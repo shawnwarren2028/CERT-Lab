@@ -102,7 +102,23 @@ canvas#map{display:block;width:auto;height:auto;max-width:100%;max-height:100%;a
 .ov{position:fixed;inset:0;z-index:55;display:flex;align-items:center;justify-content:center;padding:16px;}
 .ov.h{display:none;}
 .menu-ov{background:rgba(0,0,0,.6);}
-.menu-box{background:var(--surface);border:2px solid var(--primary);border-radius:var(--radius);padding:18px 20px;max-width:520px;width:100%;}
+.menu-box{background:var(--surface);border:2px solid var(--primary);border-radius:var(--radius);padding:18px 20px;max-width:520px;width:100%;animation:menuIn .26s ease;}
+@keyframes menuIn{from{opacity:0;transform:translateY(10px) scale(.985);}to{opacity:1;transform:none;}}
+.menu-step{display:flex;align-items:center;gap:10px;margin-bottom:11px;}
+.menu-step.hidden{display:none;}
+.step-dots{display:flex;gap:7px;}
+.step-dot{width:11px;height:11px;border-radius:50%;background:var(--border);transition:background .3s,box-shadow .3s;}
+.step-dot.on{background:var(--primary);box-shadow:0 0 0 2px rgba(90,170,58,.25);}
+.step-lbl{font-size:0.68rem;color:var(--muted);font-weight:700;letter-spacing:.06em;text-transform:uppercase;}
+.step-flash{position:fixed;inset:0;z-index:60;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:rgba(8,18,8,.55);pointer-events:none;opacity:0;transition:opacity .25s;}
+.step-flash.hidden{display:none;}
+.step-flash.show{opacity:1;}
+.sf-check{width:76px;height:76px;border-radius:50%;background:var(--primary);color:var(--bg);font-size:2.5rem;font-weight:800;
+  display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 9px rgba(90,170,58,.22);animation:sfpop .42s ease;}
+@keyframes sfpop{0%{transform:scale(.4);opacity:0;}60%{transform:scale(1.14);}100%{transform:scale(1);opacity:1;}}
+.sf-text{margin-top:15px;font-size:1.08rem;font-weight:700;color:var(--text);}
+.sf-sub{margin-top:5px;font-size:0.82rem;color:var(--primary);font-weight:700;}
 .menu-title{font-size:0.98rem;font-weight:700;color:var(--primary);margin-bottom:7px;}
 .menu-desc{font-size:0.8rem;color:var(--text);line-height:1.55;background:var(--surface2);padding:10px;border-radius:var(--radius);margin-bottom:12px;}
 .menu-choice{display:block;width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:9px 12px;margin-bottom:6px;
@@ -243,7 +259,8 @@ canvas#map{display:block;width:auto;height:auto;max-width:100%;max-height:100%;a
   </div>
 </div>
 <div class="toast" id="toast"></div>
-<div class="ov menu-ov h" id="menu-ov"><div class="menu-box"><div class="menu-title" id="menu-title"></div><div class="menu-desc" id="menu-desc"></div><div id="menu-choices"></div></div></div>
+<div class="ov menu-ov h" id="menu-ov"><div class="menu-box"><div class="menu-step hidden" id="menu-step"></div><div class="menu-title" id="menu-title"></div><div class="menu-desc" id="menu-desc"></div><div id="menu-choices"></div></div></div>
+<div class="step-flash hidden" id="step-flash"></div>
 <div class="ov dlg-ov h" id="dlg-ov"><div class="dlg-box"><div class="dlg-hdr"><canvas class="dlg-portrait" id="dlg-portrait" width="46" height="46"></canvas><div><div class="dlg-npc-name" id="dlg-name"></div><div class="dlg-npc-role" id="dlg-role"></div></div></div><div class="dlg-text" id="dlg-text"></div><div class="dlg-choices" id="dlg-choices"></div></div></div>
 <div class="ov ass-ov h" id="ass-ov"><div class="ass-box"><div class="ass-title" id="ass-title"></div><div class="ass-findings" id="ass-findings"></div><div id="ass-action-wrap"></div><div class="ass-prompt">Apply START triage tag:</div><div class="tag-row" id="tag-row"></div></div></div>
 <div class="ov lu-ov h" id="lu-ov"><div class="lu-box"><div class="lu-title">⬆ LEVEL UP!</div><div class="lu-sub">Abe L. — <span id="lu-lvl"></span></div><div class="lu-unlock" id="lu-unlock"></div><button class="lu-btn" onclick="closeLU()">Continue →</button></div></div>
@@ -578,25 +595,25 @@ function openSizeup(){
   return sizeupQ3();
 }
 function sizeupQ1(){
-  openMenu('🔭 Scene Size-Up (1/3)','You reach a vantage point on the perimeter. What is your first action?',[
-    {label:'Perform a 360° scene size-up before committing', run:()=>{S.surveyDone=true;gainXP(20,'Completed scene survey');advQ('sizeup',0);toastGood('Size-up underway.');sizeupQ2();}},
+  openMenu('🔭 Scene Size-Up','You reach a vantage point on the perimeter. What is your first action?',[
+    {label:'Perform a 360° scene size-up before committing', run:()=>{S.surveyDone=true;gainXP(20,'Completed scene survey');advQ('sizeup',0);addLog('Size-up underway — 360° survey done.','good');flashStep(1,3,sizeupQ2);}},
     {label:'Run straight to the nearest victim', run:()=>{loseCR(10,'Entered before sizing up the scene');toastBad('Never rush in before a size-up.');}},
     {label:'Grab a hose and start fighting the structure fire', run:()=>{loseCR(10,'Attempted structural suppression — not a CERT task');toastBad('Structural suppression is the fire department’s job.');}},
-  ]);
+  ],{cur:1,total:3});
 }
 function sizeupQ2(){
-  openMenu('🔭 Scene Size-Up (2/3)','Scanning the scene, what do you do about the hazards you can see?',[
-    {label:'Note them and plan to radio each one in to Command as you reach it', run:()=>{S.hazardDone=true;gainXP(15,'Hazard plan set');advQ('sizeup',1);toastGood('Hazard plan set — report them as you go.');sizeupQ3();}},
+  openMenu('🔭 Scene Size-Up','Scanning the scene, what do you do about the hazards you can see?',[
+    {label:'Note them and plan to radio each one in to Command as you reach it', run:()=>{S.hazardDone=true;gainXP(15,'Hazard plan set');advQ('sizeup',1);addLog('Hazard plan set — report them as you go.','good');flashStep(2,3,sizeupQ3);}},
     {label:'There aren’t any real hazards here', run:()=>{loseCR(10,'Missed obvious scene hazards');toastBad('Look again — several hazards are visible.');}},
     {label:'Ignore them, they’re the fire department’s problem', run:()=>{loseCR(8,'Failed to plan hazard communication');toastBad('You must communicate hazards to Command.');}},
-  ]);
+  ],{cur:2,total:3});
 }
 function sizeupQ3(){
-  openMenu('🔭 Scene Size-Up (3/3)','Before you enter the triage zone, you confirm…',[
-    {label:'A clear escape route back to staging (west, upwind)', run:()=>{S.escapeDone=true;gainXP(15,'Escape route confirmed');advQ('sizeup',2);toastGood('Escape route confirmed. Size-up complete.');closeMenu();}},
+  openMenu('🔭 Scene Size-Up','Before you enter the triage zone, you confirm…',[
+    {label:'A clear escape route back to staging (west, upwind)', run:()=>{S.escapeDone=true;gainXP(15,'Escape route confirmed');advQ('sizeup',2);addLog('Escape route confirmed — size-up complete.','good');flashStep(3,3,null);}},
     {label:'That your phone has signal', run:()=>{loseCR(8,'Failed to confirm an escape route');toastBad('Always confirm a way out first.');}},
     {label:'Nothing — just get in there', run:()=>{loseCR(10,'Entered with no escape route');toastBad('Going in blind gets responders hurt.');}},
-  ]);
+  ],{cur:3,total:3});
 }
 
 /* ════════════ UTILITY SHUTOFF ════════════ */
@@ -804,8 +821,12 @@ document.getElementById('dlg-ov').addEventListener('click', e=>{ if (e.target===
 document.getElementById('menu-ov').addEventListener('click', e=>{ if (e.target===document.getElementById('menu-ov')) closeMenu(); });
 
 /* ════════════ MENU ════════════ */
-function openMenu(title, desc, choices){
+function openMenu(title, desc, choices, step){
   document.getElementById('menu-title').textContent=title;
+  const stepEl=document.getElementById('menu-step');
+  if (step){ let dots=''; for (let i=1;i<=step.total;i++) dots+=`<span class="step-dot${i<=step.cur?' on':''}"></span>`;
+    stepEl.innerHTML=`<div class="step-dots">${dots}</div><span class="step-lbl">Step ${step.cur} of ${step.total}</span>`; stepEl.classList.remove('hidden'); }
+  else stepEl.classList.add('hidden');
   document.getElementById('menu-desc').innerHTML=desc;
   const box=document.getElementById('menu-choices'); box.innerHTML='';
   choices.forEach(c=>{ const b=document.createElement('button'); b.className='menu-choice'; b.textContent=c.label; b.onclick=()=>{ const crB=S.cr; SND.beginChoice(); c.run(); SND.endChoice(); SND.sfx(S.cr<crB?'dong':'ding'); render(); }; box.appendChild(b); });
@@ -814,6 +835,14 @@ function openMenu(title, desc, choices){
   SND.sfx('open');
 }
 function closeMenu(){ document.getElementById('menu-ov').classList.add('h'); render(); }
+function flashStep(cur,total,next){ // celebratory "part complete" beat between multi-part steps
+  closeMenu();
+  const f=document.getElementById('step-flash'); const done=cur>=total;
+  f.innerHTML=`<div class="sf-check">✓</div><div class="sf-text">Size-Up Part ${cur} of ${total} complete</div><div class="sf-sub">${done?'Scene size-up complete!':((total-cur)+' more to go…')}</div>`;
+  f.classList.remove('hidden'); setTimeout(()=>f.classList.add('show'),20);
+  setTimeout(()=>f.classList.remove('show'),1150);
+  setTimeout(()=>{ f.classList.add('hidden'); if (next) next(); }, 1450);
+}
 
 /* ════════════ PATIENT ASSESSMENT ════════════ */
 function openAssess(pid){
@@ -892,7 +921,7 @@ function renderLog(){
 function render(){ renderStats(); renderQuests(); renderLog(); }
 
 /* ════════════ WIN / LOSE ════════════ */
-function anyOverlayOpen(){ return ['menu-ov','dlg-ov','ass-ov','lu-ov','end-ov'].some(id=>!document.getElementById(id).classList.contains('h')); }
+function anyOverlayOpen(){ return ['menu-ov','dlg-ov','ass-ov','lu-ov','end-ov'].some(id=>!document.getElementById(id).classList.contains('h')) || !document.getElementById('step-flash').classList.contains('hidden'); }
 function showWin(){
   if (S.over) return; S.over=true; SND.sfx('win');
   const correct=S.patients.filter(p=>p.tagged===p.correctTag).length;
@@ -1362,16 +1391,23 @@ const SND = (function(){
   function mtof(m){ return 440*Math.pow(2,(m-69)/12); }
   function startMusic(){
     if (!ctx) return; stopMusic();
-    const triad=[0,3,7], roots=[57,55,53,52]; let ri=0; // calm minor pad, slow descent
-    const filter=ctx.createBiquadFilter(); filter.type='lowpass'; filter.frequency.value=620; filter.Q.value=1.5; filter.connect(musicGain);
-    const lfo=ctx.createOscillator(), lfoGain=ctx.createGain(); lfo.frequency.value=0.05; lfoGain.gain.value=240;
-    lfo.connect(lfoGain); lfoGain.connect(filter.frequency); lfo.start();
-    const oscs=[];
-    for (let i=0;i<3;i++){ const o=ctx.createOscillator(), g=ctx.createGain(); o.type=i===0?'sine':'triangle'; g.gain.value=0; o.connect(g); g.connect(filter); o.start(); oscs.push({o,g}); }
-    function setChord(root){ for (let i=0;i<3;i++){ const m=root+triad[i]+(i===2?12:0); oscs[i].o.frequency.setTargetAtTime(mtof(m),ctx.currentTime,0.9); oscs[i].g.gain.setTargetAtTime(0.5,ctx.currentTime,1.4); } }
-    setChord(roots[0]);
-    musicNodes=[filter,lfo,lfoGain].concat(oscs.map(x=>x.o)).concat(oscs.map(x=>x.g));
-    musicTimer=setInterval(()=>{ ri=(ri+1)%roots.length; setChord(roots[ri]); }, 9000);
+    // cozy music-box loop: sweet triangle melody over warm major chords (C – G – Am – F)
+    const bpm=96, step=(60/bpm)/2, STEPS_PER_BAR=8, BARS=4, loopDur=STEPS_PER_BAR*BARS*step;
+    const chords=[[60,64,67],[55,59,62],[57,60,64],[53,57,60]]; // C  G  Am  F
+    const melody=[[72,2],[76,2],[79,2],[76,2],[74,2],[71,2],[74,4],[72,2],[76,2],[81,2],[79,2],[77,2],[74,2],[72,4]];
+    function bell(freq,t,dur){ const o=ctx.createOscillator(),g=ctx.createGain(); o.type='triangle'; o.frequency.value=freq;
+      g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.5,t+0.012); g.gain.exponentialRampToValueAtTime(0.0008,t+dur);
+      o.connect(g); g.connect(musicGain); o.start(t); o.stop(t+dur+0.05); }
+    function pad(freq,t,dur){ const o=ctx.createOscillator(),g=ctx.createGain(); o.type='sine'; o.frequency.value=freq;
+      g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.15,t+0.1); g.gain.setValueAtTime(0.15,t+dur-0.12); g.gain.exponentialRampToValueAtTime(0.0008,t+dur);
+      o.connect(g); g.connect(musicGain); o.start(t); o.stop(t+dur+0.05); }
+    function schedule(startT){
+      for (let bar=0;bar<BARS;bar++){ const t=startT+bar*STEPS_PER_BAR*step; chords[bar].forEach(m=>pad(mtof(m),t,STEPS_PER_BAR*step)); }
+      let s=0; for (const mn of melody){ if (mn[0]>0) bell(mtof(mn[0]), startT+s*step, mn[1]*step*0.9); s+=mn[1]; }
+    }
+    let loopStart=ctx.currentTime+0.2; schedule(loopStart);
+    musicTimer=setInterval(()=>{ loopStart+=loopDur; schedule(loopStart); }, loopDur*1000);
+    musicNodes=[];
   }
   function stopMusic(){ if (musicTimer){ clearInterval(musicTimer); musicTimer=null; } musicNodes.forEach(n=>{ try{ if (n.stop) n.stop(); n.disconnect(); }catch(e){} }); musicNodes=[]; }
   function setMusicLevel(n){ musicLevel=Math.max(0,Math.min(10,n|0)); localStorage.setItem('cert_music_vol',musicLevel); ensure();
