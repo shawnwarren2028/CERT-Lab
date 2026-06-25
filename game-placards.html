@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wallingford CERT — Hazmat Placard Match</title>
+<style>
+:root{
+  --bg:#0e1208;--surface:#1a2012;--surface2:#243018;--border:#3a5228;
+  --primary:#5aaa3a;--primary-dark:#4a8f2e;--primary-light:#7ac95a;
+  --text:#eef2e8;--muted:#8aa87a;--radius:12px;--danger:#cc4444;--gold:#ffce3a;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);
+  min-height:100vh;display:flex;flex-direction:column;}
+header{width:100%;background:#111a09;border-bottom:3px solid var(--primary);
+  padding:10px 22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+.logo-wrap{display:flex;align-items:center;}
+#cert-logo{height:48px;width:auto;}
+.logo-badge{background:var(--primary);color:#000;font-weight:900;font-size:1.05rem;letter-spacing:.1em;padding:6px 12px;border-radius:6px;}
+.hdr-txt h1{font-size:1.12rem;font-weight:700;color:var(--primary);}
+.hdr-txt p{font-size:0.76rem;color:var(--muted);}
+.home-link{margin-left:auto;color:var(--primary-light);text-decoration:none;font-size:0.82rem;font-weight:600;
+  border:1px solid var(--border);padding:7px 14px;border-radius:8px;white-space:nowrap;}
+.home-link:hover{background:var(--surface2);border-color:var(--primary);}
+main{flex:1;width:100%;max-width:760px;margin:0 auto;padding:24px 16px 32px;}
+
+/* ── HUD ── */
+.hud{display:none;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
+.hud.on{display:flex;}
+.hud .chip{background:var(--surface);border:1px solid var(--border);border-radius:99px;padding:6px 14px;font-size:0.82rem;}
+.hud .chip b{color:var(--primary);}
+.hud .sp{margin-left:auto;}
+.btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:7px 14px;border-radius:8px;
+  cursor:pointer;font-size:0.82rem;font-family:inherit;}
+.btn:hover{border-color:var(--primary);color:var(--primary);}
+.btn-primary{background:var(--primary);color:#06210a;border:none;font-weight:700;}
+.btn-primary:hover{background:var(--primary-light);color:#06210a;}
+
+/* ── LEVEL SELECT ── */
+.lvl-hero{text-align:center;margin-bottom:22px;}
+.lvl-hero h2{font-size:1.7rem;color:var(--primary);margin-bottom:8px;}
+.lvl-hero p{color:var(--muted);max-width:560px;margin:0 auto;line-height:1.55;font-size:0.92rem;}
+.lvl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;margin-top:22px;}
+.lvl-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 16px;
+  cursor:pointer;transition:transform .15s,border-color .15s;text-align:center;position:relative;}
+.lvl-card:hover{transform:translateY(-3px);border-color:var(--primary);}
+.lvl-num{font-size:0.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700;}
+.lvl-name{font-size:1.05rem;font-weight:700;color:var(--primary);margin:4px 0 6px;}
+.lvl-meta{font-size:0.78rem;color:var(--text);opacity:.85;}
+.lvl-stars{margin-top:8px;font-size:0.95rem;letter-spacing:2px;color:var(--gold);min-height:20px;}
+.lvl-stars .empty{color:#3a4a2a;}
+
+/* ── BOARD ── */
+.board-wrap{display:none;}
+.board-wrap.on{display:block;}
+.board{display:grid;gap:9px;margin:0 auto;}
+.card{position:relative;aspect-ratio:1/1;cursor:pointer;perspective:600px;}
+.card-inner{position:absolute;inset:0;transition:transform .4s;transform-style:preserve-3d;}
+.card.flipped .card-inner,.card.matched .card-inner{transform:rotateY(180deg);}
+.card-face{position:absolute;inset:0;backface-visibility:hidden;border-radius:9px;display:flex;
+  align-items:center;justify-content:center;overflow:hidden;}
+.card-back{background:linear-gradient(150deg,#243018,#1a2012);border:2px solid var(--border);}
+.card-back svg{width:54%;height:54%;opacity:.55;}
+.card-front{background:#f4f4ec;border:2px solid var(--border);transform:rotateY(180deg);padding:4px;}
+.card.matched .card-front{border-color:var(--primary);box-shadow:0 0 0 2px var(--primary) inset;}
+.card.matched{animation:pop .4s ease;}
+@keyframes pop{0%{transform:scale(1);}40%{transform:scale(1.07);}100%{transform:scale(1);}}
+.placard-svg{width:100%;height:100%;display:block;}
+.text-card{width:100%;height:100%;display:flex;align-items:center;justify-content:center;text-align:center;
+  background:#11180c;border-radius:7px;color:var(--text);font-weight:700;padding:6px;line-height:1.25;}
+.text-card span{font-size:clamp(0.6rem,2.4vw,0.92rem);}
+.card.busy{pointer-events:none;}
+
+/* ── FACT TOAST ── */
+.fact{position:fixed;left:50%;bottom:18px;transform:translateX(-50%) translateY(20px);z-index:60;
+  background:var(--surface);border:1px solid var(--primary);border-radius:10px;padding:11px 16px;max-width:min(92vw,520px);
+  box-shadow:0 6px 22px rgba(0,0,0,.5);opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;font-size:0.86rem;line-height:1.45;}
+.fact.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.fact b{color:var(--primary);}
+
+/* ── WIN OVERLAY ── */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:70;display:none;align-items:center;justify-content:center;padding:18px;}
+.ov.on{display:flex;}
+.win-box{background:var(--surface);border:2px solid var(--primary);border-radius:var(--radius);padding:28px 26px;max-width:420px;width:100%;text-align:center;}
+.win-box h2{font-size:1.5rem;color:var(--primary);margin-bottom:4px;}
+.win-sub{font-size:0.86rem;color:var(--muted);margin-bottom:12px;}
+.win-stars{font-size:2.3rem;letter-spacing:6px;color:var(--gold);margin:6px 0 14px;}
+.win-stars .empty{color:#3a4a2a;}
+.win-stats{display:flex;justify-content:center;gap:26px;margin-bottom:20px;}
+.win-stats div{font-size:0.8rem;color:var(--muted);}
+.win-stats b{display:block;font-size:1.3rem;color:var(--text);}
+.win-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+footer{text-align:center;padding:16px;font-size:0.74rem;color:var(--muted);border-top:1px solid var(--border);}
+footer span{color:var(--primary);}
+@media(max-width:560px){
+  header{padding:9px 14px;}
+  .hdr-txt h1{font-size:0.98rem;}
+  main{padding:18px 12px 26px;}
+  .board{gap:6px;}
+  .lvl-hero h2{font-size:1.4rem;}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo-wrap">
+    <img id="cert-logo" src="cert-wallingford-logo.png" alt="Wallingford CERT" onerror="this.style.display='none';document.getElementById('logo-fallback').style.display='flex'">
+    <div id="logo-fallback" style="display:none;align-items:center;"><div class="logo-badge">CERT</div></div>
+  </div>
+  <div class="hdr-txt">
+    <h1>Hazmat Placard Match</h1>
+    <p>DOT hazard classes &amp; the NFPA 704 fire diamond</p>
+  </div>
+  <a class="home-link" href="index.html">← Menu</a>
+</header>
+
+<main>
+  <!-- LEVEL SELECT -->
+  <section id="select">
+    <div class="lvl-hero">
+      <h2>🧩 Match the Placards</h2>
+      <p>Flip cards to find pairs. Some pairs match a <strong>placard to its meaning</strong>; others match
+         <strong>two identical placards</strong>. Each match teaches you what the placard stands for. Pick a level to begin —
+         they get bigger and add new placards as you go.</p>
+    </div>
+    <div class="lvl-grid" id="lvl-grid"></div>
+  </section>
+
+  <!-- BOARD -->
+  <section class="board-wrap" id="board-wrap">
+    <div class="hud on" id="hud">
+      <span class="chip">Level <b id="hud-lvl">1</b></span>
+      <span class="chip">Pairs <b id="hud-pairs">0/0</b></span>
+      <span class="chip">Moves <b id="hud-moves">0</b></span>
+      <span class="chip">⏱ <b id="hud-time">0:00</b></span>
+      <span class="sp"></span>
+      <button class="btn" onclick="restartLevel()">↻ Restart</button>
+      <button class="btn" onclick="toSelect()">≡ Levels</button>
+    </div>
+    <div class="board" id="board"></div>
+  </section>
+</main>
+
+<div class="fact" id="fact"></div>
+
+<div class="ov" id="win-ov">
+  <div class="win-box">
+    <h2 id="win-title">Level Complete!</h2>
+    <div class="win-sub" id="win-sub"></div>
+    <div class="win-stars" id="win-stars"></div>
+    <div class="win-stats">
+      <div>Moves<b id="win-moves">0</b></div>
+      <div>Time<b id="win-time">0:00</b></div>
+    </div>
+    <div class="win-btns" id="win-btns"></div>
+  </div>
+</div>
+
+<footer><span>Wallingford CERT</span> Training Suite · Hazmat Placard Memory Match</footer>
+
+<script>
+/* ════════════ PLACARD DATA ════════════ */
+const C = { orange:'#E0922F', red:'#D2342A', green:'#2E8B57', yellow:'#E9C13B',
+  white:'#F2F2EC', blue:'#2E5FAE', black:'#1a1a1a' };
+
+const PLACARDS = {
+  explosives:   { num:'1', top:C.orange, sym:'explosion', name:'Explosives',
+    meaning:'Class 1 — Explosives', fact:'<b>Class 1 — Explosives:</b> dynamite, fireworks, ammunition, blasting agents.' },
+  flam_gas:     { num:'2', top:C.red, sym:'flame', name:'Flammable Gas',
+    meaning:'Class 2.1 — Flammable Gas', fact:'<b>Class 2.1 — Flammable Gas:</b> propane, butane, hydrogen, acetylene.' },
+  nonflam_gas:  { num:'2', top:C.green, sym:'gascyl', name:'Non-Flammable Gas',
+    meaning:'Class 2.2 — Non-Flammable Gas', fact:'<b>Class 2.2 — Non-Flammable Gas:</b> nitrogen, CO₂, helium, compressed oxygen.' },
+  flam_liquid:  { num:'3', top:C.red, sym:'flame', name:'Flammable Liquid',
+    meaning:'Class 3 — Flammable Liquid', fact:'<b>Class 3 — Flammable Liquid:</b> gasoline, acetone, alcohol, paint thinner.' },
+  flam_solid:   { num:'4', stripes:'flamsolid', sym:'flame', name:'Flammable Solid',
+    meaning:'Class 4.1 — Flammable Solid', fact:'<b>Class 4.1 — Flammable Solid:</b> matches, sulfur, magnesium.' },
+  dangerous_wet:{ num:'4', top:C.blue, sym:'flame', symColor:'#fff', numColor:'#fff', name:'Dangerous When Wet',
+    meaning:'Class 4.3 — Dangerous When Wet', fact:'<b>Class 4.3 — Dangerous When Wet:</b> sodium, calcium carbide — react with water to make flammable gas.' },
+  oxidizer:     { num:'5.1', top:C.yellow, sym:'oxidizer', name:'Oxidizer',
+    meaning:'Class 5.1 — Oxidizer', fact:'<b>Class 5.1 — Oxidizer:</b> ammonium nitrate, hydrogen peroxide — feed and intensify fire.' },
+  toxic:        { num:'6', top:C.white, sym:'skull', name:'Toxic / Poison',
+    meaning:'Class 6.1 — Toxic / Poison', fact:'<b>Class 6.1 — Toxic/Poison:</b> pesticides, cyanide, arsenic compounds.' },
+  radioactive:  { num:'7', top:C.yellow, bottom:C.white, sym:'radioactive', symY:34, name:'Radioactive',
+    meaning:'Class 7 — Radioactive', fact:'<b>Class 7 — Radioactive:</b> uranium, plutonium, medical isotopes.' },
+  corrosive:    { num:'8', top:C.white, bottom:C.black, sym:'corrosive', numColor:'#fff', name:'Corrosive',
+    meaning:'Class 8 — Corrosive', fact:'<b>Class 8 — Corrosive:</b> sulfuric acid, sodium hydroxide, battery acid — burns skin & metal.' },
+  misc:         { num:'9', stripes:'misc', sym:'none', name:'Misc. Dangerous Goods',
+    meaning:'Class 9 — Miscellaneous', fact:'<b>Class 9 — Miscellaneous:</b> lithium batteries, dry ice, asbestos, molten sulfur.' },
+  nfpa_health:      { nfpa:'health', name:'NFPA Health (Blue)',
+    meaning:'NFPA Blue — Health Hazard', fact:'<b>NFPA 704 Blue (left):</b> Health hazard, 0 (normal) → 4 (deadly, brief exposure).' },
+  nfpa_flammability:{ nfpa:'flam', name:'NFPA Flammability (Red)',
+    meaning:'NFPA Red — Flammability', fact:'<b>NFPA 704 Red (top):</b> Flammability, 0 (won\'t burn) → 4 (extremely flammable).' },
+  nfpa_reactivity:  { nfpa:'react', name:'NFPA Instability (Yellow)',
+    meaning:'NFPA Yellow — Instability', fact:'<b>NFPA 704 Yellow (right):</b> Instability/Reactivity, 0 (stable) → 4 (may detonate).' },
+  nfpa_special:     { nfpa:'special', name:'NFPA Special (White)',
+    meaning:'NFPA White — Special Hazards', fact:'<b>NFPA 704 White (bottom):</b> Special — <b>OX</b> oxidizer, <b>W̶</b> water-reactive, <b>SA</b> simple asphyxiant.' },
+};
+
+const LEVELS = [
+  { name:'Recruit',   cols:4, ids:['flam_liquid','corrosive','flam_gas','oxidizer','toxic','explosives'] },
+  { name:'Responder', cols:4, ids:['flam_liquid','corrosive','flam_gas','oxidizer','toxic','explosives','radioactive','nonflam_gas'] },
+  { name:'Technician',cols:5, ids:['flam_liquid','corrosive','flam_gas','oxidizer','toxic','explosives','radioactive','nonflam_gas','nfpa_health','nfpa_flammability'] },
+  { name:'Specialist',cols:6, ids:['flam_liquid','corrosive','flam_gas','oxidizer','toxic','explosives','radioactive','nonflam_gas','nfpa_health','nfpa_flammability','nfpa_reactivity','nfpa_special'] },
+  { name:'Hazmat Cmdr',cols:6, ids:['flam_liquid','corrosive','flam_gas','oxidizer','toxic','explosives','radioactive','nonflam_gas','nfpa_health','nfpa_flammability','nfpa_reactivity','nfpa_special','flam_solid','dangerous_wet','misc'] },
+];
+
+/* ════════════ SVG RENDERING ════════════ */
+function symInner(type, p){
+  const col = p && p.symColor ? p.symColor : '#1a1a1a';
+  const yShift = (p && p.symY) ? p.symY : 42;
+  switch(type){
+    case 'flame':
+      return `<path transform="translate(0,${yShift-42})" d="M50,26 C60,40 62,48 55,56 C57,50 51,49 51,54 C46,50 46,43 49,39 C49,44 53,41 50,26 Z" fill="${col}"/>`;
+    case 'explosion':
+      return `<path d="M50,24 L54,38 L67,32 L58,44 L72,47 L58,51 L65,64 L52,56 L50,70 L48,56 L35,64 L42,51 L28,47 L42,44 L33,32 L46,38 Z" fill="${col}"/>`;
+    case 'gascyl':
+      return `<g fill="none" stroke="${col}" stroke-width="3"><rect x="43" y="34" width="14" height="22" rx="6"/><line x1="50" y1="30" x2="50" y2="34"/></g>`;
+    case 'oxidizer':
+      return `<g><circle cx="50" cy="50" r="11" fill="none" stroke="${col}" stroke-width="3"/><path d="M50,30 C56,38 57,43 52,48 C53,44 49,44 49,47 C46,44 47,39 50,30 Z" fill="${col}"/></g>`;
+    case 'skull':
+      return `<text x="50" y="${yShift}" font-size="26" text-anchor="middle" dominant-baseline="central" fill="${col}">☠</text>`;
+    case 'radioactive':
+      return `<text x="50" y="${yShift}" font-size="24" text-anchor="middle" dominant-baseline="central" fill="${col}">☢</text>`;
+    case 'corrosive':
+      return `<g stroke="${col}" stroke-width="2.4" fill="none">
+        <rect x="33" y="34" width="6" height="13" rx="1" transform="rotate(34 36 40)"/>
+        <rect x="61" y="34" width="6" height="13" rx="1" transform="rotate(-34 64 40)"/>
+        <line x1="29" y1="60" x2="71" y2="60"/>
+        <path d="M40,60 l3,-4 l3,4 l3,-4 l3,4"/></g>
+        <g fill="${col}"><circle cx="43" cy="52" r="1.4"/><circle cx="57" cy="52" r="1.4"/></g>`;
+    default: return '';
+  }
+}
+function vstripes(color){ // vertical stripes clipped to the diamond
+  let s=`<defs><clipPath id="dia"><polygon points="50,4 96,50 50,96 4,50"/></clipPath></defs><g clip-path="url(#dia)">`;
+  for(let x=8;x<96;x+=12) s+=`<rect x="${x}" y="0" width="6" height="100" fill="${color}"/>`;
+  return s+`</g>`;
+}
+function stripesTopHalf(){ // class 9: black vertical stripes, top half only
+  let s=`<defs><clipPath id="dtop"><polygon points="50,4 96,50 4,50"/></clipPath></defs><g clip-path="url(#dtop)">`;
+  for(let x=10;x<92;x+=11) s+=`<rect x="${x}" y="0" width="5" height="55" fill="#1a1a1a"/>`;
+  return s+`</g>`;
+}
+function diamondSVG(p){
+  const dia='50,4 96,50 50,96 4,50';
+  let bg;
+  if(p.stripes==='flamsolid'){
+    bg=`<polygon points="${dia}" fill="${C.white}" stroke="#111" stroke-width="2"/>`+vstripes(C.red)+`<polygon points="${dia}" fill="none" stroke="#111" stroke-width="2"/>`;
+  } else if(p.stripes==='misc'){
+    bg=`<polygon points="${dia}" fill="${C.white}" stroke="#111" stroke-width="2"/>`+stripesTopHalf()+`<polygon points="${dia}" fill="none" stroke="#111" stroke-width="2"/>`;
+  } else if(p.bottom){
+    bg=`<polygon points="50,4 96,50 4,50" fill="${p.top}"/><polygon points="4,50 96,50 50,96" fill="${p.bottom}"/><polygon points="${dia}" fill="none" stroke="#111" stroke-width="2"/>`;
+  } else {
+    bg=`<polygon points="${dia}" fill="${p.top}" stroke="#111" stroke-width="2"/>`;
+  }
+  const sym=symInner(p.sym,p);
+  const numCol=p.numColor||'#111';
+  const num=p.num?`<text x="50" y="83" text-anchor="middle" font-size="15" font-weight="800" fill="${numCol}" font-family="Arial">${p.num}</text>`:'';
+  return `<svg viewBox="0 0 100 100" class="placard-svg">${bg}${sym}${num}</svg>`;
+}
+function nfpaSVG(which){
+  const cells={ flam:{pts:'50,5 73,28 50,50 27,28', c:C.red},
+                health:{pts:'5,50 27,28 50,50 27,72', c:C.blue},
+                react:{pts:'95,50 73,28 50,50 73,72', c:C.yellow},
+                special:{pts:'50,95 27,72 50,50 73,72', c:C.white} };
+  let s='<svg viewBox="0 0 100 100" class="placard-svg"><rect x="0" y="0" width="100" height="100" fill="#f4f4ec"/>';
+  for(const k in cells){ const cell=cells[k]; const on=(k===which);
+    s+=`<polygon points="${cell.pts}" fill="${on?cell.c:'#cdd3c4'}" stroke="#111" stroke-width="1.6"/>`; }
+  // sample rating digit in the highlighted cell
+  const pos={flam:[50,26],health:[26,50],react:[74,50],special:[50,74]};
+  const d=pos[which];
+  const dig = which==='special' ? 'OX' : (which==='health'?'3':which==='flam'?'4':'2');
+  s+=`<text x="${d[0]}" y="${d[1]}" font-size="${which==='special'?9:14}" font-weight="800" text-anchor="middle" dominant-baseline="central" fill="#111">${dig}</text>`;
+  return s+'</svg>';
+}
+function placardInner(id){ const p=PLACARDS[id]; return p.nfpa?nfpaSVG(p.nfpa):diamondSVG(p); }
+const BACK_SVG=`<svg viewBox="0 0 100 100"><polygon points="50,8 92,50 50,92 8,50" fill="none" stroke="#7ac95a" stroke-width="5"/><text x="50" y="55" font-size="34" font-weight="800" text-anchor="middle" fill="#7ac95a">?</text></svg>`;
+
+/* ════════════ GAME STATE ════════════ */
+let curLevel=0, deck=[], flipped=[], matchedCount=0, moves=0, busy=false;
+let startTime=0, timerInt=null, started=false;
+const bestStars = JSON.parse(localStorage.getItem('cert_placard_stars')||'{}');
+
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function fmtTime(s){ const m=Math.floor(s/60); return m+':'+String(s%60).padStart(2,'0'); }
+function starsFor(pairs,mv){ if(mv<=Math.ceil(pairs*1.5)) return 3; if(mv<=Math.ceil(pairs*2.3)) return 2; return 1; }
+function starStr(n){ let s=''; for(let i=0;i<3;i++) s+= i<n?'★':'<span class="empty">★</span>'; return s; }
+
+/* ── LEVEL SELECT ── */
+function renderSelect(){
+  const g=document.getElementById('lvl-grid'); g.innerHTML='';
+  LEVELS.forEach((lv,i)=>{
+    const pairs=lv.ids.length;
+    const div=document.createElement('div'); div.className='lvl-card'; div.onclick=()=>startLevel(i);
+    const st=bestStars[i];
+    div.innerHTML=`<div class="lvl-num">Level ${i+1}</div><div class="lvl-name">${lv.name}</div>
+      <div class="lvl-meta">${pairs} pairs · ${pairs*2} cards</div>
+      <div class="lvl-stars">${st?starStr(st):'<span class="empty">★★★</span>'}</div>`;
+    g.appendChild(div);
+  });
+}
+function toSelect(){ stopTimer(); document.getElementById('board-wrap').classList.remove('on'); document.getElementById('select').style.display='';
+  document.getElementById('win-ov').classList.remove('on'); renderSelect(); }
+
+/* ── BUILD & START ── */
+function buildDeck(lv,levelIdx){
+  const cards=[]; let pid=0;
+  const meaningProb=Math.min(0.8, 0.3+0.12*levelIdx);
+  lv.ids.forEach(id=>{
+    const thisPid=pid++;
+    if(Math.random()<meaningProb){ // placard ↔ meaning
+      cards.push({pid:thisPid,id,face:'placard'});
+      cards.push({pid:thisPid,id,face:'text'});
+    } else { // identical placards
+      cards.push({pid:thisPid,id,face:'placard'});
+      cards.push({pid:thisPid,id,face:'placard'});
+    }
+  });
+  return shuffle(cards);
+}
+function startLevel(i){
+  curLevel=i; const lv=LEVELS[i];
+  deck=buildDeck(lv,i); flipped=[]; matchedCount=0; moves=0; busy=false; started=false;
+  document.getElementById('select').style.display='none';
+  document.getElementById('board-wrap').classList.add('on');
+  document.getElementById('win-ov').classList.remove('on');
+  document.getElementById('hud-lvl').textContent=(i+1)+' · '+lv.name;
+  document.getElementById('hud-pairs').textContent='0/'+lv.ids.length;
+  document.getElementById('hud-moves').textContent='0';
+  document.getElementById('hud-time').textContent='0:00';
+  stopTimer(); document.getElementById('hud-time').textContent='0:00';
+  renderBoard();
+}
+function restartLevel(){ startLevel(curLevel); }
+
+function renderBoard(){
+  const lv=LEVELS[curLevel]; const board=document.getElementById('board');
+  board.style.gridTemplateColumns='repeat('+lv.cols+',1fr)';
+  board.style.maxWidth=(lv.cols*92)+'px';
+  board.innerHTML='';
+  deck.forEach((card,idx)=>{
+    const el=document.createElement('div'); el.className='card'; el.dataset.idx=idx;
+    const front = card.face==='text'
+      ? `<div class="card-face card-front"><div class="text-card"><span>${PLACARDS[card.id].meaning}</span></div></div>`
+      : `<div class="card-face card-front">${placardInner(card.id)}</div>`;
+    el.innerHTML=`<div class="card-inner"><div class="card-face card-back">${BACK_SVG}</div>${front}</div>`;
+    el.addEventListener('click',()=>onCardClick(idx,el));
+    board.appendChild(el);
+  });
+}
+
+/* ── TIMER ── */
+function startTimer(){ startTime=Date.now(); timerInt=setInterval(()=>{ document.getElementById('hud-time').textContent=fmtTime(Math.floor((Date.now()-startTime)/1000)); },500); }
+function stopTimer(){ if(timerInt){ clearInterval(timerInt); timerInt=null; } }
+function elapsed(){ return Math.floor((Date.now()-startTime)/1000); }
+
+/* ── FLIP LOGIC ── */
+function onCardClick(idx,el){
+  if(busy) return;
+  const card=deck[idx];
+  if(el.classList.contains('flipped')||el.classList.contains('matched')) return;
+  if(flipped.length>=2) return;
+  if(!started){ started=true; startTimer(); }
+  el.classList.add('flipped'); SFX('flip');
+  flipped.push({idx,el,card});
+  if(flipped.length===2){
+    moves++; document.getElementById('hud-moves').textContent=moves;
+    const [a,b]=flipped;
+    if(a.card.pid===b.card.pid){
+      busy=true;
+      setTimeout(()=>{
+        a.el.classList.add('matched'); b.el.classList.add('matched');
+        a.el.classList.remove('flipped'); b.el.classList.remove('flipped');
+        flipped=[]; matchedCount++; busy=false;
+        document.getElementById('hud-pairs').textContent=matchedCount+'/'+LEVELS[curLevel].ids.length;
+        showFact(PLACARDS[a.card.id].fact); SFX('match');
+        if(matchedCount===LEVELS[curLevel].ids.length) setTimeout(winLevel,650);
+      },360);
+    } else {
+      busy=true; SFX('miss');
+      setTimeout(()=>{ a.el.classList.remove('flipped'); b.el.classList.remove('flipped'); flipped=[]; busy=false; },820);
+    }
+  }
+}
+
+/* ── FACT TOAST ── */
+let factT=null;
+function showFact(html){ const f=document.getElementById('fact'); f.innerHTML=html; f.classList.add('show');
+  clearTimeout(factT); factT=setTimeout(()=>f.classList.remove('show'),2600); }
+
+/* ── WIN ── */
+function winLevel(){
+  stopTimer(); const lv=LEVELS[curLevel]; const pairs=lv.ids.length; const t=elapsed();
+  const stars=starsFor(pairs,moves);
+  if(!bestStars[curLevel]||stars>bestStars[curLevel]){ bestStars[curLevel]=stars; localStorage.setItem('cert_placard_stars',JSON.stringify(bestStars)); }
+  document.getElementById('win-title').textContent='Level '+(curLevel+1)+' Complete!';
+  document.getElementById('win-sub').textContent=lv.name+' — all '+pairs+' placards matched';
+  document.getElementById('win-stars').innerHTML=starStr(stars);
+  document.getElementById('win-moves').textContent=moves;
+  document.getElementById('win-time').textContent=fmtTime(t);
+  const btns=document.getElementById('win-btns'); btns.innerHTML='';
+  if(curLevel<LEVELS.length-1){ const n=document.createElement('button'); n.className='btn btn-primary'; n.textContent='Next Level →'; n.onclick=()=>startLevel(curLevel+1); btns.appendChild(n); }
+  else { const done=document.createElement('div'); done.style.cssText='width:100%;color:var(--primary);font-weight:700;margin-bottom:6px;'; done.textContent='🏅 You cleared every level!'; btns.appendChild(done); }
+  const r=document.createElement('button'); r.className='btn'; r.textContent='↻ Replay'; r.onclick=()=>startLevel(curLevel); btns.appendChild(r);
+  const s=document.createElement('button'); s.className='btn'; s.textContent='≡ Levels'; s.onclick=toSelect; btns.appendChild(s);
+  SFX('win');
+  document.getElementById('win-ov').classList.add('on');
+}
+
+/* ════════════ AUDIO (tiny, optional, self-contained) ════════════ */
+let actx=null;
+function SFX(name){
+  try{
+    if(!actx){ const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return; actx=new AC(); }
+    if(actx.state==='suspended') actx.resume();
+    const beep=(f,d,t,v)=>{ const o=actx.createOscillator(),g=actx.createGain(); o.type=t||'triangle'; o.frequency.value=f;
+      g.gain.setValueAtTime(0,actx.currentTime); g.gain.linearRampToValueAtTime(v||0.12,actx.currentTime+0.01);
+      g.gain.exponentialRampToValueAtTime(0.0008,actx.currentTime+d); o.connect(g); g.connect(actx.destination);
+      o.start(); o.stop(actx.currentTime+d+0.02); };
+    if(name==='flip') beep(520,0.07,'square',0.08);
+    else if(name==='match'){ beep(660,0.1,'triangle',0.12); setTimeout(()=>beep(880,0.14,'triangle',0.12),90); }
+    else if(name==='miss') beep(200,0.16,'sawtooth',0.08);
+    else if(name==='win'){ [523,659,784,1047].forEach((f,i)=>setTimeout(()=>beep(f,0.22,'triangle',0.13),i*110)); }
+  }catch(e){}
+}
+
+/* ════════════ INIT ════════════ */
+renderSelect();
+</script>
+</body>
+</html>
