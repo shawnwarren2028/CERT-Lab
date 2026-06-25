@@ -16,7 +16,10 @@
       "Bash(copy \"D:\\\\Claude\\\\CERT Lab\\\\index.html\" \"D:\\\\Claude\\\\CERT Lab\\\\game-scenarios.html\")",
       "PowerShell(Copy-Item \"D:\\\\Claude\\\\CERT Lab\\\\index.html\" \"D:\\\\Claude\\\\CERT Lab\\\\game-scenarios.html\")",
       "Bash(awk '{print $5, $9}')",
-      "Bash(git --version)"
+      "Bash(git --version)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)"
     ]
   }
 }
