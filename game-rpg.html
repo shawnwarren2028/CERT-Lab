@@ -531,7 +531,7 @@ function openHazard(h){
 function reportHazard(h){
   h.reported=true; gainXP(15,`Reported ${h.label} to Command`); advQ('hazards',h.step);
   addLog('Abe: "'+h.report+'"','good'); addLog('Rodriguez: "Copy — flagging it for the crew. Good eyes."','info');
-  toastGood('Hazard reported to Command.'); closeMenu();
+  toastGood('Hazard reported to Command.'); noteFireKnockdown(); closeMenu();
 }
 
 /* ════════════ EQUIPMENT CACHE ════════════ */
@@ -580,8 +580,8 @@ function openUtility(){
   if (!S.ppe || !S.checkedIn){ toast('Gear up and check in before working the utilities.'); return; }
   if (S.gasOff && S.elecOff){ openMenu('🔧 Utility Controls','Gas and electric are both secured. Good work.',[]); return; }
   const c=[];
-  if (!S.gasOff) c.push({label:'🔧 Shut off the gas — quarter-turn so the valve sits crosswise to the pipe', run:()=>{S.gasOff=true;gainXP(15,'Shut off the gas main');advQ('utilities',0);toastGood('Gas main shut off.');openUtility();}});
-  if (!S.elecOff) c.push({label:'⚡ Trip the main breaker at the electrical panel', run:()=>{S.elecOff=true;gainXP(15,'Shut off the electrical main');advQ('utilities',1);toastGood('Electrical main off.');openUtility();}});
+  if (!S.gasOff) c.push({label:'🔧 Shut off the gas — quarter-turn so the valve sits crosswise to the pipe', run:()=>{S.gasOff=true;gainXP(15,'Shut off the gas main');advQ('utilities',0);toastGood('Gas main shut off.');noteFireKnockdown();openUtility();}});
+  if (!S.elecOff) c.push({label:'⚡ Trip the main breaker at the electrical panel', run:()=>{S.elecOff=true;gainXP(15,'Shut off the electrical main');advQ('utilities',1);toastGood('Electrical main off.');noteFireKnockdown();openUtility();}});
   c.push({label:'Yank the gas meter out of the wall to be sure', run:()=>{loseCR(10,'Unsafe utility handling');toastBad('Never force a meter — a quarter-turn of the valve only.');}});
   openMenu('🔧 Utility Controls','Secure the home’s utilities to reduce fire and shock hazards.', c);
 }
@@ -591,7 +591,7 @@ function openSpotfire(){
   if (S.spotOut){ toast('The spot fire is already out.'); return; }
   if (!S.extinguisher){ toast('You need a fire extinguisher — grab one at the Equipment Cache.'); return; }
   openMenu('🧯 Spot Fire','A small, contained fire is burning in the yard, well clear of the structure. How do you attack it?',[
-    {label:'P.A.S.S. — Pull the pin, Aim at the base, Squeeze, Sweep side to side', run:()=>{S.spotOut=true;gainXP(20,'Knocked down the spot fire (P.A.S.S.)');advQ('spotfire',1);toastGood('Spot fire knocked down.');closeMenu();}},
+    {label:'P.A.S.S. — Pull the pin, Aim at the base, Squeeze, Sweep side to side', run:()=>{S.spotOut=true;gainXP(20,'Knocked down the spot fire (P.A.S.S.)');advQ('spotfire',1);toastGood('Spot fire knocked down.');noteFireKnockdown();closeMenu();}},
     {label:'Aim high at the top of the flames and hold the trigger', run:()=>{loseCR(8,'Wrong extinguisher technique');toastBad('Aim at the BASE of the fire, not the flames.');}},
     {label:'It looks risky — back off and let this small fire burn', run:()=>{loseCR(6,'Failed to act on a contained incipient fire');toastBad('This one’s small and contained — you can safely knock it down.');}},
   ]);
@@ -849,6 +849,7 @@ function renderStats(){
     Patients tagged: <span>${patientsTagged()}/10</span><br>
     Treated: <span>${treated}/10</span><br>
     Hazards reported: <span>${hz}/${S.hazards.length}</span><br>
+    🔥 Fire knocked down: <span>${Math.round((1-fireLevel())*100)}%</span><br>
     Side quests: <span>${S.quests.filter(q=>q.type==='side'&&q.complete).length}/6</span>`;
 }
 function renderQuests(){
@@ -947,6 +948,17 @@ function drawFences(){
     [px+TILE*0.2,px+TILE*0.55,px+TILE*0.9].forEach(fx=>{ ctx.beginPath(); ctx.moveTo(fx,py+TILE*0.28); ctx.lineTo(fx,py+TILE*0.85); ctx.stroke(); });
   }
 }
+function fireLevel(){ // 1 = fully involved, 0 = out. Driven by fire-suppression actions.
+  const haz=S.hazards.filter(h=>h.reported).length;   // 0..6
+  const util=(S.gasOff?1:0)+(S.elecOff?1:0);          // 0..2
+  const spot=S.spotOut?1:0;                            // 0..1
+  let lvl=1-(haz+util+spot)/9;
+  if (S.quests.filter(q=>q.type==='main').every(q=>q.complete)) lvl=0; // fully knocked down at mission end
+  return Math.max(0,Math.min(1,lvl));
+}
+function noteFireKnockdown(){
+  addLog(`🔥 Scene safer — the fire crew knocks the flames down further (${Math.round((1-fireLevel())*100)}% controlled).`,'info');
+}
 function drawBuilding(b, ts){
   const x=b.x*TILE, y=b.y*TILE, w=b.w*TILE, h=b.h*TILE;
   if (b.kind==='garage' || b.kind==='shed'){
@@ -969,14 +981,26 @@ function drawBuilding(b, ts){
   ctx.fillStyle='#e8c060'; ctx.beginPath(); ctx.arc(x+w/2+TILE*0.2,y+h-TILE*0.6,3,0,7); ctx.fill();
   ctx.fillStyle='#7a4a32'; ctx.beginPath(); ctx.moveTo(x-10,y+roofH); ctx.lineTo(x+w*0.5,y-2); ctx.lineTo(x+w+10,y+roofH); ctx.closePath(); ctx.fill();
   ctx.strokeStyle='#5e3826'; ctx.lineWidth=2; ctx.stroke();
-  if (b.burning){ const f=(Math.floor((ts||0)/170)%2)===0; drawFlame(wx[1]+TILE*0.4,winY1+TILE*0.3,f); drawFlame(x+w*0.5,y+roofH*0.55,!f); drawSmoke(x+w*0.5,y-4,ts); }
+  if (b.burning){
+    const lvl=fireLevel();
+    // anchors ordered so the core roof flames stay lit longest; peripheral/door go out first
+    const A=[
+      [x+w*0.50, y+roofH*0.30],[x+w*0.30, y+roofH*0.48],[x+w*0.70, y+roofH*0.48],
+      [x+w*0.50, y+roofH*0.64],[wx[1]+TILE*0.4, winY1+TILE*0.3],[wx[0]+TILE*0.4, winY1+TILE*0.3],
+      [x+w*0.18, y+roofH*0.58],[x+w*0.82, y+roofH*0.58],[x+w*0.50, y+h-TILE*0.7],[x+w*0.50, y+roofH*0.12],
+    ];
+    const nLit=Math.round(lvl*A.length);
+    const f=(Math.floor((ts||0)/150)%2)===0;
+    for (let i=0;i<nLit;i++){ drawFlame(A[i][0],A[i][1],(i%2===0)?f:!f); }
+    drawSmoke(x+w*0.5,y-4,ts,lvl);
+  }
 }
 function drawFlame(x,y,big){ const s=big?1.15:0.9;
   ctx.fillStyle='#e8612a'; ctx.beginPath(); ctx.moveTo(x,y-16*s); ctx.quadraticCurveTo(x+9*s,y-2,x,y+9*s); ctx.quadraticCurveTo(x-9*s,y-2,x,y-16*s); ctx.fill();
   ctx.fillStyle='#ffce3a'; ctx.beginPath(); ctx.moveTo(x,y-9*s); ctx.quadraticCurveTo(x+5*s,y-1,x,y+6*s); ctx.quadraticCurveTo(x-5*s,y-1,x,y-9*s); ctx.fill();
 }
-function drawSmoke(x,y,ts){ const t=(ts||0)/600;
-  for (let i=0;i<4;i++){ const o=(t+i*0.5)%2; const sy=y-o*TILE*1.4; const r=9+o*9+i; ctx.fillStyle=`rgba(120,120,120,${0.32*(1-o/2)})`; ctx.beginPath(); ctx.arc(x+Math.sin((t+i)*2)*8,sy,r,0,7); ctx.fill(); }
+function drawSmoke(x,y,ts,intensity){ const t=(ts||0)/600; const iv=(intensity==null?1:intensity); const n=1+Math.round(iv*3);
+  for (let i=0;i<n;i++){ const o=(t+i*0.5)%2; const sy=y-o*TILE*1.4; const r=9+o*9+i; const a=(0.08+0.26*iv)*(1-o/2); ctx.fillStyle=`rgba(120,120,120,${a})`; ctx.beginPath(); ctx.arc(x+Math.sin((t+i)*2)*8,sy,r,0,7); ctx.fill(); }
 }
 function drawTruck(d){
   const x=d.x*TILE, y=d.y*TILE, w=d.w*TILE, h=d.h*TILE, bodyY=y+h*0.22, bodyH=h*0.5;
@@ -1174,7 +1198,7 @@ function getObjective(){
   } else if (!q('sizeup').complete){
     return objAtEntity('sizeup','Begin the scene size-up');
   } else if (!q('triage').complete){
-    const p=nearestUntagged(); if (p) return {x:p.x,y:p.y,label:`Triage ${p.name}`};
+    const p=nearestUntagged(); if (p){ const left=S.patients.filter(x=>!x.tagged).length; return {x:p.x,y:p.y,label:`Triage the patients — ${left} left`}; }
   } else if (!q('treatment').complete){
     if (!S.treatmentSet) return objAtEntity('treatment','Set up the treatment area');
     if (!S.immMoved) return objAtEntity('treatment','Move the Immediate patients to treatment');
