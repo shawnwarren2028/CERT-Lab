@@ -132,6 +132,38 @@ canvas#map{display:block;width:auto;height:auto;max-width:100%;max-height:100%;a
 .end-table td{padding:5px 8px;border-bottom:1px solid var(--border);}
 .end-table td:first-child{color:var(--muted);}
 .rating{font-size:1.2rem;color:var(--primary);font-weight:700;margin:8px 0 16px;}
+
+/* ════════ RESPONSIVE: tablet + phone ════════ */
+@media (max-width:860px){
+  body{height:auto;min-height:100vh;overflow-y:auto;}
+  header{flex-wrap:wrap;gap:6px 12px;padding:8px 12px;}
+  .hdr-title h1{font-size:0.9rem;}
+  .hdr-menu{order:3;}
+  .hdr-phase{margin-left:0;order:4;width:100%;text-align:left;}
+  .layout{display:flex;flex-direction:column;height:auto;}
+  .scene-panel{order:1;padding:8px;}
+  .quest-panel{order:2;border-right:none;border-top:1px solid var(--border);}
+  .char-panel{order:3;border-left:none;border-top:1px solid var(--border);}
+  .log-panel{order:4;max-height:130px;}
+  .map-frame{flex:none;width:100%;}
+  canvas#map{max-height:56vh;}
+  /* touch-friendly controls */
+  .controls{gap:24px;max-width:100%;}
+  .dpad{grid-template-columns:repeat(3,48px);grid-template-rows:repeat(3,48px);gap:5px;}
+  .dpad button{font-size:1.2rem;border-radius:7px;}
+  .act-key{font-size:1rem;padding:16px 30px;}
+  .ctrl-hint{font-size:0.66rem;}
+  .prompt-bar{font-size:0.8rem;min-height:32px;max-width:100%;}
+}
+@media (max-width:480px){
+  .hdr-title h1{font-size:0.8rem;}
+  .hdr-title p{font-size:0.64rem;}
+  canvas#map{max-height:48vh;}
+  .dpad{grid-template-columns:repeat(3,44px);grid-template-rows:repeat(3,44px);}
+  .act-key{padding:14px 22px;}
+  .ctrl-hint{font-size:0;} /* hide misleading keyboard hint on phones */
+  .ctrl-hint::after{content:'Tap arrows to move · Interact button to act';font-size:0.62rem;}
+}
 </style>
 </head>
 <body>
