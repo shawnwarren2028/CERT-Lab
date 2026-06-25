@@ -47,6 +47,10 @@ canvas#map{display:block;width:auto;height:auto;max-width:100%;max-height:100%;a
   padding:3px 8px;font-size:0.66rem;min-height:20px;display:flex;align-items:center;gap:6px;}
 .prompt-bar .key{background:var(--primary);color:var(--bg);font-weight:700;border-radius:4px;padding:1px 6px;font-size:0.64rem;}
 .prompt-bar .pmuted{color:var(--muted);}
+.obj-banner{width:100%;max-width:560px;background:var(--surface2);border:1px solid var(--primary);border-radius:var(--radius);
+  padding:5px 11px;font-size:0.78rem;color:var(--text);display:flex;align-items:center;gap:7px;line-height:1.3;}
+.obj-banner.hidden{display:none;}
+.obj-banner .ob-tag{color:#56d4ff;font-weight:700;white-space:nowrap;letter-spacing:.03em;}
 .controls{display:flex;gap:10px;align-items:center;max-width:560px;width:100%;justify-content:center;}
 .dpad{display:grid;grid-template-columns:repeat(3,18px);grid-template-rows:repeat(3,18px);gap:2px;}
 .dpad button{background:var(--surface2);border:1px solid var(--border);border-radius:3px;color:var(--text);font-family:inherit;font-size:0.58rem;cursor:pointer;padding:0;line-height:1;}
@@ -154,6 +158,7 @@ canvas#map{display:block;width:auto;height:auto;max-width:100%;max-height:100%;a
   .act-key{font-size:1rem;padding:16px 30px;}
   .ctrl-hint{font-size:0.66rem;}
   .prompt-bar{font-size:0.8rem;min-height:32px;max-width:100%;}
+  .obj-banner{font-size:0.86rem;max-width:100%;}
 }
 @media (max-width:480px){
   .hdr-title h1{font-size:0.8rem;}
@@ -182,6 +187,7 @@ canvas#map{display:block;width:auto;height:auto;max-width:100%;max-height:100%;a
     <div id="quest-list"></div>
   </div>
   <div class="scene-panel">
+    <div class="obj-banner hidden" id="obj-banner"></div>
     <div class="map-frame"><canvas id="map" width="576" height="576"></canvas></div>
     <div class="prompt-bar" id="prompt-bar"></div>
     <div class="controls">
@@ -1012,9 +1018,9 @@ const ART={
 };
 function drawLabel(t,cx,cy){
   if (!t) return;
-  ctx.font='600 9px "Segoe UI",sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-  const w=ctx.measureText(t).width+8; ctx.fillStyle='rgba(0,0,0,.6)'; rr(cx-w/2,cy+TILE*0.30,w,12,3); ctx.fill();
-  ctx.fillStyle='#eef2e8'; ctx.fillText(t,cx,cy+TILE*0.30+6);
+  ctx.font='700 13px "Segoe UI",sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  const w=ctx.measureText(t).width+12; ctx.fillStyle='rgba(0,0,0,.66)'; rr(cx-w/2,cy+TILE*0.24,w,18,4); ctx.fill();
+  ctx.fillStyle='#eef2e8'; ctx.fillText(t,cx,cy+TILE*0.24+9);
 }
 function drawCache(cx,cy){ const s=TILE;
   ctx.fillStyle='rgba(0,0,0,.22)'; ctx.beginPath(); ctx.ellipse(cx,cy+s*0.3,s*0.26,s*0.08,0,0,7); ctx.fill();
@@ -1135,6 +1141,90 @@ function tick(ts){
   drawWorld(ts);
   requestAnimationFrame(tick);
 }
+/* ════════════ OBJECTIVE / WAYPOINT GUIDANCE ════════════ */
+function entById(id){ return ENTITIES.find(e=>e.id===id); }
+function objAtEntity(id,label){ const e=entById(id); return e?{x:e.x,y:e.y,label}:null; }
+function nearestUntagged(){
+  let best=null,bd=1e9;
+  for (const p of S.patients){ if (p.tagged) continue; const d=Math.abs(p.x-player.x)+Math.abs(p.y-player.y); if (d<bd){bd=d;best=p;} }
+  return best;
+}
+function nearestSideObjective(){
+  const q=id=>S.quests.find(x=>x.id===id); const cands=[];
+  for (const h of S.hazards){ if (h.discovered && !h.reported) cands.push({x:h.x,y:h.y,label:`Radio in the ${h.label}`}); }
+  if (!q('utilities').locked && !q('utilities').complete && S.ppe && S.checkedIn) cands.push(objAtEntity('utility','Shut off the utilities'));
+  if (!q('spotfire').locked && !q('spotfire').complete && S.extinguisher && !S.spotOut) cands.push(objAtEntity('spotfire','Put out the spot fire'));
+  if (!q('crowd').locked && !q('crowd').complete && !S.bystHelped) cands.push(objAtEntity('kim','Help Officer Kim with the crowd'));
+  if (!q('missing').locked && !q('missing').complete){
+    if (!S.neighborTip) cands.push(objAtEntity('neighbor','Hear out the worried neighbor'));
+    else if (!S.missingReportedIC) cands.push(objAtEntity('rodriguez','Report the missing person to IC'));
+    else if (!S.sideSearched) cands.push(objAtEntity('sideyard','Search the back yard'));
+    else if (!S.missingUpdatedIC) cands.push(objAtEntity('rodriguez','Update IC on the search'));
+  }
+  if (q('triage').complete && !S.tallyReported) cands.push(objAtEntity('rodriguez','Give IC the triage tally'));
+  let best=null,bd=1e9;
+  for (const c of cands){ if (!c) continue; const d=Math.abs(c.x-player.x)+Math.abs(c.y-player.y); if (d<bd){bd=d;best=c;} }
+  return best;
+}
+function getObjective(){
+  const q=id=>S.quests.find(x=>x.id===id);
+  if (!q('duty').complete){
+    if (!S.ppe || !S.radio) return objAtEntity('cache','Gear up at the Equipment Cache');
+    if (!S.checkedIn) return objAtEntity('rodriguez','Check in with IC Rodriguez');
+  } else if (!q('sizeup').complete){
+    return objAtEntity('sizeup','Begin the scene size-up');
+  } else if (!q('triage').complete){
+    const p=nearestUntagged(); if (p) return {x:p.x,y:p.y,label:`Triage ${p.name}`};
+  } else if (!q('treatment').complete){
+    if (!S.treatmentSet) return objAtEntity('treatment','Set up the treatment area');
+    if (!S.immMoved) return objAtEntity('treatment','Move the Immediate patients to treatment');
+    return objAtEntity('treatment','Treat the Immediate patients');
+  } else if (!q('handoff').complete){
+    if (!S.emsRadioed) return objAtEntity('treatment','Radio for EMS transport');
+    if (!S.briefedSantos) return objAtEntity('santos','Brief Paramedic Santos');
+    if (!S.briefedIC) return objAtEntity('rodriguez','Give your final report to the IC');
+  }
+  return nearestSideObjective(); // main path idle → nearest side task
+}
+function objVisible(obj){
+  const sx=obj.x*TILE+TILE/2-cam.x, sy=obj.y*TILE+TILE/2-cam.y;
+  return sx>=TILE*0.5 && sx<=canvas.width-TILE*0.5 && sy>=TILE*0.5 && sy<=canvas.height-TILE*0.5;
+}
+function drawWaypoint(tx,ty,ts){ // world space (inside camera translate)
+  const cx=tx*TILE+TILE/2, cy=ty*TILE+TILE/2, pulse=0.5+0.5*Math.sin((ts||0)/300);
+  ctx.strokeStyle=`rgba(86,212,255,${0.3+0.45*pulse})`; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.arc(cx,cy,TILE*0.42,0,7); ctx.stroke();
+  const py=cy-TILE*0.5+Math.sin((ts||0)/300)*4;
+  ctx.fillStyle='#56d4ff'; ctx.strokeStyle='#08303f'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(cx,py+9); ctx.lineTo(cx-8,py-5); ctx.lineTo(cx+8,py-5); ctx.closePath(); ctx.fill(); ctx.stroke();
+}
+function edgePoint(cx,cy,tx,ty,W,H,m){
+  const dx=tx-cx, dy=ty-cy; let s=Infinity;
+  if (dx>0.001) s=Math.min(s,(W-m-cx)/dx); else if (dx<-0.001) s=Math.min(s,(m-cx)/dx);
+  if (dy>0.001) s=Math.min(s,(H-m-cy)/dy); else if (dy<-0.001) s=Math.min(s,(m-cy)/dy);
+  if (!isFinite(s)||s<0) s=0;
+  return {x:cx+dx*s, y:cy+dy*s, ang:Math.atan2(dy,dx)};
+}
+function drawEdgeArrow(obj,ts){ // screen space (after camera restore)
+  const W=canvas.width,H=canvas.height,m=26,ccx=W/2,ccy=H/2;
+  const tx=obj.x*TILE+TILE/2-cam.x, ty=obj.y*TILE+TILE/2-cam.y;
+  const ep=edgePoint(ccx,ccy,tx,ty,W,H,m), pulse=0.6+0.4*Math.sin((ts||0)/250);
+  ctx.save(); ctx.translate(ep.x,ep.y); ctx.rotate(ep.ang);
+  ctx.fillStyle=`rgba(86,212,255,${pulse})`; ctx.strokeStyle='#08303f'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(15,0); ctx.lineTo(-9,-12); ctx.lineTo(-3,0); ctx.lineTo(-9,12); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.restore();
+  ctx.font='700 12px "Segoe UI",sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  const t=obj.label, tw=ctx.measureText(t).width+12;
+  const lx=clamp(ep.x, tw/2+4, W-tw/2-4), ly=clamp(ep.y>ccy?ep.y-16:ep.y+16, 12, H-12);
+  ctx.fillStyle='rgba(8,30,40,.82)'; rr(lx-tw/2,ly-9,tw,18,4); ctx.fill();
+  ctx.fillStyle='#bff0ff'; ctx.fillText(t,lx,ly);
+}
+let _lastObj='';
+function updateObjBanner(obj){
+  const b=document.getElementById('obj-banner');
+  if (obj){ if (obj.label!==_lastObj){ b.innerHTML=`<span class="ob-tag">▶ NEXT:</span> ${obj.label}`; _lastObj=obj.label; } b.classList.remove('hidden'); }
+  else if (_lastObj!==''){ b.classList.add('hidden'); _lastObj=''; }
+}
 function drawWorld(ts){
   ctx.clearRect(0,0,canvas.width,canvas.height);
   ctx.fillStyle='#0a0e07'; ctx.fillRect(0,0,canvas.width,canvas.height); // off-map dark border
@@ -1153,7 +1243,11 @@ function drawWorld(ts){
   drawPerson(player.px+TILE/2,player.py+TILE/2,ART.ABE);
   ctx.strokeStyle='#ffdc5a'; ctx.lineWidth=2; ctx.strokeRect(player.px+2,player.py+2,TILE-4,TILE-4); ctx.lineWidth=1;
   drawLabel('ABE',player.px+TILE/2,player.py+TILE/2);
+  const obj = S.over ? null : getObjective();
+  if (obj && objVisible(obj)) drawWaypoint(obj.x,obj.y,ts);
   ctx.restore();
+  if (obj && !objVisible(obj)) drawEdgeArrow(obj,ts);
+  updateObjBanner(obj);
   updatePrompt(e);
 }
 function promptLabel(e){
