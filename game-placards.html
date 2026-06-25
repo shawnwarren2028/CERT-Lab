@@ -26,8 +26,7 @@ header{width:100%;background:#111a09;border-bottom:3px solid var(--primary);
 main{flex:1;width:100%;max-width:760px;margin:0 auto;padding:24px 16px 32px;}
 
 /* ── HUD ── */
-.hud{display:none;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
-.hud.on{display:flex;}
+.hud{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
 .hud .chip{background:var(--surface);border:1px solid var(--border);border-radius:99px;padding:6px 14px;font-size:0.82rem;}
 .hud .chip b{color:var(--primary);}
 .hud .sp{margin-left:auto;}
@@ -40,7 +39,7 @@ main{flex:1;width:100%;max-width:760px;margin:0 auto;padding:24px 16px 32px;}
 /* ── LEVEL SELECT ── */
 .lvl-hero{text-align:center;margin-bottom:22px;}
 .lvl-hero h2{font-size:1.7rem;color:var(--primary);margin-bottom:8px;}
-.lvl-hero p{color:var(--muted);max-width:560px;margin:0 auto;line-height:1.55;font-size:0.92rem;}
+.lvl-hero p{color:var(--muted);max-width:580px;margin:0 auto;line-height:1.55;font-size:0.92rem;}
 .lvl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;margin-top:22px;}
 .lvl-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 16px;
   cursor:pointer;transition:transform .15s,border-color .15s;text-align:center;position:relative;}
@@ -56,40 +55,73 @@ main{flex:1;width:100%;max-width:760px;margin:0 auto;padding:24px 16px 32px;}
 .board-wrap.on{display:block;}
 .board{display:grid;gap:9px;margin:0 auto;}
 .card{position:relative;aspect-ratio:1/1;cursor:pointer;perspective:600px;}
+.card.gap{cursor:default;border:2px dashed #2c3c22;border-radius:9px;}
 .card-inner{position:absolute;inset:0;transition:transform .4s;transform-style:preserve-3d;}
-.card.flipped .card-inner,.card.matched .card-inner{transform:rotateY(180deg);}
+.card.flipped .card-inner{transform:rotateY(180deg);}
 .card-face{position:absolute;inset:0;backface-visibility:hidden;border-radius:9px;display:flex;
   align-items:center;justify-content:center;overflow:hidden;}
 .card-back{background:linear-gradient(150deg,#243018,#1a2012);border:2px solid var(--border);}
 .card-back svg{width:54%;height:54%;opacity:.55;}
 .card-front{background:#f4f4ec;border:2px solid var(--border);transform:rotateY(180deg);padding:4px;}
-.card.matched .card-front{border-color:var(--primary);box-shadow:0 0 0 2px var(--primary) inset;}
-.card.matched{animation:pop .4s ease;}
-@keyframes pop{0%{transform:scale(1);}40%{transform:scale(1.07);}100%{transform:scale(1);}}
 .placard-svg{width:100%;height:100%;display:block;}
-.text-card{width:100%;height:100%;display:flex;align-items:center;justify-content:center;text-align:center;
-  background:#11180c;border-radius:7px;color:var(--text);font-weight:700;padding:6px;line-height:1.25;}
-.text-card span{font-size:clamp(0.6rem,2.4vw,0.92rem);}
 .card.busy{pointer-events:none;}
 
+/* ── COMPLETED AREA ── */
+.completed-wrap{display:none;margin-top:16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px;}
+.completed-label{font-size:0.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--primary);font-weight:700;margin-bottom:9px;}
+.completed{display:flex;flex-wrap:wrap;gap:11px;}
+.cpl-item{width:62px;text-align:center;}
+.cpl-svg{position:relative;width:46px;height:46px;margin:0 auto;}
+.cpl-check{position:absolute;right:-5px;top:-5px;background:var(--primary);color:#06210a;border-radius:50%;width:18px;height:18px;font-size:0.7rem;font-weight:800;display:flex;align-items:center;justify-content:center;}
+.cpl-name{font-size:0.58rem;color:var(--muted);margin-top:3px;line-height:1.12;}
+
+/* ── QUIZ MODAL ── */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:70;display:none;align-items:center;justify-content:center;padding:18px;}
+.ov.on{display:flex;}
+.quiz-box{background:var(--surface);border:2px solid var(--primary);border-radius:var(--radius);padding:20px 22px;max-width:430px;width:100%;text-align:center;}
+.quiz-placard{width:106px;height:106px;margin:0 auto 12px;}
+.quiz-q{font-size:1rem;font-weight:700;color:var(--text);margin-bottom:14px;}
+.quiz-choices{display:flex;flex-direction:column;gap:8px;}
+.quiz-choice{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:11px 14px;border-radius:8px;
+  cursor:pointer;font-family:inherit;font-size:0.88rem;text-align:left;transition:border-color .15s;}
+.quiz-choice:hover:not(.done){border-color:var(--primary);}
+.quiz-choice.right{background:#14321a;border-color:var(--primary);color:var(--primary-light);}
+.quiz-choice.wrong{background:#3a1414;border-color:var(--danger);color:#ffb0b0;}
+.quiz-choice.done{cursor:default;}
+
+/* ── CONNECT ROUND ── */
+.connect-wrap{display:none;}
+.connect-wrap.on{display:block;}
+.connect-title{text-align:center;color:var(--primary);font-size:1.3rem;margin-bottom:4px;}
+.connect-sub{text-align:center;color:var(--muted);font-size:0.84rem;margin-bottom:16px;}
+.connect-cols{display:grid;grid-template-columns:1fr 1.5fr;gap:12px;max-width:620px;margin:0 auto;}
+.connect-col{display:flex;flex-direction:column;gap:8px;}
+.cn-item{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:7px;cursor:pointer;
+  display:flex;align-items:center;min-height:54px;transition:border-color .15s,box-shadow .15s,opacity .2s;}
+.cn-item:hover:not(.done){border-color:var(--primary);}
+.cn-sym{justify-content:center;}
+.cn-svg{width:42px;height:42px;}
+.cn-def{font-size:0.82rem;line-height:1.25;color:var(--text);font-weight:600;}
+.cn-item.sel{border-color:var(--primary);box-shadow:0 0 0 2px var(--primary) inset;}
+.cn-item.done{opacity:.45;border-color:var(--primary);cursor:default;}
+.cn-item.flash{border-color:var(--danger);box-shadow:0 0 0 2px var(--danger) inset;}
+
 /* ── FACT TOAST ── */
-.fact{position:fixed;left:50%;bottom:18px;transform:translateX(-50%) translateY(20px);z-index:60;
+.fact{position:fixed;left:50%;bottom:18px;transform:translateX(-50%) translateY(20px);z-index:80;
   background:var(--surface);border:1px solid var(--primary);border-radius:10px;padding:11px 16px;max-width:min(92vw,520px);
   box-shadow:0 6px 22px rgba(0,0,0,.5);opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;font-size:0.86rem;line-height:1.45;}
 .fact.show{opacity:1;transform:translateX(-50%) translateY(0);}
 .fact b{color:var(--primary);}
 
 /* ── WIN OVERLAY ── */
-.ov{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:70;display:none;align-items:center;justify-content:center;padding:18px;}
-.ov.on{display:flex;}
 .win-box{background:var(--surface);border:2px solid var(--primary);border-radius:var(--radius);padding:28px 26px;max-width:420px;width:100%;text-align:center;}
 .win-box h2{font-size:1.5rem;color:var(--primary);margin-bottom:4px;}
 .win-sub{font-size:0.86rem;color:var(--muted);margin-bottom:12px;}
 .win-stars{font-size:2.3rem;letter-spacing:6px;color:var(--gold);margin:6px 0 14px;}
 .win-stars .empty{color:#3a4a2a;}
-.win-stats{display:flex;justify-content:center;gap:26px;margin-bottom:20px;}
-.win-stats div{font-size:0.8rem;color:var(--muted);}
-.win-stats b{display:block;font-size:1.3rem;color:var(--text);}
+.win-stats{display:flex;justify-content:center;gap:22px;margin-bottom:20px;}
+.win-stats div{font-size:0.78rem;color:var(--muted);}
+.win-stats b{display:block;font-size:1.25rem;color:var(--text);}
 .win-btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
 footer{text-align:center;padding:16px;font-size:0.74rem;color:var(--muted);border-top:1px solid var(--border);}
 footer span{color:var(--primary);}
@@ -99,6 +131,8 @@ footer span{color:var(--primary);}
   main{padding:18px 12px 26px;}
   .board{gap:6px;}
   .lvl-hero h2{font-size:1.4rem;}
+  .connect-cols{gap:8px;}
+  .cn-def{font-size:0.74rem;}
 }
 </style>
 </head>
@@ -119,19 +153,19 @@ footer span{color:var(--primary);}
   <!-- LEVEL SELECT -->
   <section id="select">
     <div class="lvl-hero">
-      <h2>🧩 Match the Placards</h2>
-      <p>Flip cards to find pairs. Some pairs match a <strong>placard to its meaning</strong>; others match
-         <strong>two identical placards</strong>. Each match teaches you what the placard stands for. Pick a level to begin —
-         they get bigger and add new placards as you go.</p>
+      <h2>🧩 Match &amp; Master the Placards</h2>
+      <p>Find two matching placards, then <strong>prove you know it</strong> by picking the right meaning.
+         Get it right and the placard joins your <strong>Completed</strong> row — get the meaning wrong and the board
+         reshuffles. Clear the board, then connect every symbol to its meaning. Pick any level to start.</p>
     </div>
     <div class="lvl-grid" id="lvl-grid"></div>
   </section>
 
   <!-- BOARD -->
   <section class="board-wrap" id="board-wrap">
-    <div class="hud on" id="hud">
+    <div class="hud" id="hud">
       <span class="chip">Level <b id="hud-lvl">1</b></span>
-      <span class="chip">Pairs <b id="hud-pairs">0/0</b></span>
+      <span class="chip">Mastered <b id="hud-pairs">0/0</b></span>
       <span class="chip">Moves <b id="hud-moves">0</b></span>
       <span class="chip">⏱ <b id="hud-time">0:00</b></span>
       <span class="sp"></span>
@@ -139,18 +173,43 @@ footer span{color:var(--primary);}
       <button class="btn" onclick="toSelect()">≡ Levels</button>
     </div>
     <div class="board" id="board"></div>
+    <div class="completed-wrap" id="completed-wrap">
+      <div class="completed-label">✓ Completed — placards you've mastered</div>
+      <div class="completed" id="completed"></div>
+    </div>
+  </section>
+
+  <!-- CONNECT ROUND -->
+  <section class="connect-wrap" id="connect-wrap">
+    <h2 class="connect-title">🔗 Final Round — Connect the Pairs</h2>
+    <p class="connect-sub">Tap a placard, then tap its meaning. Match all of them to finish the level.</p>
+    <div class="connect-cols">
+      <div class="connect-col" id="connect-syms"></div>
+      <div class="connect-col" id="connect-defs"></div>
+    </div>
   </section>
 </main>
 
 <div class="fact" id="fact"></div>
 
+<!-- QUIZ -->
+<div class="ov" id="quiz-ov">
+  <div class="quiz-box">
+    <div class="quiz-placard" id="quiz-placard"></div>
+    <div class="quiz-q">What does this placard warn about?</div>
+    <div class="quiz-choices" id="quiz-choices"></div>
+  </div>
+</div>
+
+<!-- WIN -->
 <div class="ov" id="win-ov">
   <div class="win-box">
     <h2 id="win-title">Level Complete!</h2>
     <div class="win-sub" id="win-sub"></div>
     <div class="win-stars" id="win-stars"></div>
     <div class="win-stats">
-      <div>Moves<b id="win-moves">0</b></div>
+      <div>First-try<b id="win-ft">0/0</b></div>
+      <div>Mistakes<b id="win-miss">0</b></div>
       <div>Time<b id="win-time">0:00</b></div>
     </div>
     <div class="win-btns" id="win-btns"></div>
@@ -198,10 +257,10 @@ const PLACARDS = {
 };
 
 const LEVELS = [
-  { name:'Recruit',   cols:4, ids:['flam_liquid','corrosive','flam_gas','oxidizer','toxic','explosives'] },
-  { name:'Responder', cols:4, ids:['flam_liquid','corrosive','flam_gas','oxidizer','toxic','explosives','radioactive','nonflam_gas'] },
-  { name:'Technician',cols:5, ids:['flam_liquid','corrosive','flam_gas','oxidizer','toxic','explosives','radioactive','nonflam_gas','nfpa_health','nfpa_flammability'] },
-  { name:'Specialist',cols:6, ids:['flam_liquid','corrosive','flam_gas','oxidizer','toxic','explosives','radioactive','nonflam_gas','nfpa_health','nfpa_flammability','nfpa_reactivity','nfpa_special'] },
+  { name:'Recruit',    cols:4, ids:['flam_liquid','corrosive','flam_gas','oxidizer','toxic','explosives'] },
+  { name:'Responder',  cols:4, ids:['flam_liquid','corrosive','flam_gas','oxidizer','toxic','explosives','radioactive','nonflam_gas'] },
+  { name:'Technician', cols:5, ids:['flam_liquid','corrosive','flam_gas','oxidizer','toxic','explosives','radioactive','nonflam_gas','nfpa_health','nfpa_flammability'] },
+  { name:'Specialist', cols:6, ids:['flam_liquid','corrosive','flam_gas','oxidizer','toxic','explosives','radioactive','nonflam_gas','nfpa_health','nfpa_flammability','nfpa_reactivity','nfpa_special'] },
   { name:'Hazmat Cmdr',cols:6, ids:['flam_liquid','corrosive','flam_gas','oxidizer','toxic','explosives','radioactive','nonflam_gas','nfpa_health','nfpa_flammability','nfpa_reactivity','nfpa_special','flam_solid','dangerous_wet','misc'] },
 ];
 
@@ -232,13 +291,16 @@ function symInner(type, p){
     default: return '';
   }
 }
-function vstripes(color){ // vertical stripes clipped to the diamond
-  let s=`<defs><clipPath id="dia"><polygon points="50,4 96,50 50,96 4,50"/></clipPath></defs><g clip-path="url(#dia)">`;
+let _clip=0;
+function vstripes(color){
+  const id='vs'+(_clip++);
+  let s=`<defs><clipPath id="${id}"><polygon points="50,4 96,50 50,96 4,50"/></clipPath></defs><g clip-path="url(#${id})">`;
   for(let x=8;x<96;x+=12) s+=`<rect x="${x}" y="0" width="6" height="100" fill="${color}"/>`;
   return s+`</g>`;
 }
-function stripesTopHalf(){ // class 9: black vertical stripes, top half only
-  let s=`<defs><clipPath id="dtop"><polygon points="50,4 96,50 4,50"/></clipPath></defs><g clip-path="url(#dtop)">`;
+function stripesTopHalf(){
+  const id='vt'+(_clip++);
+  let s=`<defs><clipPath id="${id}"><polygon points="50,4 96,50 4,50"/></clipPath></defs><g clip-path="url(#${id})">`;
   for(let x=10;x<92;x+=11) s+=`<rect x="${x}" y="0" width="5" height="55" fill="#1a1a1a"/>`;
   return s+`</g>`;
 }
@@ -255,8 +317,7 @@ function diamondSVG(p){
     bg=`<polygon points="${dia}" fill="${p.top}" stroke="#111" stroke-width="2"/>`;
   }
   const sym=symInner(p.sym,p);
-  const numCol=p.numColor||'#111';
-  const num=p.num?`<text x="50" y="83" text-anchor="middle" font-size="15" font-weight="800" fill="${numCol}" font-family="Arial">${p.num}</text>`:'';
+  const num=p.num?`<text x="50" y="83" text-anchor="middle" font-size="15" font-weight="800" fill="${p.numColor||'#111'}" font-family="Arial">${p.num}</text>`:'';
   return `<svg viewBox="0 0 100 100" class="placard-svg">${bg}${sym}${num}</svg>`;
 }
 function nfpaSVG(which){
@@ -267,10 +328,8 @@ function nfpaSVG(which){
   let s='<svg viewBox="0 0 100 100" class="placard-svg"><rect x="0" y="0" width="100" height="100" fill="#f4f4ec"/>';
   for(const k in cells){ const cell=cells[k]; const on=(k===which);
     s+=`<polygon points="${cell.pts}" fill="${on?cell.c:'#cdd3c4'}" stroke="#111" stroke-width="1.6"/>`; }
-  // sample rating digit in the highlighted cell
   const pos={flam:[50,26],health:[26,50],react:[74,50],special:[50,74]};
-  const d=pos[which];
-  const dig = which==='special' ? 'OX' : (which==='health'?'3':which==='flam'?'4':'2');
+  const d=pos[which]; const dig = which==='special'?'OX':(which==='health'?'3':which==='flam'?'4':'2');
   s+=`<text x="${d[0]}" y="${d[1]}" font-size="${which==='special'?9:14}" font-weight="800" text-anchor="middle" dominant-baseline="central" fill="#111">${dig}</text>`;
   return s+'</svg>';
 }
@@ -278,14 +337,18 @@ function placardInner(id){ const p=PLACARDS[id]; return p.nfpa?nfpaSVG(p.nfpa):d
 const BACK_SVG=`<svg viewBox="0 0 100 100"><polygon points="50,8 92,50 50,92 8,50" fill="none" stroke="#7ac95a" stroke-width="5"/><text x="50" y="55" font-size="34" font-weight="800" text-anchor="middle" fill="#7ac95a">?</text></svg>`;
 
 /* ════════════ GAME STATE ════════════ */
-let curLevel=0, deck=[], flipped=[], matchedCount=0, moves=0, busy=false;
-let startTime=0, timerInt=null, started=false;
+let curLevel=0, levelPairs=0, cols=4, pidToId=[];
+let cards=[], layout=[], faceUp={}, mastered=new Set(), flipped=[], defAttempts={};
+let busy=false, moves=0, started=false, startTime=0, timerInt=null;
+let meaningMistakes=0, connectMistakes=0, firstTryHits=0;
 const bestStars = JSON.parse(localStorage.getItem('cert_placard_stars')||'{}');
 
 function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 function fmtTime(s){ const m=Math.floor(s/60); return m+':'+String(s%60).padStart(2,'0'); }
-function starsFor(pairs,mv){ if(mv<=Math.ceil(pairs*1.5)) return 3; if(mv<=Math.ceil(pairs*2.3)) return 2; return 1; }
 function starStr(n){ let s=''; for(let i=0;i<3;i++) s+= i<n?'★':'<span class="empty">★</span>'; return s; }
+function cardByUid(u){ return cards.find(c=>c.uid===u); }
+function choiceCount(){ return curLevel<2?3:4; }
+function elEl(uid){ return document.querySelector('#board .card[data-uid="'+uid+'"]'); }
 
 /* ── LEVEL SELECT ── */
 function renderSelect(){
@@ -295,120 +358,166 @@ function renderSelect(){
     const div=document.createElement('div'); div.className='lvl-card'; div.onclick=()=>startLevel(i);
     const st=bestStars[i];
     div.innerHTML=`<div class="lvl-num">Level ${i+1}</div><div class="lvl-name">${lv.name}</div>
-      <div class="lvl-meta">${pairs} pairs · ${pairs*2} cards</div>
+      <div class="lvl-meta">${pairs} placards · ${pairs*2} cards</div>
       <div class="lvl-stars">${st?starStr(st):'<span class="empty">★★★</span>'}</div>`;
     g.appendChild(div);
   });
 }
-function toSelect(){ stopTimer(); document.getElementById('board-wrap').classList.remove('on'); document.getElementById('select').style.display='';
-  document.getElementById('win-ov').classList.remove('on'); renderSelect(); }
-
-/* ── BUILD & START ── */
-function buildDeck(lv,levelIdx){
-  const cards=[]; let pid=0;
-  const meaningProb=Math.min(0.8, 0.3+0.12*levelIdx);
-  lv.ids.forEach(id=>{
-    const thisPid=pid++;
-    if(Math.random()<meaningProb){ // placard ↔ meaning
-      cards.push({pid:thisPid,id,face:'placard'});
-      cards.push({pid:thisPid,id,face:'text'});
-    } else { // identical placards
-      cards.push({pid:thisPid,id,face:'placard'});
-      cards.push({pid:thisPid,id,face:'placard'});
-    }
-  });
-  return shuffle(cards);
+function showOnly(which){
+  document.getElementById('select').style.display = which==='select'?'':'none';
+  document.getElementById('board-wrap').classList.toggle('on', which==='board');
+  document.getElementById('connect-wrap').classList.toggle('on', which==='connect');
 }
+function toSelect(){ stopTimer(); document.getElementById('quiz-ov').classList.remove('on'); document.getElementById('win-ov').classList.remove('on'); showOnly('select'); renderSelect(); }
+
+/* ── START / BOARD ── */
 function startLevel(i){
-  curLevel=i; const lv=LEVELS[i];
-  deck=buildDeck(lv,i); flipped=[]; matchedCount=0; moves=0; busy=false; started=false;
-  document.getElementById('select').style.display='none';
-  document.getElementById('board-wrap').classList.add('on');
-  document.getElementById('win-ov').classList.remove('on');
+  curLevel=i; const lv=LEVELS[i]; levelPairs=lv.ids.length; cols=lv.cols; pidToId=lv.ids.slice();
+  cards=[]; let uid=0,pid=0;
+  lv.ids.forEach(id=>{ const p=pid++; cards.push({uid:uid++,pid:p,id}); cards.push({uid:uid++,pid:p,id}); });
+  layout=shuffle(cards.map(c=>c.uid));
+  faceUp={}; mastered=new Set(); flipped=[]; defAttempts={};
+  busy=false; moves=0; started=false; meaningMistakes=0; connectMistakes=0; firstTryHits=0;
+  document.getElementById('quiz-ov').classList.remove('on'); document.getElementById('win-ov').classList.remove('on');
+  showOnly('board');
   document.getElementById('hud-lvl').textContent=(i+1)+' · '+lv.name;
-  document.getElementById('hud-pairs').textContent='0/'+lv.ids.length;
-  document.getElementById('hud-moves').textContent='0';
   document.getElementById('hud-time').textContent='0:00';
-  stopTimer(); document.getElementById('hud-time').textContent='0:00';
-  renderBoard();
+  stopTimer();
+  updHud(); renderBoard(); renderCompleted();
 }
 function restartLevel(){ startLevel(curLevel); }
+function updHud(){ document.getElementById('hud-pairs').textContent=mastered.size+'/'+levelPairs; document.getElementById('hud-moves').textContent=moves; }
 
 function renderBoard(){
-  const lv=LEVELS[curLevel]; const board=document.getElementById('board');
-  board.style.gridTemplateColumns='repeat('+lv.cols+',1fr)';
-  board.style.maxWidth=(lv.cols*92)+'px';
+  const board=document.getElementById('board');
+  board.style.gridTemplateColumns='repeat('+cols+',1fr)';
+  board.style.maxWidth=(cols*92)+'px';
   board.innerHTML='';
-  deck.forEach((card,idx)=>{
-    const el=document.createElement('div'); el.className='card'; el.dataset.idx=idx;
-    const front = card.face==='text'
-      ? `<div class="card-face card-front"><div class="text-card"><span>${PLACARDS[card.id].meaning}</span></div></div>`
-      : `<div class="card-face card-front">${placardInner(card.id)}</div>`;
-    el.innerHTML=`<div class="card-inner"><div class="card-face card-back">${BACK_SVG}</div>${front}</div>`;
-    el.addEventListener('click',()=>onCardClick(idx,el));
+  layout.forEach(uid=>{
+    if(uid==null){ const g=document.createElement('div'); g.className='card gap'; board.appendChild(g); return; }
+    const c=cardByUid(uid);
+    const el=document.createElement('div'); el.className='card'; el.dataset.uid=uid;
+    if(faceUp[uid]) el.classList.add('flipped');
+    el.innerHTML=`<div class="card-inner"><div class="card-face card-back">${BACK_SVG}</div><div class="card-face card-front">${placardInner(c.id)}</div></div>`;
+    el.addEventListener('click',()=>onCardClick(uid));
     board.appendChild(el);
   });
+}
+function renderCompleted(){
+  const wrap=document.getElementById('completed-wrap'); const el=document.getElementById('completed');
+  wrap.style.display = mastered.size?'block':'none'; el.innerHTML='';
+  [...mastered].forEach(pid=>{ const id=pidToId[pid]; const d=document.createElement('div'); d.className='cpl-item';
+    d.innerHTML=`<div class="cpl-svg">${placardInner(id)}<span class="cpl-check">✓</span></div><div class="cpl-name">${PLACARDS[id].name}</div>`;
+    el.appendChild(d); });
 }
 
 /* ── TIMER ── */
 function startTimer(){ startTime=Date.now(); timerInt=setInterval(()=>{ document.getElementById('hud-time').textContent=fmtTime(Math.floor((Date.now()-startTime)/1000)); },500); }
 function stopTimer(){ if(timerInt){ clearInterval(timerInt); timerInt=null; } }
-function elapsed(){ return Math.floor((Date.now()-startTime)/1000); }
+function elapsed(){ return startTime?Math.floor((Date.now()-startTime)/1000):0; }
 
-/* ── FLIP LOGIC ── */
-function onCardClick(idx,el){
-  if(busy) return;
-  const card=deck[idx];
-  if(el.classList.contains('flipped')||el.classList.contains('matched')) return;
-  if(flipped.length>=2) return;
+/* ── FLIP / MATCH ── */
+function onCardClick(uid){
+  if(busy || faceUp[uid] || flipped.length>=2) return;
   if(!started){ started=true; startTimer(); }
-  el.classList.add('flipped'); SFX('flip');
-  flipped.push({idx,el,card});
+  faceUp[uid]=true; const el=elEl(uid); if(el) el.classList.add('flipped'); SFX('flip');
+  flipped.push(uid);
   if(flipped.length===2){
-    moves++; document.getElementById('hud-moves').textContent=moves;
-    const [a,b]=flipped;
-    if(a.card.pid===b.card.pid){
-      busy=true;
-      setTimeout(()=>{
-        a.el.classList.add('matched'); b.el.classList.add('matched');
-        a.el.classList.remove('flipped'); b.el.classList.remove('flipped');
-        flipped=[]; matchedCount++; busy=false;
-        document.getElementById('hud-pairs').textContent=matchedCount+'/'+LEVELS[curLevel].ids.length;
-        showFact(PLACARDS[a.card.id].fact); SFX('match');
-        if(matchedCount===LEVELS[curLevel].ids.length) setTimeout(winLevel,650);
-      },360);
-    } else {
-      busy=true; SFX('miss');
-      setTimeout(()=>{ a.el.classList.remove('flipped'); b.el.classList.remove('flipped'); flipped=[]; busy=false; },820);
-    }
+    moves++; updHud();
+    const [u1,u2]=flipped, c1=cardByUid(u1), c2=cardByUid(u2);
+    if(c1.pid===c2.pid){ busy=true; setTimeout(()=>openQuiz(c1.pid,[u1,u2]),430); }
+    else { busy=true; SFX('miss'); setTimeout(()=>{ faceUp[u1]=false; faceUp[u2]=false;
+      [u1,u2].forEach(u=>{ const e=elEl(u); if(e) e.classList.remove('flipped'); }); flipped=[]; busy=false; },820); }
+  }
+}
+
+/* ── MEANING QUIZ ── */
+function openQuiz(pid,uids){
+  const id=pidToId[pid]; defAttempts[pid]=(defAttempts[pid]||0)+1;
+  document.getElementById('quiz-placard').innerHTML=placardInner(id);
+  const others=shuffle(LEVELS[curLevel].ids.filter(x=>x!==id)).slice(0,choiceCount()-1).map(x=>PLACARDS[x].meaning);
+  const correct=PLACARDS[id].meaning;
+  const choices=shuffle([correct,...others]);
+  const box=document.getElementById('quiz-choices'); box.innerHTML='';
+  choices.forEach(m=>{ const b=document.createElement('button'); b.className='quiz-choice'; b.textContent=m;
+    b.onclick=()=>answerQuiz(b,m===correct,id,pid,uids,correct); box.appendChild(b); });
+  document.getElementById('quiz-ov').classList.add('on');
+}
+function answerQuiz(btn,correct,id,pid,uids,correctMeaning){
+  const box=document.getElementById('quiz-choices'); if(btn.classList.contains('done')) return;
+  [...box.children].forEach(b=>b.classList.add('done'));
+  if(correct){
+    btn.classList.add('right'); SFX('match');
+    mastered.add(pid); if(defAttempts[pid]===1) firstTryHits++;
+    showFact('<b>✓ Mastered.</b> '+PLACARDS[id].fact);
+    layout=layout.map(u=> (u!=null && uids.includes(u))?null:u);
+    setTimeout(()=>{ document.getElementById('quiz-ov').classList.remove('on'); flipped=[]; busy=false;
+      renderBoard(); renderCompleted(); updHud();
+      if(mastered.size===levelPairs) setTimeout(startConnect,550);
+    },750);
+  } else {
+    btn.classList.add('wrong'); SFX('miss'); meaningMistakes++;
+    [...box.children].forEach(b=>{ if(b.textContent===correctMeaning) b.classList.add('right'); });
+    showFact('<b>Not quite.</b> '+PLACARDS[id].fact);
+    setTimeout(()=>{ document.getElementById('quiz-ov').classList.remove('on');
+      layout=shuffle(cards.filter(c=>!mastered.has(c.pid)).map(c=>c.uid));
+      faceUp={}; flipped=[]; busy=false; renderBoard();
+      showFact('🔀 Board reshuffled — find that pair again!');
+    },1600);
   }
 }
 
 /* ── FACT TOAST ── */
 let factT=null;
 function showFact(html){ const f=document.getElementById('fact'); f.innerHTML=html; f.classList.add('show');
-  clearTimeout(factT); factT=setTimeout(()=>f.classList.remove('show'),2600); }
+  clearTimeout(factT); factT=setTimeout(()=>f.classList.remove('show'),2800); }
 
-/* ── WIN ── */
-function winLevel(){
-  stopTimer(); const lv=LEVELS[curLevel]; const pairs=lv.ids.length; const t=elapsed();
-  const stars=starsFor(pairs,moves);
+/* ── CONNECT ROUND ── */
+let connectSel=null, connectMatched=new Set();
+function startConnect(){
+  showOnly('connect'); connectSel=null; connectMatched=new Set();
+  const symCol=document.getElementById('connect-syms'), defCol=document.getElementById('connect-defs');
+  symCol.innerHTML=''; defCol.innerHTML='';
+  shuffle(pidToId.slice()).forEach(id=>{ const d=document.createElement('div'); d.className='cn-item cn-sym'; d.dataset.id=id;
+    d.innerHTML=`<div class="cn-svg">${placardInner(id)}</div>`; d.onclick=()=>selSym(d,id); symCol.appendChild(d); });
+  shuffle(pidToId.slice()).forEach(id=>{ const d=document.createElement('div'); d.className='cn-item cn-def'; d.dataset.id=id;
+    d.innerHTML=`<span>${PLACARDS[id].meaning}</span>`; d.onclick=()=>selDef(d,id); defCol.appendChild(d); });
+}
+function selSym(el,id){ if(connectMatched.has(id)||el.classList.contains('done')) return;
+  document.querySelectorAll('.cn-sym.sel').forEach(x=>x.classList.remove('sel')); el.classList.add('sel'); connectSel=id; SFX('flip'); }
+function selDef(el,id){
+  if(connectMatched.has(id)||el.classList.contains('done')||connectSel==null) return;
+  if(id===connectSel){
+    connectMatched.add(id); SFX('match');
+    document.querySelector('.cn-sym[data-id="'+id+'"]').classList.add('done'); el.classList.add('done');
+    document.querySelectorAll('.cn-sym.sel').forEach(x=>x.classList.remove('sel')); connectSel=null;
+    if(connectMatched.size===pidToId.length) setTimeout(finishLevel,550);
+  } else {
+    connectMistakes++; SFX('miss'); el.classList.add('flash'); setTimeout(()=>el.classList.remove('flash'),520);
+  }
+}
+
+/* ── FINISH ── */
+function finishLevel(){
+  stopTimer(); const t=elapsed(), pairs=levelPairs, totalMistakes=meaningMistakes+connectMistakes;
+  let stars=3; if(totalMistakes>=1) stars=2; if(totalMistakes>=3) stars=1;
+  if(moves>pairs*3) stars=Math.max(1,stars-1);
   if(!bestStars[curLevel]||stars>bestStars[curLevel]){ bestStars[curLevel]=stars; localStorage.setItem('cert_placard_stars',JSON.stringify(bestStars)); }
-  document.getElementById('win-title').textContent='Level '+(curLevel+1)+' Complete!';
-  document.getElementById('win-sub').textContent=lv.name+' — all '+pairs+' placards matched';
+  document.getElementById('win-title').textContent='Level '+(curLevel+1)+' Mastered!';
+  document.getElementById('win-sub').textContent='You learned all '+pairs+' placards — '+LEVELS[curLevel].name;
   document.getElementById('win-stars').innerHTML=starStr(stars);
-  document.getElementById('win-moves').textContent=moves;
+  document.getElementById('win-ft').textContent=firstTryHits+'/'+pairs;
+  document.getElementById('win-miss').textContent=totalMistakes;
   document.getElementById('win-time').textContent=fmtTime(t);
   const btns=document.getElementById('win-btns'); btns.innerHTML='';
   if(curLevel<LEVELS.length-1){ const n=document.createElement('button'); n.className='btn btn-primary'; n.textContent='Next Level →'; n.onclick=()=>startLevel(curLevel+1); btns.appendChild(n); }
   else { const done=document.createElement('div'); done.style.cssText='width:100%;color:var(--primary);font-weight:700;margin-bottom:6px;'; done.textContent='🏅 You cleared every level!'; btns.appendChild(done); }
   const r=document.createElement('button'); r.className='btn'; r.textContent='↻ Replay'; r.onclick=()=>startLevel(curLevel); btns.appendChild(r);
   const s=document.createElement('button'); s.className='btn'; s.textContent='≡ Levels'; s.onclick=toSelect; btns.appendChild(s);
-  SFX('win');
-  document.getElementById('win-ov').classList.add('on');
+  SFX('win'); document.getElementById('win-ov').classList.add('on');
 }
 
-/* ════════════ AUDIO (tiny, optional, self-contained) ════════════ */
+/* ════════════ AUDIO (tiny, self-contained) ════════════ */
 let actx=null;
 function SFX(name){
   try{
