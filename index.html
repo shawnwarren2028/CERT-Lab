@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CERT Wallingford — Training Suite</title>
+<style>
+  :root {
+    --bg:#0e1208; --surface:#1a2012; --surface2:#243018; --border:#3a5228;
+    --primary:#5aaa3a; --primary-dark:#4a8f2e; --primary-light:#7ac95a;
+    --text:#eef2e8; --text-muted:#8aa87a; --radius:12px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);
+    min-height:100vh;display:flex;flex-direction:column;}
+
+  header{width:100%;background:#111a09;border-bottom:3px solid var(--primary);
+    padding:12px 28px;display:flex;align-items:center;gap:16px;}
+  .logo-wrap{display:flex;align-items:center;}
+  #cert-logo{height:54px;width:auto;}
+  .logo-badge{background:var(--primary);color:#000;font-weight:900;font-size:1.1rem;
+    letter-spacing:.1em;padding:6px 12px;border-radius:6px;}
+  header h1{font-size:1.2rem;font-weight:700;color:var(--primary);}
+  header p{font-size:0.8rem;color:var(--text-muted);}
+
+  main{flex:1;width:100%;max-width:1080px;margin:0 auto;padding:40px 24px 28px;
+    display:flex;flex-direction:column;}
+
+  .hero{text-align:center;margin-bottom:38px;}
+  .hero .eyebrow{font-size:0.78rem;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--primary-light);font-weight:700;margin-bottom:10px;}
+  .hero h2{font-size:2.3rem;font-weight:800;line-height:1.15;margin-bottom:14px;}
+  .hero h2 span{color:var(--primary);}
+  .hero p{font-size:1rem;color:var(--text-muted);max-width:620px;margin:0 auto;line-height:1.6;}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:26px 24px 22px;text-decoration:none;color:inherit;display:flex;flex-direction:column;
+    transition:transform .18s,border-color .18s,box-shadow .18s;position:relative;overflow:hidden;}
+  .card:hover{transform:translateY(-4px);border-color:var(--primary);
+    box-shadow:0 12px 28px rgba(0,0,0,.45);}
+  .card-icon{font-size:2.6rem;line-height:1;margin-bottom:16px;}
+  .card-kicker{font-size:0.72rem;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--text-muted);font-weight:700;margin-bottom:6px;}
+  .card h3{font-size:1.32rem;font-weight:700;color:var(--primary);margin-bottom:10px;}
+  .card p{font-size:0.88rem;color:var(--text);opacity:.85;line-height:1.55;flex:1;margin-bottom:18px;}
+  .card .cta{display:inline-flex;align-items:center;gap:7px;font-size:0.85rem;font-weight:700;
+    color:var(--primary-light);}
+  .card .cta::after{content:'→';transition:transform .18s;}
+  .card:hover .cta::after{transform:translateX(4px);}
+  .card .tag{position:absolute;top:16px;right:16px;font-size:0.66rem;font-weight:700;
+    color:var(--text-muted);border:1px solid var(--border);border-radius:20px;padding:3px 10px;}
+
+  footer{text-align:center;padding:20px;color:var(--text-muted);font-size:0.76rem;
+    border-top:1px solid var(--border);margin-top:38px;}
+  footer span{color:var(--primary);}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-wrap">
+    <img id="cert-logo" src="cert-wallingford-logo.png" alt="CERT Wallingford"
+      onerror="this.style.display='none';document.getElementById('logo-fallback').style.display='flex'">
+    <div id="logo-fallback" style="display:none;align-items:center;gap:10px;">
+      <div class="logo-badge">CERT</div>
+    </div>
+  </div>
+  <div>
+    <h1>CERT Wallingford — Training Suite</h1>
+    <p>Community Emergency Response Team</p>
+  </div>
+</header>
+
+<main>
+  <div class="hero">
+    <div class="eyebrow">Basic Training · Sections 1–8</div>
+    <h2>Sharpen your <span>CERT</span> skills.</h2>
+    <p>Choose a training tool below. Practice decision-making through realistic scenarios,
+       step into the field with an interactive response mission, or review the official
+       course materials.</p>
+  </div>
+
+  <div class="cards">
+
+    <a class="card" href="game-scenarios.html">
+      <span class="tag">9 modules</span>
+      <span class="card-icon">🎯</span>
+      <span class="card-kicker">Game 1</span>
+      <h3>Training Scenarios</h3>
+      <p>Work through realistic, multiple-choice emergency scenarios across nine topic
+         modules with instant feedback and scoring. Ideal for final-exam prep.</p>
+      <span class="cta">Start training</span>
+    </a>
+
+    <a class="card" href="game-rpg.html">
+      <span class="tag">Interactive</span>
+      <span class="card-icon">🚒</span>
+      <span class="card-kicker">Game 2</span>
+      <h3>Fire Scene RPG</h3>
+      <p>Take on the role of CERT volunteer Abe L. Explore a residential structure fire,
+         triage and treat patients, complete quests, and hand off to EMS — all by the book.</p>
+      <span class="cta">Play mission</span>
+    </a>
+
+    <a class="card" href="reference.html">
+      <span class="tag">8 sections</span>
+      <span class="card-icon">📄</span>
+      <span class="card-kicker">Reference</span>
+      <h3>Course Materials</h3>
+      <p>Browse the official CERT Basic Training presentations for Sections 1–8 —
+         disaster prep, fire safety, medical ops, search &amp; rescue, and more.</p>
+      <span class="cta">Open library</span>
+    </a>
+
+  </div>
+</main>
+
+<footer>
+  <span>CERT Wallingford</span> Training Suite · For program members studying Basic Training Sections 1–8.
+</footer>
+
+</body>
+</html>

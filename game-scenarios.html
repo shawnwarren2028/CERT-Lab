@@ -1,0 +1,1637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CERT Wallingford — Training Scenarios</title>
+<style>
+  :root {
+    --bg: #0e1208;
+    --surface: #1a2012;
+    --surface2: #243018;
+    --border: #3a5228;
+    --primary: #5aaa3a;
+    --primary-dark: #4a8f2e;
+    --primary-light: #7ac95a;
+    --danger: #ef4444;
+    --success: #5aaa3a;
+    --warning: #f59e0b;
+    --info: #38bdf8;
+    --text: #eef2e8;
+    --text-muted: #8aa87a;
+    --radius: 10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  header {
+    width: 100%;
+    background: #111a09;
+    border-bottom: 3px solid var(--primary);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .logo-wrap { display: flex; align-items: center; }
+  #cert-logo { height: 56px; width: auto; }
+  .logo-badge {
+    background: var(--primary); color: #000;
+    font-weight: 900; font-size: 1.1rem; letter-spacing: 0.1em;
+    padding: 6px 12px; border-radius: 6px;
+  }
+  header h1 { font-size: 1.25rem; font-weight: 700; color: var(--primary); }
+  header p { font-size: 0.82rem; color: var(--text-muted); }
+
+  .home-link {
+    margin-left: auto;
+    color: var(--primary-light);
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border: 1px solid var(--border);
+    padding: 8px 15px;
+    border-radius: 8px;
+    white-space: nowrap;
+    transition: background .15s, border-color .15s;
+  }
+  .home-link:hover { background: var(--surface2); border-color: var(--primary); }
+  .scorebar {
+    margin-left: 20px;
+    text-align: right;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+  .scorebar span { color: var(--primary); font-weight: 700; font-size: 1.1rem; }
+
+  main {
+    width: 100%;
+    max-width: 860px;
+    padding: 32px 20px;
+    flex: 1;
+  }
+
+  /* ── HOME SCREEN ── */
+  #home { display: flex; flex-direction: column; align-items: center; gap: 32px; }
+
+  .home-hero {
+    text-align: center;
+  }
+  .home-hero h2 { font-size: 2rem; color: var(--primary); margin-bottom: 8px; }
+  .home-hero p { color: var(--text-muted); max-width: 520px; }
+
+  .module-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 16px;
+    width: 100%;
+  }
+
+  .module-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    cursor: pointer;
+    transition: border-color 0.2s, transform 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+  .module-card:hover { border-color: var(--primary); transform: translateY(-2px); }
+  .module-card.completed { border-color: var(--primary); }
+  .module-card .badge {
+    position: absolute; top: 12px; right: 12px;
+    font-size: 0.7rem; font-weight: 700; padding: 2px 8px;
+    border-radius: 99px; background: var(--success); color: #000;
+    opacity: 0;
+  }
+  .module-card.completed .badge { opacity: 1; }
+  .module-card .icon { font-size: 2.2rem; margin-bottom: 10px; }
+  .module-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
+  .module-card p { font-size: 0.82rem; color: var(--text-muted); line-height: 1.5; }
+  .module-card .score-display {
+    margin-top: 10px; font-size: 0.8rem; color: var(--primary); font-weight: 600;
+  }
+
+  /* ── SCENARIO SCREEN ── */
+  #scenario { display: none; flex-direction: column; gap: 20px; }
+
+  .scenario-header {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .back-btn {
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text); padding: 8px 14px; border-radius: var(--radius);
+    cursor: pointer; font-size: 0.85rem; transition: background 0.2s;
+  }
+  .back-btn:hover { background: var(--surface2); }
+
+  .module-title { font-size: 1.2rem; font-weight: 700; color: var(--primary); }
+  .step-counter { margin-left: auto; font-size: 0.82rem; color: var(--text-muted); }
+
+  .progress-bar-wrap {
+    background: var(--surface); border-radius: 99px; height: 6px; overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%; background: var(--primary);
+    border-radius: 99px; transition: width 0.4s;
+  }
+
+  .scene-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+  }
+  .scene-image {
+    width: 100%; height: 160px;
+    background: var(--surface2);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 4rem; margin-bottom: 20px;
+  }
+  .scene-situation {
+    font-size: 0.82rem; font-weight: 700; letter-spacing: 0.08em;
+    color: var(--primary); text-transform: uppercase; margin-bottom: 8px;
+  }
+  .scene-text {
+    font-size: 1.05rem; line-height: 1.7; color: var(--text); margin-bottom: 24px;
+  }
+
+  .choices { display: flex; flex-direction: column; gap: 10px; }
+  .choice-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 14px 18px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    text-align: left;
+    font-size: 0.92rem;
+    line-height: 1.5;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .choice-btn:hover:not(:disabled) { border-color: var(--primary); background: #2a3a4e; }
+  .choice-btn.correct { border-color: var(--success); background: #14321a; color: var(--success); }
+  .choice-btn.incorrect { border-color: var(--danger); background: #2d1414; color: var(--danger); }
+  .choice-btn:disabled { cursor: default; }
+
+  .feedback-box {
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    font-size: 0.92rem;
+    line-height: 1.6;
+    display: none;
+    margin-top: 16px;
+  }
+  .feedback-box.correct { background: #14321a; border: 1px solid var(--success); color: #86efac; }
+  .feedback-box.incorrect { background: #2d1414; border: 1px solid var(--danger); color: #fca5a5; }
+
+  .next-btn {
+    display: none;
+    background: var(--primary);
+    color: #000;
+    font-weight: 700;
+    padding: 12px 28px;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 0.95rem;
+    margin-top: 16px;
+    align-self: flex-end;
+    transition: background 0.2s;
+  }
+  .next-btn:hover { background: var(--primary-dark); }
+
+  /* ── RESULTS SCREEN ── */
+  #results {
+    display: none; flex-direction: column; align-items: center;
+    gap: 24px; text-align: center;
+  }
+  .results-icon { font-size: 4rem; }
+  .results-title { font-size: 1.8rem; font-weight: 700; color: var(--primary); }
+  .results-score { font-size: 3rem; font-weight: 800; }
+  .results-score .denom { font-size: 1.4rem; color: var(--text-muted); }
+  .results-msg { color: var(--text-muted); max-width: 480px; line-height: 1.6; }
+  .results-breakdown {
+    width: 100%; background: var(--surface);
+    border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;
+    text-align: left;
+  }
+  .results-breakdown h3 { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.08em; }
+  .breakdown-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 0.9rem;
+  }
+  .breakdown-item:last-child { border-bottom: none; }
+  .breakdown-icon { font-size: 1.1rem; width: 24px; }
+  .breakdown-result { margin-left: auto; font-weight: 700; }
+  .breakdown-result.pass { color: var(--success); }
+  .breakdown-result.fail { color: var(--danger); }
+
+  .btn-row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  .btn-secondary {
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); padding: 12px 24px; border-radius: var(--radius);
+    cursor: pointer; font-size: 0.92rem; transition: background 0.2s;
+  }
+  .btn-secondary:hover { background: var(--border); }
+  .btn-primary {
+    background: var(--primary); color: #000; font-weight: 700;
+    padding: 12px 28px; border: none; border-radius: var(--radius);
+    cursor: pointer; font-size: 0.92rem; transition: background 0.2s;
+  }
+  .btn-primary:hover { background: var(--primary-dark); }
+
+  /* ── REFERENCE MATERIALS BUTTON ── */
+  .ref-btn-wrap {
+    width: 100%; display: flex; justify-content: center; padding: 10px 0 4px;
+  }
+  .ref-btn {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px 32px;
+    color: var(--text); font-size: 1rem; font-weight: 600;
+    cursor: pointer; display: flex; align-items: center; gap: 10px;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .ref-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7); z-index: 100;
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 28px 32px;
+    max-width: 700px; width: 90%; max-height: 80vh; overflow-y: auto;
+  }
+  .modal-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 20px;
+  }
+  .modal-title {
+    font-size: 1.1rem; font-weight: 700; color: var(--primary);
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .modal-close {
+    background: none; border: none; color: var(--text-muted);
+    font-size: 1.4rem; cursor: pointer; line-height: 1;
+  }
+  .modal-close:hover { color: var(--text); }
+  .resource-grid {
+    display: flex; flex-wrap: wrap; gap: 10px;
+  }
+  .resource-card {
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 12px 16px;
+    display: flex; align-items: center; gap: 10px;
+    text-decoration: none; color: var(--text);
+    font-size: 0.88rem; transition: border-color 0.2s; width: calc(50% - 5px);
+  }
+  .resource-card:hover { border-color: var(--primary); color: var(--primary); }
+  .resource-card .file-icon { font-size: 1.4rem; }
+  .resource-card .file-name { font-weight: 600; }
+  .resource-card .file-type { font-size: 0.75rem; color: var(--text-muted); }
+
+  footer {
+    width: 100%; text-align: center; padding: 16px;
+    font-size: 0.75rem; color: var(--text-muted); border-top: 1px solid var(--border);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-wrap">
+    <img id="cert-logo" src="cert-wallingford-logo.png" alt="CERT Wallingford" onerror="this.style.display='none';document.getElementById('logo-fallback').style.display='flex'">
+    <div id="logo-fallback" style="display:none;align-items:center;gap:10px;">
+      <div class="logo-badge">CERT</div>
+    </div>
+  </div>
+  <div>
+    <h1>CERT Wallingford — Training Scenarios</h1>
+    <p>Community Emergency Response Team — Skills Practice</p>
+  </div>
+  <a class="home-link" href="index.html">← Menu</a>
+  <div class="scorebar">Total Score<br><span id="total-score">0</span> pts</div>
+</header>
+
+<main>
+
+  <!-- HOME -->
+  <div id="home">
+    <div class="home-hero">
+      <h2>Choose a Training Module</h2>
+      <p>Work through realistic emergency scenarios to sharpen your CERT skills. Each module tests decision-making with immediate feedback.</p>
+    </div>
+    <div class="module-grid" id="module-grid"></div>
+  </div>
+
+  <!-- SCENARIO -->
+  <div id="scenario">
+    <div class="scenario-header">
+      <button class="back-btn" onclick="goHome()">← Modules</button>
+      <div class="module-title" id="module-label"></div>
+      <div class="step-counter" id="step-counter"></div>
+    </div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+    </div>
+    <div class="scene-card">
+      <div class="scene-image" id="scene-image"></div>
+      <div class="scene-situation" id="scene-situation"></div>
+      <div class="scene-text" id="scene-text"></div>
+      <div class="choices" id="choices"></div>
+      <div class="feedback-box" id="feedback-box"></div>
+      <button class="next-btn" id="next-btn" onclick="nextStep()">Continue →</button>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results">
+    <div class="results-icon" id="results-icon"></div>
+    <div class="results-title" id="results-title"></div>
+    <div class="results-score" id="results-score"></div>
+    <div class="results-msg" id="results-msg"></div>
+    <div class="results-breakdown" id="results-breakdown"></div>
+    <div class="btn-row">
+      <button class="btn-secondary" onclick="retryModule()">Retry This Module</button>
+      <button class="btn-primary" onclick="goHome()">Back to Modules</button>
+    </div>
+  </div>
+
+</main>
+
+<footer>CERT Training Tool — For educational use only. Always follow your local CERT program guidelines.</footer>
+
+<script>
+// ─────────────────────────────────────────────
+//  DATA
+// ─────────────────────────────────────────────
+const MODULES = [
+  {
+    id: "scene-safety",
+    title: "Scene Safety",
+    icon: "⚠️",
+    desc: "Assess hazards before entering an emergency scene.",
+    steps: [
+      {
+        situation: "Arriving on Scene",
+        image: "🚗💥",
+        text: "You are a CERT volunteer responding to a reported car accident. As you pull up, you see a vehicle with front-end damage against a utility pole. There is a person slumped over the steering wheel. What is your FIRST action?",
+        choices: [
+          { text: "Run to the car immediately to check the victim.", correct: false },
+          { text: "Stop, look, and listen — assess for hazards before approaching.", correct: true },
+          { text: "Call out to the victim from your vehicle.", correct: false },
+          { text: "Direct traffic away from the scene.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! The CERT mantra is 'Size-up first.' Before entering any scene, you must identify potential hazards: downed power lines, leaking fuel, unstable vehicles, oncoming traffic, or bystanders who could become secondary victims.",
+          incorrect: "❌ CERT rule #1: Do not become a victim yourself. Rushing to a scene without assessing hazards risks your own life. Stop and survey the scene from a safe distance first."
+        }
+      },
+      {
+        situation: "Identifying Hazards",
+        image: "⚡🔥",
+        text: "You stop and size up the scene. You notice the utility pole is leaning and there is a power line lying across the road near the car. Fuel is dripping from the vehicle. What do you do?",
+        choices: [
+          { text: "Approach carefully — the fuel may not ignite.", correct: false },
+          { text: "Stay back at least 30 feet, keep others back, and call 9-1-1 if not already done.", correct: true },
+          { text: "Use your coat to smother any potential flames before helping the victim.", correct: false },
+          { text: "Wave down another car to help push the vehicle away from the pole.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! Downed power lines and leaking fuel create an immediately dangerous to life and health (IDLH) environment. The safe distance for downed lines is at least 30–35 feet (one full span). Keep bystanders back and let trained utilities/fire personnel handle it.",
+          incorrect: "❌ Downed power lines and leaking fuel together create an extreme risk of electrocution and fire/explosion. CERT members are NOT trained or equipped for these hazards. Stay back and call for professional responders."
+        }
+      },
+      {
+        situation: "Bystander Management",
+        image: "👥🚧",
+        text: "Professionals are en route. A bystander says 'I'm a doctor — let me through!' and tries to push past your safety perimeter. What do you do?",
+        choices: [
+          { text: "Let them through since they are a medical professional.", correct: false },
+          { text: "Explain the hazards present (downed line, fuel) and keep them back until the scene is declared safe.", correct: true },
+          { text: "Ask to see their medical credentials before deciding.", correct: false },
+          { text: "Ignore them and focus on the victim yourself.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! Medical credentials do not override scene safety. A doctor electrocuted by a power line cannot help anyone. Explain the specific hazards and maintain the perimeter for everyone's protection until the scene is declared safe by the appropriate responders.",
+          incorrect: "❌ Scene safety applies to everyone — including medical professionals. A bystander who becomes a victim adds to the problem. Explain the hazards and maintain the perimeter."
+        }
+      },
+      {
+        situation: "Scene Clear",
+        image: "🟢✔️",
+        text: "Fire department has arrived, the power line has been de-energized, and the scene has been declared safe. The incident commander asks CERT to begin triage of pedestrian victims in the parking lot. Before moving in, what is your first step?",
+        choices: [
+          { text: "Run to the most seriously injured-looking person first.", correct: false },
+          { text: "Put on your PPE (gloves, safety vest, eye protection) and get a quick briefing from the IC.", correct: true },
+          { text: "Begin triage immediately — time is critical.", correct: false },
+          { text: "Set up a treatment area first before touching any victims.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! Even after a scene is declared safe, always don PPE before patient contact and check in with the Incident Commander for situational awareness and assignment. This protects you and ensures coordinated operations.",
+          incorrect: "❌ PPE and ICS check-in come before patient contact, even in urgent situations. Gloves protect against bloodborne pathogens; reporting to the IC prevents duplication and ensures you have the full picture."
+        }
+      }
+    ]
+  },
+  {
+    id: "emergency-medical",
+    title: "Emergency Medical Operations",
+    icon: "🏥",
+    desc: "CPR, hemorrhage control, triage, burns, splinting, and patient assessment.",
+    steps: [
+      {
+        situation: "Unresponsive Victim",
+        image: "😨🏃",
+        text: "A man suddenly collapses at a community event and is not moving. What are the FIRST two things you must confirm simultaneously?",
+        choices: [
+          { text: "Check for a pulse and start chest compressions.", correct: false },
+          { text: "Tap the shoulder to check responsiveness AND look for normal breathing.", correct: true },
+          { text: "Call 9-1-1 and then tilt the head back.", correct: false },
+          { text: "Ask bystanders what happened.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! Confirm the need for CPR by tapping the shoulder and shouting 'Are you okay?' while simultaneously scanning for normal breathing. No response AND no normal breathing = activate the chain of survival: call 9-1-1, get an AED, begin CPR.",
+          incorrect: "❌ Before starting CPR, confirm the victim is unresponsive AND not breathing normally. Tap the shoulder, shout, and look for breathing simultaneously to save time."
+        }
+      },
+      {
+        situation: "CPR Compression Technique",
+        image: "👐💓",
+        text: "You begin CPR on the adult victim. Which compression technique is correct?",
+        choices: [
+          { text: "2 fingers on the chest, 60 per minute, 1 inch deep.", correct: false },
+          { text: "Heel of one hand on the center of the chest, 100–120 per minute, at least 2 inches deep, full recoil between compressions.", correct: true },
+          { text: "Both palms flat on the chest, 80 per minute, 3 inches deep.", correct: false },
+          { text: "Fist on the sternum, 100 per minute, 1.5 inches deep.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! Adult CPR: heel of hand on the lower half of the sternum, push HARD (≥2 inches) and FAST (100–120/min), allow FULL chest recoil between compressions. Hands-only CPR (no breaths) is effective when no barrier device is available.",
+          incorrect: "❌ Adult CPR: heel of hand on center of chest, depth ≥2 inches, rate 100–120/min, and full chest recoil. Compressions too shallow or too slow dramatically reduce survival."
+        }
+      },
+      {
+        situation: "Arterial Bleeding",
+        image: "🩸🦺",
+        text: "A victim has bright red blood SPURTING from a thigh wound with each heartbeat. What type of bleeding is this and what should you do first?",
+        choices: [
+          { text: "Venous bleeding — apply a bandage and continue assessment.", correct: false },
+          { text: "Arterial bleeding — immediately life-threatening; apply direct pressure, and use a tourniquet if needed.", correct: true },
+          { text: "Capillary bleeding — clean and dress the wound.", correct: false },
+          { text: "Treat all bleeds the same regardless of type.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! Spurting bright red blood = arterial bleeding — fatal within 3–5 minutes. Three control methods in order: direct pressure, wound packing, tourniquet. For an uncontrollable limb bleed, apply a tourniquet 2–3 inches ABOVE the wound and note the time.",
+          incorrect: "❌ Spurting bright red blood = arterial bleeding. Immediately life-threatening. Apply direct pressure first; if that fails on a limb, apply a tourniquet 2–3 inches above the wound and record the time of application."
+        }
+      },
+      {
+        situation: "Junction Wound — Wound Packing",
+        image: "🩹🫶",
+        text: "A victim has a deep stab wound to the armpit. A tourniquet cannot be used on junction wounds (armpit/groin/neck). What is the correct technique?",
+        choices: [
+          { text: "Lay a flat dressing on top of the wound and press down.", correct: false },
+          { text: "Pack the wound with gauze (hemostatic if available), then apply firm continuous direct pressure for at least 3 minutes.", correct: true },
+          { text: "Leave the wound open to allow drainage.", correct: false },
+          { text: "Wrap a tourniquet around the chest.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! Junction wounds can't be tourniqueted. Wound packing: push gauze deep into the wound cavity, layer by layer, then hold firm continuous pressure for minimum 3 minutes. A flat dressing on top is insufficient for deep cavities — you must pack inside.",
+          incorrect: "❌ For junction wounds (armpit, groin, neck), wound packing is required. Push gauze DEEP into the wound — not just on top — then hold firm pressure for at least 3 minutes."
+        }
+      },
+      {
+        situation: "Three Killers",
+        image: "⚠️🩺",
+        text: "CERT training identifies three 'killers' that are the first priority in disaster medical operations. What are they?",
+        choices: [
+          { text: "Burns, fractures, and head injuries.", correct: false },
+          { text: "Airway obstruction, excessive bleeding, and shock.", correct: true },
+          { text: "Hypothermia, dehydration, and infection.", correct: false },
+          { text: "Cardiac arrest, stroke, and internal bleeding.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! The three killers: Airway obstruction (fatal in 4–6 min), Excessive bleeding (fatal in 3–5 min), and Shock (inadequate circulation causing organ failure). Address these first in every assessment — all other injuries are secondary until these are controlled.",
+          incorrect: "❌ The three killers are Airway obstruction, Excessive bleeding, and Shock. These are the most rapidly fatal and the most addressable by CERT members with basic training. Prioritize them in every assessment."
+        }
+      },
+      {
+        situation: "START Triage Categories",
+        image: "🏷️👥",
+        text: "Triaging 20 survivors after a building collapse: one is walking around with minor pain; another is unresponsive and stops breathing after two airway-opening attempts. What tags do they receive?",
+        choices: [
+          { text: "Both Immediate (I) — all injuries need attention.", correct: false },
+          { text: "Walking victim: Minor (M); non-breathing after two attempts: Dead (DEAD).", correct: true },
+          { text: "Walking victim: Delayed (D); non-breathing: Immediate (I) — start CPR.", correct: false },
+          { text: "Both Delayed (D) until more help arrives.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! START triage: Immediate (I) = life-threatening but treatable; Delayed (D) = serious, can wait; Minor (M) = walking wounded; Dead (DEAD) = no breathing after TWO airway-opening attempts. In mass casualty triage, CPR is NOT initiated — move on to save more lives.",
+          incorrect: "❌ Walking survivors = Minor (M). No breathing after two airway attempts = Dead (DEAD). In mass casualty triage, no CPR — the goal is greatest good for the greatest number."
+        }
+      },
+      {
+        situation: "Recognizing Shock",
+        image: "😰🌡️",
+        text: "A survivor has cold hands despite hot weather, rapid shallow breathing, and cannot squeeze your hand on command. What do you suspect, and what triage tag applies?",
+        choices: [
+          { text: "Heat exhaustion — move to shade.", correct: false },
+          { text: "Shock from inadequate blood circulation — tag Immediate (I).", correct: true },
+          { text: "Low blood sugar — offer food.", correct: false },
+          { text: "Minor stress reaction — tag Delayed (D).", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! Signs of shock: cold extremities (blood shunted to core), rapid shallow breathing, and failure to follow simple commands. Capillary refill greater than 2 seconds is another key indicator. Shock = Immediate (I). Lay flat, control bleeding, keep warm, maintain airway.",
+          incorrect: "❌ Cold extremities in hot weather + rapid shallow breathing + altered mental status = shock. Capillary refill >2 seconds confirms it. This is Immediate (I) triage. Lay the victim flat, keep warm, and control bleeding."
+        }
+      },
+      {
+        situation: "Burn Treatment",
+        image: "🔥🧊",
+        text: "A survivor has partial-thickness burns on their forearm. Which action should you NOT take?",
+        choices: [
+          { text: "Cool the burn with room-temperature water.", correct: false },
+          { text: "Cover loosely with dry sterile dressings.", correct: false },
+          { text: "Apply ice directly to the burn.", correct: true },
+          { text: "Elevate the burned extremity.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! NEVER apply ice to a burn — it constricts blood vessels and can cause frostbite on top of burned tissue. Also avoid: antiseptics, ointments, breaking blisters, and removing adhered clothing. DO: cool with room-temperature water, cover loosely with dry sterile dressing, elevate.",
+          incorrect: "❌ Ice should NEVER be applied to a burn — it causes vasoconstriction and can create frostbite on already damaged tissue. Cool with room-temperature water and cover loosely with dry sterile dressings."
+        }
+      },
+      {
+        situation: "Splinting",
+        image: "🦴🛡️",
+        text: "A survivor has a suspected forearm fracture. What is the correct splinting rule?",
+        choices: [
+          { text: "Splint only the fracture site itself.", correct: false },
+          { text: "Immobilize the injury and the joints immediately above AND below the injury.", correct: true },
+          { text: "Straighten the arm to normal position before splinting.", correct: false },
+          { text: "Only splint confirmed fractures.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! Splint the injury AND the joints above AND below it. For a forearm fracture: immobilize the wrist (below) and elbow (above). Splint in the position found — do NOT try to realign bones. If uncertain whether it's a fracture, treat it as one. Check PMS (pulse, motor, sensory) before and after.",
+          incorrect: "❌ Always immobilize the injury AND joints immediately above AND below. Do not straighten or realign bones. When in doubt, splint. Check PMS before and after application."
+        }
+      },
+      {
+        situation: "DCAP-BTLS Assessment",
+        image: "🔍📋",
+        text: "You are performing rapid head-to-toe assessments in the treatment area. What does DCAP-BTLS stand for?",
+        choices: [
+          { text: "Deformities, Contusions, Abrasions, Punctures — Burns, Tenderness, Lacerations, Swelling.", correct: true },
+          { text: "Damage, Circulation, Airway, Pulse — Breathing, Temperature, Level of consciousness, Signs.", correct: false },
+          { text: "Diagnosis, Check, Assess, Plan — Bandage, Treat, Lift, Stabilize.", correct: false },
+          { text: "Danger, CPR, Airway, Pulse — Breathing, Trauma, Limbs, Scene.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! DCAP-BTLS: Deformities, Contusions, Abrasions, Punctures — Burns, Tenderness, Lacerations, Swelling. Use it head-to-toe to ensure no injury is missed. Also check PMS (pulse, motor function, sensory response) in all extremities.",
+          incorrect: "❌ DCAP-BTLS: Deformities, Contusions, Abrasions, Punctures, Burns, Tenderness, Lacerations, Swelling. This systematic mnemonic guides a complete rapid trauma assessment."
+        }
+      }
+    ]
+  },
+  {
+    id: "radio",
+    title: "Radio Communications",
+    icon: "📻",
+    desc: "Use proper radio protocol to communicate clearly in emergencies.",
+    steps: [
+      {
+        situation: "Radio Basics",
+        image: "📡🔊",
+        text: "You are issued a handheld radio at a CERT activation. Before transmitting, what must you do first?",
+        choices: [
+          { text: "Transmit immediately to let the base know you are on scene.", correct: false },
+          { text: "Listen first to make sure the channel is clear before transmitting.", correct: true },
+          { text: "Switch to the highest power setting for better range.", correct: false },
+          { text: "Program all local repeater frequencies manually.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! Monitoring before transmitting is fundamental radio discipline. Transmitting over an ongoing conversation blocks critical traffic. Listen, ensure the channel is clear, then transmit. This is especially important on a shared emergency net.",
+          incorrect: "❌ Always monitor before you transmit. Keying up over an ongoing conversation can block critical emergency traffic. Listen for a moment, and if the channel is clear, then transmit."
+        }
+      },
+      {
+        situation: "Proper Transmission",
+        image: "🎙️📋",
+        text: "You need to report to Base that you have found 3 injured victims at Grid C-4. What is the correct transmission format?",
+        choices: [
+          { text: "'Hello? Is anyone there? This is Bob, I found some hurt people, over.'", correct: false },
+          { text: "'Base, this is CERT Team 2. We have 3 injured victims at Grid Charlie-4. Over.'", correct: true },
+          { text: "'MAYDAY MAYDAY MAYDAY — we need help at C-4 right now!'", correct: false },
+          { text: "'Base Base Base, urgent message, stand by...' then wait 10 seconds.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! Proper format: called station first, then your unit ID, then your brief, clear message, then 'Over' to indicate you are finished and awaiting reply. Avoid filler words. Use phonetics for clarity (Charlie-4, not C-4 which can sound like 'see-four'). Keep transmissions short and factual.",
+          incorrect: "❌ The correct radio format is: [Called station], [Your station], [Message], Over. Example: 'Base, this is CERT Team 2. 3 injured at Grid Charlie-4. Over.' MAYDAY is reserved for life-safety emergencies involving the operator themselves."
+        }
+      },
+      {
+        situation: "Phonetic Alphabet",
+        image: "🔤📻",
+        text: "You need to spell out a street name — 'BAKER ST' — over the radio. Which is correct NATO phonetic spelling?",
+        choices: [
+          { text: "Bravo-Alpha-Kilo-Echo-Romeo, Sierra-Tango", correct: true },
+          { text: "Boy-Apple-King-Egg-Run, Sugar-Tom", correct: false },
+          { text: "B-A-K-E-R, S-T", correct: false },
+          { text: "Balloon-Almond-Kite-Eagle-Radio, Sun-Truck", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! NATO phonetics for BAKER ST: Bravo-Alpha-Kilo-Echo-Romeo, Sierra-Tango. The NATO alphabet (Alpha, Bravo, Charlie, Delta, Echo, Foxtrot, Golf, Hotel, India, Juliet, Kilo, Lima, Mike, November, Oscar, Papa, Quebec, Romeo, Sierra, Tango, Uniform, Victor, Whiskey, X-ray, Yankee, Zulu) is universally recognized and minimizes misunderstanding over noisy channels.",
+          incorrect: "❌ Use NATO phonetics for spelling: Alpha, Bravo, Charlie... not casual words. BAKER = Bravo-Alpha-Kilo-Echo-Romeo. ST = Sierra-Tango. Memorizing the NATO alphabet is a core CERT radio skill."
+        }
+      },
+      {
+        situation: "Radio Discipline",
+        image: "🚫🎙️",
+        text: "During an active incident, Base broadcasts: 'All stations, all stations, all stations — net control, break break break.' What does this mean and how do you respond?",
+        choices: [
+          { text: "An emergency message is about to be broadcast. Immediately stop all transmissions and listen.", correct: true },
+          { text: "All stations should break radio silence and check in.", correct: false },
+          { text: "The network is shutting down — switch to a backup channel.", correct: false },
+          { text: "Transmit your unit's status so Base can account for all teams.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! 'Break break break' is an emergency interruption signal — it means all other traffic must cease immediately. The calling station has priority emergency traffic. Stop transmitting, listen, and only respond if directly called. 'All stations x3' followed by 'break break break' is a universal signal for emergency net priority.",
+          incorrect: "❌ 'Break break break' signals an emergency priority transmission. All other stations must immediately clear the channel and listen. Only respond if directly addressed by the emergency station."
+        }
+      },
+      {
+        situation: "SALUTE Report",
+        image: "📝🔭",
+        text: "You observe what appears to be a hazmat situation at your search sector. Your team leader asks you to give a SALUTE report. What does SALUTE stand for?",
+        choices: [
+          { text: "Size, Activity, Location, Unit, Time, Equipment", correct: true },
+          { text: "Scene, Assessment, Lifesigns, Urgency, Treatment, Evacuation", correct: false },
+          { text: "Severity, Area, Location, Unknowns, Triage, Emergency", correct: false },
+          { text: "Status, Alert, Location, Urgency, Team, Estimate", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! SALUTE: Size (how many / how large), Activity (what is happening), Location (where exactly), Unit (what type of hazard/entity), Time (when observed), Equipment (what resources/hazards are present). This structured report format ensures all critical information is transmitted clearly and completely.",
+          incorrect: "❌ SALUTE stands for: Size, Activity, Location, Unit, Time, Equipment. This structured reporting format ensures responders don't omit critical details when reporting a hazard or situation."
+        }
+      }
+    ]
+  },
+  {
+    id: "nims-ics-cert",
+    title: "NIMS, ICS & CERT Organization",
+    icon: "🏛️",
+    desc: "National incident management, command structure, and CERT team operations.",
+    steps: [
+      {
+        situation: "What is NIMS?",
+        image: "🇺🇸📋",
+        text: "A major earthquake has struck your community. Multiple agencies — fire, police, EMS, utilities, Red Cross, and your CERT team — are responding. Why is NIMS essential in this situation?",
+        choices: [
+          { text: "NIMS gives CERT authority over other responders.", correct: false },
+          { text: "NIMS provides a common framework, terminology, and command structure so all agencies can work together effectively.", correct: true },
+          { text: "NIMS is only required for federal responses — local events follow local rules.", correct: false },
+          { text: "NIMS replaces local emergency plans with federal directives.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! NIMS (National Incident Management System), established after 9/11, gives all agencies — from local volunteer groups to federal organizations — a common language, unified command structure, and interoperable processes. Without it, multi-agency responses become chaotic. All federal preparedness grants require NIMS compliance.",
+          incorrect: "❌ NIMS exists precisely for multi-agency events. It provides common terminology, unified command, and interoperable processes so that agencies that rarely work together can coordinate effectively. It applies at all levels — local, state, and federal."
+        }
+      },
+      {
+        situation: "NIMS Components",
+        image: "🧩🏛️",
+        text: "Which of the following is NOT one of the six NIMS components?",
+        choices: [
+          { text: "Command and Coordination", correct: false },
+          { text: "Communications and Information Management", correct: false },
+          { text: "Resource Management", correct: false },
+          { text: "National Threat Assessment", correct: true }
+        ],
+        feedback: {
+          correct: "✅ Correct! 'National Threat Assessment' is not a NIMS component. The six NIMS components are: (1) Command and Coordination, (2) Communications and Information Management, (3) Resource Management, (4) Preparedness, (5) Ongoing Management and Maintenance, and (6) Joint Information System. Each addresses a critical aspect of incident management.",
+          incorrect: "❌ 'National Threat Assessment' is not a NIMS component. The real six components are: Command and Coordination, Communications and Information Management, Resource Management, Preparedness, Ongoing Management and Maintenance, and Joint Information System."
+        }
+      },
+      {
+        situation: "Unified Command",
+        image: "🤝👥",
+        text: "Three agencies — fire, law enforcement, and public health — all have jurisdiction over a major hazmat spill. Under NIMS, how should command be structured?",
+        choices: [
+          { text: "The fire department takes command since hazmat is their specialty.", correct: false },
+          { text: "Each agency establishes its own command post and coordinates independently.", correct: false },
+          { text: "A Unified Command is established with representatives from all three agencies sharing command authority.", correct: true },
+          { text: "The federal government assigns a single Incident Commander.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! Unified Command (UC) is used when multiple agencies or jurisdictions have authority over an incident. Representatives from each agency share command responsibilities, make joint decisions, and issue a single Incident Action Plan. This prevents conflicting orders and ensures integrated operations.",
+          incorrect: "❌ When multiple agencies have jurisdiction, NIMS calls for Unified Command — a shared command structure with representatives from each authority. Single-agency command, parallel commands, or federal takeover are all incorrect approaches for this scenario."
+        }
+      },
+      {
+        situation: "Common Terminology",
+        image: "📖🗣️",
+        text: "A fire department and a hospital use the term 'Code Red' differently — fire means 'active fire,' hospital means 'mass casualty.' Under NIMS, how is this resolved?",
+        choices: [
+          { text: "Each agency keeps its own terminology but issues a decoder sheet.", correct: false },
+          { text: "NIMS mandates plain language and common terminology to avoid misinterpretation.", correct: true },
+          { text: "The larger agency's terminology takes precedence.", correct: false },
+          { text: "Radio silence is maintained to avoid confusion.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! NIMS mandates the use of plain language (clear text) and common terminology across all agencies. Codes that vary by organization create dangerous miscommunication in multi-agency events. 'Active structure fire at 123 Main Street' is preferred over 'Code Red at Baker-3.' This is a core NIMS principle.",
+          incorrect: "❌ NIMS specifically addresses this problem by mandating plain language and common terminology across all responding agencies. Agency-specific codes that have different meanings to different organizations must not be used in multi-agency operations."
+        }
+      },
+      {
+        situation: "ICS Span of Control",
+        image: "🏗️📊",
+        text: "What is the maximum number of subordinates that one ICS supervisor should manage, according to the principle of Span of Control?",
+        choices: [
+          { text: "1 to 3 people", correct: false },
+          { text: "3 to 7 people, with 5 being optimal", correct: true },
+          { text: "8 to 12 people", correct: false },
+          { text: "There is no limit — it depends on the incident.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! ICS Span of Control: 3–7 subordinates per supervisor, with 5 as the optimum. Beyond 7, a supervisor loses effective control. Below 3, resources are wasted on supervision overhead. If a supervisor has too many direct reports, ICS mandates creating additional organizational layers (Divisions, Branches, Groups).",
+          incorrect: "❌ ICS Span of Control is 3–7 people per supervisor, with 5 being the ideal. This principle ensures supervisors maintain effective control. When more people need to be managed, additional supervisory positions are activated in the ICS structure."
+        }
+      },
+      {
+        situation: "Unity of Command",
+        image: "⬆️👆",
+        text: "As a CERT volunteer, your Team Leader gives you one assignment. A Fire Captain then approaches and asks you to perform a different task. What does ICS say you should do?",
+        choices: [
+          { text: "Follow the Fire Captain — they outrank your CERT Team Leader.", correct: false },
+          { text: "Do both tasks simultaneously.", correct: false },
+          { text: "Inform the Fire Captain that you have an assignment from your Team Leader and ask them to coordinate with your Team Leader.", correct: true },
+          { text: "Stop all tasks and request clarification from the Incident Commander.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! Under ICS Unity of Command, each person reports to exactly one supervisor. You should politely inform the Fire Captain of your current assignment and ask them to work through your Team Leader. This prevents conflicting orders and maintains accountability. ICS is built on this principle.",
+          incorrect: "❌ Not quite. Under ICS Unity of Command, you report to ONE supervisor. You should inform the Fire Captain of your current assignment and ask them to coordinate with your Team Leader. ICS prohibits dual-reporting to prevent conflicting orders and task confusion."
+        }
+      },
+      {
+        situation: "CERT Team Leader",
+        image: "👆🏅",
+        text: "In the CERT command structure, how is the CERT Team Leader established?",
+        choices: [
+          { text: "By being the first trained CERT member to arrive on the scene.", correct: true },
+          { text: "By seniority.", correct: false },
+          { text: "By department.", correct: false },
+          { text: "By the local police chief.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! In field operations, the CERT Team Leader role goes to the first trained CERT member to arrive on scene. This ensures immediate command is established without delay. The leader sets up the command post and begins organizing the response.",
+          incorrect: "❌ The CERT Team Leader is the first trained CERT member to arrive on scene. This prevents command gaps in the critical early minutes of a response."
+        }
+      },
+      {
+        situation: "Minimum Team Size",
+        image: "👥🔒",
+        text: "CERT members should always be assigned to teams of at least how many people?",
+        choices: [
+          { text: "Six.", correct: false },
+          { text: "Three.", correct: true },
+          { text: "Two.", correct: false },
+          { text: "Four.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! CERT teams should have a minimum of three members. This ensures that if one member is injured, one can stay with the victim while one goes for help. The 'rule of three' is a fundamental safety principle in CERT field operations.",
+          incorrect: "❌ CERT teams should have a minimum of three members — not two. With three, if one is injured, one stays with the victim and one goes for help. Two-person teams cannot safely handle a member-down situation."
+        }
+      },
+      {
+        situation: "Documentation Transfer",
+        image: "📄🤝",
+        text: "To whom should you give your CERT documentation at the end of a response?",
+        choices: [
+          { text: "The first professional responders on the scene.", correct: true },
+          { text: "Your local CERT leader.", correct: false },
+          { text: "Keep it for your own records.", correct: false },
+          { text: "The National CERT Program Office.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! CERT documentation — triage tags, treatment area records, and assignment logs — should be handed off to the professional responders on scene. This ensures continuity of care and situational awareness for the Incident Commander.",
+          incorrect: "❌ Documentation goes to the professional responders arriving on scene. They need your recorded information to maintain situational awareness, coordinate resources, and ensure continuity of care for survivors."
+        }
+      }
+    ]
+  },
+  // ── PPTX-DERIVED MODULES ────────────────────────────────────────
+  {
+    id: "fire-hazmat",
+    title: "Fire Safety & Hazmat",
+    icon: "🔥",
+    desc: "Fire chemistry, extinguisher use, hazmat placards, and CBRNE response.",
+    steps: [
+      {
+        situation: "The Fire Triangle",
+        image: "🔥⚗️",
+        text: "Fire requires three elements to exist simultaneously. Remove any one and the fire goes out. What are the three elements of the Fire Triangle?",
+        choices: [
+          { text: "Heat, Fuel, and Oxygen.", correct: true },
+          { text: "Spark, Fuel, and Carbon dioxide.", correct: false },
+          { text: "Heat, Fuel, and Nitrogen.", correct: false },
+          { text: "Ignition, Accelerant, and Air.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! Heat + Fuel + Oxygen = fire. Remove any one: water removes heat, CO2/foam removes oxygen, dry chemical interrupts the chain reaction. Understanding the triangle helps you choose the right extinguisher for each fire class.",
+          incorrect: "❌ The Fire Triangle is Heat, Fuel, and Oxygen. Remove any one side and fire cannot sustain itself — water (heat), CO2/foam (oxygen), dry chemical (chain reaction)."
+        }
+      },
+      {
+        situation: "Five Classes of Fire",
+        image: "🍳🔥",
+        text: "A fire breaks out in a commercial kitchen involving deep-fryer cooking oil. What fire class is this, and which is the correct extinguishing agent?",
+        choices: [
+          { text: "Class B — flammable liquids; use dry chemical.", correct: false },
+          { text: "Class K — cooking oils; requires a specialized wet chemical extinguisher.", correct: true },
+          { text: "Class A — ordinary combustibles; water will work.", correct: false },
+          { text: "Class C — electrical equipment; use CO2.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! The 5 fire classes: A = ordinary combustibles, B = flammable liquids, C = energized electrical, D = combustible metals, K = cooking oils. Class K fires require a wet chemical extinguisher that saponifies (turns to soap) the oil — standard extinguishers are ineffective and can spread a cooking oil fire explosively.",
+          incorrect: "❌ Cooking oil = Class K. Classes: A (paper/wood), B (gasoline), C (electrical), D (metals), K (cooking oils). Class K requires a specialized wet chemical agent — using the wrong type can make the fire worse."
+        }
+      },
+      {
+        situation: "Flammable Storage — L.I.E.S.",
+        image: "⛽🏠",
+        text: "You are reducing fire hazards at home. Gasoline, paint thinner, and lighter fluid are in your garage. The CERT L.I.E.S. storage method stands for:",
+        choices: [
+          { text: "Label, Inspect, Examine, Secure.", correct: false },
+          { text: "Limit, Isolate, Eliminate, Separate.", correct: true },
+          { text: "Lock, Identify, Evacuate, Store.", correct: false },
+          { text: "List, Inspect, Extinguish, Safeguard.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! L.I.E.S.: Limit (keep only what you need), Isolate (from ignition sources), Eliminate (dispose of extras), Separate (keep incompatible materials apart). This is the CERT framework for managing flammable liquid risks at home and in the workplace.",
+          incorrect: "❌ L.I.E.S.: Limit, Isolate, Eliminate, Separate. Always read labels and apply this method when storing any flammable material."
+        }
+      },
+      {
+        situation: "Using a Fire Extinguisher",
+        image: "🧯✅",
+        text: "You have sized up a small fire and decided it can be fought. You retrieve the correct extinguisher type. What should you do BEFORE approaching the fire?",
+        choices: [
+          { text: "Wait for the fire department to confirm it's safe.", correct: false },
+          { text: "Pull the pin and do a quick test burst to confirm the extinguisher is functional.", correct: true },
+          { text: "Send your buddy to stand by the door while you approach alone.", correct: false },
+          { text: "Aim at the flames from across the room first.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! Before approaching: pull the pin and test-fire to confirm it works. A dead extinguisher at a fire is extremely dangerous. Your buddy stays near the exit (not sent away) so both of you have an escape route. Then use PASS: Pull, Aim at the base, Squeeze, Sweep.",
+          incorrect: "❌ Pull the pin and do a quick test burst before approaching. A non-functional extinguisher at a fire could be fatal. Keep your buddy near the exit. Use PASS: Pull, Aim at base, Squeeze, Sweep."
+        }
+      },
+      {
+        situation: "5-Second Rule",
+        image: "🔥⏱️",
+        text: "You apply the extinguisher using the PASS technique. After 5 seconds, the fire is still burning. What do you do?",
+        choices: [
+          { text: "Try a different extinguishing agent.", correct: false },
+          { text: "Back up and try from a greater distance.", correct: false },
+          { text: "Leave immediately.", correct: true },
+          { text: "Have your buddy attempt suppression while you watch.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! CERT rule: if the fire is NOT out within 5 seconds, LEAVE IMMEDIATELY. A fire that isn't responding is growing — conditions can turn lethal within seconds. Evacuate, account for your buddy, and wait for the fire department. No second attempts.",
+          incorrect: "❌ Fire not out in 5 seconds = LEAVE IMMEDIATELY. No second passes, no backup, no creative solutions. A growing fire can overwhelm you in moments. Get out now."
+        }
+      },
+      {
+        situation: "Hazmat Placards — Stop Sign Rule",
+        image: "🔷⛔",
+        text: "During size-up you see an NFPA 704 Diamond on a shed near the fire. The red quadrant shows a 2. What is the CERT rule?",
+        choices: [
+          { text: "A 2 is moderate risk — proceed with extra PPE.", correct: false },
+          { text: "Any number greater than 1 in ANY quadrant means stay away — treat the diamond as a stop sign.", correct: true },
+          { text: "Only the blue (health) quadrant number matters.", correct: false },
+          { text: "Numbers 1–2 are safe; only 3–4 require staying back.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! CERT rule: ANY number greater than 1 in the NFPA 704 Diamond = stay away. Treat ALL hazmat placards — NFPA 704, DOT, UN/NA — as a stop sign. CERT is not trained or equipped for hazmat. Report to professional responders and keep a safe distance.",
+          incorrect: "❌ Greater than 1 in any NFPA 704 quadrant = CERT stop sign. It doesn't matter which quadrant — step back, don't touch anything, and report to professional responders immediately."
+        }
+      },
+      {
+        situation: "CBRNE Attack Indicators",
+        image: "💨🤢",
+        text: "On patrol you notice a vapor cloud near a building, an unusual smell, and multiple people suddenly becoming ill. What should you do?",
+        choices: [
+          { text: "Help the sick people immediately — they need first aid.", correct: false },
+          { text: "Identify the source precisely so you can report its exact location.", correct: false },
+          { text: "Do NOT touch anything — move upwind and away — report to authorities immediately.", correct: true },
+          { text: "Shelter in place in the nearest building.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! CBRNE indicators (vapor clouds, unusual odors, mass illness): DO NOT touch. Move AWAY and upwind. Report IMMEDIATELY. Attempting to help victims in a contaminated zone makes you a casualty too. Call 9-1-1 from a safe upwind distance.",
+          incorrect: "❌ CBRNE protocol: Don't touch, move away upwind, report immediately. Never enter a potentially contaminated area to help victims — you will become a casualty and remove a responder from service."
+        }
+      },
+      {
+        situation: "Basic Decontamination",
+        image: "🚿🧼",
+        text: "You suspect exposure to a chemical agent. What is the CORRECT decontamination sequence?",
+        choices: [
+          { text: "Wash hands first, then remove clothing, then flush body.", correct: false },
+          { text: "Leave the area, remove ALL clothing, flush entire body with water, blot (don't rub) dry.", correct: true },
+          { text: "Only remove clothing if you see visible contamination.", correct: false },
+          { text: "Report to authorities first, then decontaminate when directed.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! Decontamination sequence: (1) Leave the area, (2) Remove ALL clothing — this eliminates 70–80% of contamination, (3) Wash hands, (4) Flush entire body with water, (5) BLOT dry — rubbing drives agents into skin, (6) Report for formal decontamination. Clothing removal first is the single most impactful step.",
+          incorrect: "❌ Decontamination: Leave → Remove ALL clothing (70–80% reduction) → Wash hands → Flush body → Blot dry (don't rub) → Report for formal decon. Do not wash before removing contaminated clothing."
+        }
+      }
+    ]
+  },
+  {
+    id: "search-rescue",
+    title: "Search & Rescue",
+    icon: "🔍",
+    desc: "Size-up, damage levels, structural voids, search patterns, and safe extrication.",
+    steps: [
+      {
+        situation: "Rescue Priority Order",
+        image: "🏃🚶🦽",
+        text: "You arrive at a collapse scene with multiple trapped survivors. What is the correct order of rescue priority?",
+        choices: [
+          { text: "Most seriously injured first, then lightly trapped, then walking wounded.", correct: false },
+          { text: "Walking wounded out first, then lightly trapped survivors, keeping rescuers safe throughout.", correct: true },
+          { text: "Rescuers decide based on proximity to the collapse.", correct: false },
+          { text: "Children first, then adults, then elderly.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! SAR rescue priority: (1) Get walking wounded out first — they can move themselves and free up space/resources. (2) Rescue lightly trapped survivors next — they need help but the rescue is relatively safe. (3) Keep the rescuer safe throughout — an injured rescuer becomes another victim. Heavily trapped survivors may require technical rescue beyond CERT's capability.",
+          incorrect: "❌ CERT SAR priority: walking wounded first (they self-extricate with direction), then lightly trapped, while always maintaining rescuer safety. The most critically injured and heavily trapped may require technical rescue teams — CERT should not take excessive risks attempting to free heavily trapped victims."
+        }
+      },
+      {
+        situation: "Heavy Damage Buildings",
+        image: "🏚️💥",
+        text: "While sizing up a collapse scene, you identify a building with partial structural collapse, visible tilting, and the building is off its foundation. What does CERT protocol say about this building?",
+        choices: [
+          { text: "Enter quickly to rescue any survivors before secondary collapse.", correct: false },
+          { text: "Enter only with a buddy and only for confirmed survivors.", correct: false },
+          { text: "Do not enter under any circumstances.", correct: true },
+          { text: "Enter the ground floor only — avoid upper floors.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! Heavy damage = do NOT enter under any circumstances. Signs of heavy damage: partial or total collapse, tilting, obvious structural instability, building off foundation. The risk of secondary collapse is extreme. Mark the building and notify technical rescue teams. CERT enters only light-damage buildings freely and moderate-damage buildings only to save lives with extreme caution.",
+          incorrect: "❌ Heavy damage buildings (partial/total collapse, tilting, off-foundation, structural instability) are a CERT no-go. Do not enter under ANY circumstances. The risk of secondary collapse is too great. Light damage = safe to enter. Moderate damage = enter only to save lives. Heavy damage = never."
+        }
+      },
+      {
+        situation: "Structural Voids",
+        image: "🏗️🕳️",
+        text: "After a building collapse, you know to look for structural voids where survivors may be trapped. Which of the following correctly names and describes the three main types of structural void?",
+        choices: [
+          { text: "Lean-to, Pancake, and V-void.", correct: true },
+          { text: "Tunnel, Pocket, and Shelf.", correct: false },
+          { text: "Corner, Center, and Edge voids.", correct: false },
+          { text: "Floor, Wall, and Ceiling voids.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! Three structural void types: Pancake (floors collapse directly onto each other — small void), V-void (floor collapses in the center, leaving triangular voids at edges), and Lean-to void (one end of the floor collapses while the other remains attached, creating a ramp-shaped void). Survivors often shelter in bathtubs, under desks, inside cabinets, and under/next to beds — check individual void locations within these structural types.",
+          incorrect: "❌ The three structural void types are: Pancake (floors stack on each other), V-void (center collapse, triangular voids at edges), and Lean-to (one end collapses, ramp shape). If you see collapsed floors or walls of any type, get out — secondary collapse is a constant threat."
+        }
+      },
+      {
+        situation: "Interior Search Pattern",
+        image: "🔦🏢",
+        text: "Your team is conducting an interior search of a multi-story library. What is the correct systematic search pattern?",
+        choices: [
+          { text: "Search each floor from center outward in a spiral.", correct: false },
+          { text: "Bottom-up or top-down for multi-story; right wall or left wall for a single floor.", correct: true },
+          { text: "Search randomly — systematic patterns waste time.", correct: false },
+          { text: "Focus only on the most recently occupied areas.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! Interior search patterns: For a multi-story building, search bottom-up OR top-down systematically. For a single floor, follow either the right wall or left wall consistently. Stop frequently to listen for tapping, movement, or voices. Call out to survivors: 'If anyone can hear my voice, come here!' Complete the search marking ('X') when you exit each room to prevent duplicate searching.",
+          incorrect: "❌ Systematic search patterns: bottom-up or top-down for multi-story buildings; right wall or left wall for single floors. Stop frequently to listen — survivors may be too weak to call out but can tap. Random searching leads to missed areas and wasted resources."
+        }
+      },
+      {
+        situation: "Extrication — Choosing the Method",
+        image: "🤝🏃",
+        text: "You need to move an injured survivor who cannot walk but is conscious and has no suspected spinal injury. You have one other CERT member with you. Which carry should you use?",
+        choices: [
+          { text: "Blanket carry — most comfortable for the survivor.", correct: false },
+          { text: "Two-person carry or chair carry — appropriate with two rescuers.", correct: true },
+          { text: "Drag the survivor on the floor.", correct: false },
+          { text: "Wait for more rescuers before attempting any move.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! With two rescuers, use a two-person carry or chair carry. Blanket carry requires 4+ people. One-person carries (arm carry, pack-strap) work with 1 rescuer. Choose the method based on: number of rescuers available, strength/ability of rescuers, environmental stability, and condition of the survivor. If spinal injury is suspected, do not move without proper immobilization.",
+          incorrect: "❌ With two rescuers, a two-person carry or chair carry is appropriate. Blanket carry needs 4+ people. The choice of extrication method depends on: number and strength of rescuers, environmental stability, and survivor condition. Always match technique to available resources."
+        }
+      },
+      {
+        situation: "Size-Up First Step",
+        image: "🌪️🏚️",
+        text: "A tornado has hit a nearby community. Cars are in trees and debris is everywhere. As you begin the CERT size-up process, what is the FIRST thing you should do?",
+        choices: [
+          { text: "Gather facts.", correct: true },
+          { text: "Assess and communicate damage.", correct: false },
+          { text: "Establish priorities.", correct: false },
+          { text: "Consider probabilities.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! The CERT size-up process begins with gathering facts — what do you know about the incident, how many buildings, what type of construction, what hazards are present, how many potential victims. Without factual information, all other steps are guesswork. Gather facts → Assess/communicate damage → Consider probabilities → Assess resources → Establish priorities → Take action.",
+          incorrect: "❌ The first step in CERT size-up is to gather facts. The full sequence is: Gather facts → Assess and communicate damage → Consider probabilities → Assess resources → Establish priorities → Take action and evaluate. You can't make good decisions without first gathering the facts."
+        }
+      },
+      {
+        situation: "Damage Classification",
+        image: "🏛️🪟",
+        text: "You are searching a large brick library. The size-up reveals broken windows and cracked plaster. How would you classify the damage?",
+        choices: [
+          { text: "Heavy damage.", correct: false },
+          { text: "Moderate damage.", correct: false },
+          { text: "Light damage.", correct: true },
+          { text: "Slight damage.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! Broken windows and cracked plaster = Light damage. CERT damage classifications: Slight (cosmetic only, no structural), Light (broken windows, minor cracks), Moderate (partial collapse, compromised structure), Heavy (major collapse, immediate danger). Light damage typically means the building can be entered with caution.",
+          incorrect: "❌ Broken windows and cracked plaster classify as Light damage. The scale is: Slight → Light → Moderate → Heavy. Light damage is superficial but requires caution; moderate/heavy damage indicates structural compromise and potential collapse."
+        }
+      },
+      {
+        situation: "Search Markings",
+        image: "🖊️🔲",
+        text: "You make a single slash '/' next to the doorway of the first room you enter. What information goes in the LEFT quadrant of the completed search marking?",
+        choices: [
+          { text: "Information about hazards and collapses.", correct: false },
+          { text: "The number of survivors in the room.", correct: false },
+          { text: "Your agency or group ID.", correct: true },
+          { text: "The room number.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! The CERT search marking system uses an X with four quadrants. Left quadrant: your agency/group ID. Top quadrant: hazards found. Right quadrant: date and time of search completion. Bottom quadrant: number of survivors and victims found. The single slash '/' is made on entry; a second slash creates the 'X' on exit.",
+          incorrect: "❌ In the CERT search marking X: Left = agency/group ID, Top = hazards, Right = date/time of completion, Bottom = number of survivors/victims. The single slash is made entering; the full X is completed when you exit."
+        }
+      },
+      {
+        situation: "Moving a Victim",
+        image: "🤕🚑",
+        text: "You find a boy with glass in his leg who cannot walk. You have two other CERT members with you (3 total). Which of the following is NOT recommended for moving the boy?",
+        choices: [
+          { text: "Blanket carry.", correct: true },
+          { text: "Pack-strap carry.", correct: false },
+          { text: "Chair carry.", correct: false },
+          { text: "One-person arm carry.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! A blanket carry typically requires 4 or more people to execute safely — you only have 3. With 3 responders, recommended carries include the chair carry (2 people), pack-strap carry (1 person), or two-person arm carry. Always match the carry technique to the number of available and trained responders.",
+          incorrect: "❌ The blanket carry requires 4+ people to perform safely — you only have 3. With 3 rescuers, use techniques that work with your available personnel: chair carry, pack-strap, or two-person arm carry. Never attempt a carry with fewer people than required."
+        }
+      },
+      {
+        situation: "Lean-To Void",
+        image: "🏗️💥",
+        text: "You enter a house where the second floor has collapsed, creating a lean-to void. How should you proceed?",
+        choices: [
+          { text: "Leave the premises immediately and mark the structure as unsound.", correct: true },
+          { text: "Quickly search the ground floor.", correct: false },
+          { text: "Use an axe to knock down the floor and clear the void.", correct: false },
+          { text: "Call for backup.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! A lean-to collapse means the structure is significantly compromised — a secondary collapse could trap or kill rescuers. CERT members should not enter structures with this level of damage. Leave, mark the building clearly as structurally unsound, and report it to your team leader for possible technical rescue team response.",
+          incorrect: "❌ A lean-to void indicates major structural compromise with high secondary collapse risk. CERT members must leave immediately and mark the structure as unsound. Only trained technical rescue teams should operate in these conditions. Do not attempt entry."
+        }
+      }
+    ]
+  },
+  {
+    id: "disaster-psychology",
+    title: "Disaster Psychology",
+    icon: "🧠",
+    desc: "Trauma symptoms, disaster phases, empathetic listening, stress management, and CISD.",
+    steps: [
+      {
+        situation: "What NOT to Say",
+        image: "🚫💬",
+        text: "A survivor has just lost her home. She is crying and shaking. Which of the following should you AVOID saying?",
+        choices: [
+          { text: "'Tell me what happened.'", correct: false },
+          { text: "'You'll get through this' or 'You're strong.'", correct: true },
+          { text: "'I'm here with you.'", correct: false },
+          { text: "'Can I get you some water?'", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! Avoid these well-intentioned but harmful phrases: 'I understand,' 'Don't feel bad,' 'You're strong / You'll get through this,' 'Don't cry,' 'It's God's will,' 'It could be worse,' 'At least you still have…,' and 'Everything will be okay.' These phrases minimize or dismiss the survivor's feelings. Instead: listen, use open-ended questions, acknowledge pain, and be physically present.",
+          incorrect: "❌ Avoid: 'You'll get through this,' 'You're strong,' 'I understand,' 'Don't feel bad,' 'It could be worse,' 'At least you still have…' These invalidate the survivor's experience. Good responses: listen, acknowledge what they're feeling, offer practical help (water, blanket), and be present without trying to fix their emotions."
+        }
+      },
+      {
+        situation: "Empathetic Listening",
+        image: "👂❤️",
+        text: "A survivor is speaking rapidly and emotionally about what they experienced. What does being an empathetic listener mean in this moment?",
+        choices: [
+          { text: "Wait for them to finish so you can offer solutions.", correct: false },
+          { text: "Listen for meaning and emotion, not just the literal words; pay attention to nonverbal cues.", correct: true },
+          { text: "Stay objective — avoid showing emotion yourself.", correct: false },
+          { text: "Take detailed notes to pass the information to your team leader.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! Empathetic listening means: put yourself in the speaker's shoes, listen for MEANING (not just words), pay attention to nonverbal communication (tears, posture, gestures), and paraphrase what you heard to show you understood. The goal is to make the survivor feel heard and not alone — not to gather information or solve their problem.",
+          incorrect: "❌ Empathetic listening means listening for meaning and emotion, not just words. Pay attention to nonverbal communication. Paraphrase to show understanding. The goal is to make the survivor feel heard and supported — not to give advice, gather data, or stay detached."
+        }
+      },
+      {
+        situation: "CERT Team Stress Reduction",
+        image: "💪🌙",
+        text: "As a CERT team leader after a long and difficult response, which of these is a recommended step to reduce stress in your team members?",
+        choices: [
+          { text: "Tell team members to suppress their emotions to stay professional.", correct: false },
+          { text: "Brief team members beforehand, rotate teams and duties, and arrange for debriefing.", correct: true },
+          { text: "Deploy the same experienced volunteers for all tasks to maintain consistency.", correct: false },
+          { text: "Limit discussion about the incident to prevent triggering others.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! CERT team leader stress-reduction responsibilities: brief team members beforehand (set realistic expectations), remember it's a team effort, take breaks away from the scene, ensure proper food and hydration, arrange for Critical Incident Stress Debriefing (CISD), rotate teams and duties to prevent burnout, and phase workers out gradually rather than abruptly ending deployment.",
+          incorrect: "❌ CERT leaders manage team stress by: briefing beforehand, rotating teams and duties, ensuring breaks and food/water, arranging CISD, and phasing out workers gradually. Suppressing emotions, burning out experienced volunteers, and avoiding discussion of the incident all worsen psychological outcomes."
+        }
+      },
+      {
+        situation: "Critical Incident Stress Debriefing",
+        image: "🗣️👥",
+        text: "After a mass casualty incident, your CERT team participates in a Critical Incident Stress Debriefing (CISD). What is the PRIMARY purpose of CISD?",
+        choices: [
+          { text: "To evaluate the team's performance and identify mistakes.", correct: false },
+          { text: "To help responders process the psychological impact of the incident and learn about normal stress reactions.", correct: true },
+          { text: "To gather documentation for the after-action report.", correct: false },
+          { text: "To determine who should be removed from future CERT activations.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! CISD is a 7-step psychological intervention: (1) Introductions and description, (2) Review of facts, (3) Initial thoughts and feelings, (4) Emotional reactions, (5) Teaching about normal stress reactions, (6) Review of symptoms, (7) Closing and needs assessment. Its purpose is to help responders normalize their reactions, process difficult experiences, and identify those who may need further support. It is NOT a performance evaluation.",
+          incorrect: "❌ CISD purpose: help responders process the psychological impact, understand that their reactions are NORMAL, and identify those who need additional support. It is NOT a performance review or documentation exercise. The 7 steps guide participants from facts through feelings to education and closure."
+        }
+      },
+      {
+        situation: "Physiological vs. Psychological Symptoms",
+        image: "😟🤒",
+        text: "After finding bodies at a tornado site, a fellow CERT member becomes nauseated and overwhelmed. Which of the following is NOT an example of a physiological (physical) symptom of trauma?",
+        choices: [
+          { text: "Hyperactivity.", correct: false },
+          { text: "Denial.", correct: true },
+          { text: "Headaches.", correct: false },
+          { text: "Loss of appetite.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! Denial is a psychological/emotional response to trauma — it is a mental defense mechanism, not a physical symptom. Physiological symptoms of trauma include headaches, nausea, hyperactivity, fatigue, loss of appetite, muscle tremors, and difficulty sleeping. Denial, guilt, anger, and numbness are psychological responses.",
+          incorrect: "❌ Denial is a psychological (emotional/mental) response to trauma, not a physiological (physical) symptom. Physical trauma symptoms include headaches, nausea, fatigue, loss of appetite, and hyperactivity. Psychological symptoms include denial, anger, guilt, and emotional numbness."
+        }
+      },
+      {
+        situation: "Phases of Disaster Response",
+        image: "📈🗓️",
+        text: "During which phase of a post-disaster crisis do survivors attempt to assess the damage and locate other survivors?",
+        choices: [
+          { text: "Pre-disaster phase.", correct: false },
+          { text: "Impact phase.", correct: false },
+          { text: "Honeymoon phase.", correct: false },
+          { text: "Heroic phase.", correct: true }
+        ],
+        feedback: {
+          correct: "✅ Correct! The six post-disaster phases are: Pre-disaster → Impact → Heroic → Honeymoon → Disillusionment → Reconstruction. The Heroic phase occurs immediately after impact — survivors are fueled by adrenaline, actively searching for others, and assessing damage. In this phase, people take extraordinary actions to help each other.",
+          incorrect: "❌ The Heroic phase (immediately post-impact) is when survivors are energized by adrenaline and actively searching for survivors and assessing damage. The six phases are: Pre-disaster, Impact, Heroic, Honeymoon, Disillusionment, and Reconstruction."
+        }
+      },
+      {
+        situation: "Psychological First Aid Priority",
+        image: "🤕💬",
+        text: "The goal of on-scene psychological intervention is to stabilize individuals. A man is in shock and bleeding from his chest. What should you do FIRST?",
+        choices: [
+          { text: "Listen empathetically.", correct: false },
+          { text: "Attempt to locate the man's family or friends.", correct: false },
+          { text: "Say, 'You'll get through this.'", correct: false },
+          { text: "Address the man's medical needs.", correct: true }
+        ],
+        feedback: {
+          correct: "✅ Correct! Psychological first aid never supersedes physical first aid. When someone has a life-threatening medical condition — shock and chest hemorrhage — address the physical emergency first. Once the immediate physical threat is controlled, then provide psychological support: listen, stay calm, provide information, connect them with support.",
+          incorrect: "❌ Physical needs always come first. A person in shock with active bleeding requires immediate medical intervention — not emotional counseling. Stabilize the body first, then provide psychological support."
+        }
+      },
+      {
+        situation: "Personal Stress Reduction",
+        image: "💪🌙",
+        text: "Which of the following is NOT a step that CERT members should take to personally reduce stress after a disaster response?",
+        choices: [
+          { text: "Eat a balanced diet.", correct: false },
+          { text: "Get enough sleep.", correct: false },
+          { text: "Take antidepressants.", correct: true },
+          { text: "Connect with others.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! CERT self-care after a response includes: eating well, getting adequate sleep, exercising, connecting with others, and talking about experiences. Taking antidepressants is a medical treatment decision made with a doctor — it is not a general CERT stress reduction recommendation and should not be self-prescribed.",
+          incorrect: "❌ Taking antidepressants is a medical treatment decision for a physician — not a self-care strategy for CERT members. Recommended stress reduction includes: balanced diet, adequate sleep, exercise, social connection, and debriefing with teammates or a mental health professional."
+        }
+      }
+    ]
+  },
+  // ── EXAM-BASED MODULES ──────────────────────────────────────────
+  {
+    id: "disaster-prep",
+    title: "Disaster Preparedness",
+    icon: "🏠",
+    desc: "Know your responsibilities and how to prepare before disaster strikes.",
+    steps: [
+      {
+        situation: "Your First Responsibility",
+        image: "🏠👨‍👩‍👧",
+        text: "When a disaster occurs, a CERT member's FIRST responsibility is to:",
+        choices: [
+          { text: "Join the CERT in disaster response efforts.", correct: false },
+          { text: "Help professional responders.", correct: false },
+          { text: "Ensure personal and family safety.", correct: true },
+          { text: "Do the greatest good for the greatest number of people.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! A CERT member who has not secured their own household is not available to help anyone else. Personal and family safety comes first — once you are safe and your household is stable, then you activate with your CERT team.",
+          incorrect: "❌ CERT training is clear: ensure personal and family safety FIRST. A CERT member who neglects their own household becomes a victim or liability. Once safe, then report to your team."
+        }
+      },
+      {
+        situation: "Non-Disaster CERT Roles",
+        image: "🎪🤝",
+        text: "CERT members volunteer to fill non-disaster roles. An example of a non-disaster function of CERTs is:",
+        choices: [
+          { text: "Staffing parades, health fairs, and other special events.", correct: true },
+          { text: "Monitoring the news for potential disaster threats.", correct: false },
+          { text: "Petitioning local officials for more emergency response funding.", correct: false },
+          { text: "Distributing political pamphlets and other materials.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! CERTs regularly support non-disaster community events such as parades, health fairs, sporting events, and public gatherings — providing first aid coverage and community presence. This also keeps skills sharp and maintains community visibility.",
+          incorrect: "❌ A key non-disaster CERT function is supporting community events like parades and health fairs. CERT members are not a political or advocacy group, and news monitoring is not an assigned CERT role."
+        }
+      },
+      {
+        situation: "Types of Disasters",
+        image: "🌊🔥💻",
+        text: "There are five types of disasters: natural, terrorist, home fires, pandemic, and ___________.",
+        choices: [
+          { text: "Mechanical", correct: false },
+          { text: "Biological", correct: false },
+          { text: "Chemical", correct: false },
+          { text: "Technological and Accidental", correct: true }
+        ],
+        feedback: {
+          correct: "✅ Correct! The five CERT disaster categories are: Natural (earthquakes, floods, hurricanes), Technological/Accidental (industrial accidents, hazmat spills, infrastructure failure), Terrorist, Home Fires, and Pandemic. Technological/Accidental includes man-made but non-intentional events.",
+          incorrect: "❌ The fifth disaster type is Technological and Accidental — covering industrial accidents, hazmat releases, and infrastructure failures. While biological and chemical can be terrorist methods, the fifth standalone category is Technological and Accidental."
+        }
+      },
+      {
+        situation: "Home Fixture Hazards",
+        image: "🏚️⚠️",
+        text: "Which of the following is NOT a hazard associated with home fixtures?",
+        choices: [
+          { text: "Gas line ruptures.", correct: false },
+          { text: "Hazardous material spill.", correct: true },
+          { text: "Injury or electric shock.", correct: false },
+          { text: "Fire from faulty wiring.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! Hazardous material spills are not typically a home fixture hazard — they are an industrial or transportation hazard. Home fixtures present risks such as gas line ruptures, electric shock, fire from faulty wiring, and water damage from burst pipes.",
+          incorrect: "❌ The item NOT associated with home fixtures is a hazardous material spill — that's an industrial or transportation hazard. Gas ruptures, electrical shock, and fire from faulty wiring are all legitimate home fixture hazards."
+        }
+      },
+      {
+        situation: "Disaster Supply Kits",
+        image: "🎒💼🚗",
+        text: "One step in preparing for a disaster is developing a disaster supply kit. Where should you keep separate disaster supply kits?",
+        choices: [
+          { text: "Home and work.", correct: false },
+          { text: "Every room in the house.", correct: false },
+          { text: "Vehicle.", correct: false },
+          { text: "Home, work, and vehicle.", correct: true }
+        ],
+        feedback: {
+          correct: "✅ Correct! CERT preparedness guidance calls for disaster supply kits in all three locations — home, work, and vehicle. Disasters can strike anywhere, and you may not be at home when one occurs. Each kit should include water, food, first aid supplies, a flashlight, and basic tools appropriate to that location.",
+          incorrect: "❌ You need disaster supply kits at home, at work, AND in your vehicle. Disasters don't wait for you to be at home. Having kits in all three locations ensures you're covered wherever you are when a disaster strikes."
+        }
+      }
+    ]
+  },
+  {
+    id: "terrorism",
+    title: "Terrorism Awareness",
+    icon: "💥",
+    desc: "Recognize the signs of terrorism and know the correct CERT response.",
+    steps: [
+      {
+        situation: "Explosion — Initial Response",
+        image: "💥🏭",
+        text: "You hear a loud explosion downtown. Outside, you see heavy smoke from an electrical plant that was recently cited as a terrorist target. People are speculating it was an attack. What is your FIRST action?",
+        choices: [
+          { text: "Gather your CERT equipment and report for duty.", correct: false },
+          { text: "Locate your family and evacuate to safety.", correct: false },
+          { text: "Call the Federal Government to alert about a terrorist attack.", correct: false },
+          { text: "Initially monitor the situation from a safe place.", correct: true }
+        ],
+        feedback: {
+          correct: "✅ Correct! In a potential terrorist incident, CERT members must first protect themselves by monitoring from a safe distance. Do NOT rush toward the scene — a second device or attack may target first responders and bystanders. Gather information, ensure your own safety, and await official guidance before taking any action.",
+          incorrect: "❌ In a potential terrorist incident, monitor from a safe distance first. Do not rush to the scene — secondary devices are a common terrorist tactic. Protect yourself, gather information, and wait for official activation. CERT does NOT self-deploy to potential terrorist scenes."
+        }
+      },
+      {
+        situation: "Signs of Terrorism",
+        image: "👁️🚐",
+        text: "A security guard noticed the same black van parked outside the plant for over a week, became suspicious, and alerted authorities. Which of the eight signs of terrorism did the guard notice?",
+        choices: [
+          { text: "Surveillance.", correct: true },
+          { text: "Tests of security.", correct: false },
+          { text: "Acquiring supplies.", correct: false },
+          { text: "Dry runs.", correct: false }
+        ],
+        feedback: {
+          correct: "✅ Correct! Surveillance — monitoring a target to learn its patterns, security, and vulnerabilities — is one of the 8 signs of terrorism: Surveillance, Eliciting information, Tests of security, Acquiring supplies, Suspicious persons, Dry runs, and Deploying assets (STEP DOWN). Reporting suspicious surveillance is exactly what 'If You See Something, Say Something' is about.",
+          incorrect: "❌ The security guard observed surveillance — one of the 8 signs of terrorism. Surveillance involves watching a target to study its vulnerabilities and routines. The 8 signs are: Surveillance, Eliciting information, Tests of security, Acquiring supplies, Suspicious persons, Dry runs, Deploying assets."
+        }
+      },
+      {
+        situation: "CERT and Terrorism",
+        image: "🚫🦺",
+        text: "A friend says you should go help since you're a trained CERT member. How do you respond?",
+        choices: [
+          { text: "'Yes — I'm heading in that direction now.'", correct: false },
+          { text: "'I have to wait for an official to declare a disaster before I can activate.'", correct: false },
+          { text: "'I'm not part of the Terrorist Response Team.'", correct: false },
+          { text: "'You're right that I'm a CERT member, but CERT members must not respond to a potential terrorist incident.'", correct: true }
+        ],
+        feedback: {
+          correct: "✅ Correct! CERT members are specifically trained NOT to respond to potential terrorist incidents. The reasons: secondary devices, chemical/biological/radiological agents, and unstable structures can all target responders. CERT waits for the scene to be declared safe and for official activation through the proper ICS chain of command.",
+          incorrect: "❌ CERT members must NOT respond to potential terrorist incidents. The risks include secondary explosive devices, CBRN (chemical/biological/radiological/nuclear) agents, and structural hazards specifically designed to harm responders. CERT does not self-deploy — ever — and especially not to terrorism scenes."
+        }
+      }
+    ]
+  }
+];
+
+// ─────────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────────
+let state = {
+  totalScore: 0,
+  moduleScores: {},   // id -> { correct, total }
+  currentModule: null,
+  currentStep: 0,
+  stepScores: []      // bool per step
+};
+
+// ─────────────────────────────────────────────
+//  RESOURCES
+// ─────────────────────────────────────────────
+const RESOURCES = [
+  { name: "Disaster Preparedness", file: "section_01_unit_1_ppt_508.pptx", icon: "🏠", desc: "PPTX · Section 1" },
+  { name: "Fire Safety & Utility Controls", file: "section_02_unit_2_ppt_508.pptx", icon: "🔥", desc: "PPTX · Section 2" },
+  { name: "Disaster Medical Ops — Part 1", file: "section_03_unit_3_ppt_508.pptx", icon: "🏥", desc: "PPTX · Section 3" },
+  { name: "Disaster Medical Ops — Part 2", file: "section_04_unit_4_ppt_508.pptx", icon: "🩺", desc: "PPTX · Section 4" },
+  { name: "Light Search & Rescue", file: "section_05_unit_5_ppt_508.pptx", icon: "🔍", desc: "PPTX · Section 5" },
+  { name: "CERT Organization", file: "section_06_unit_6_ppt_508.pptx", icon: "🗂️", desc: "PPTX · Section 6" },
+  { name: "Disaster Psychology", file: "section_07_unit_7_ppt_508.pptx", icon: "🧠", desc: "PPTX · Section 7" },
+  { name: "Terrorism & CERT", file: "section_08_unit_8_ppt_508.pptx", icon: "💥", desc: "PPTX · Section 8" },
+];
+
+function renderResources() {
+  const grid = document.getElementById('resource-grid');
+  grid.innerHTML = '';
+  RESOURCES.forEach(r => {
+    const a = document.createElement('a');
+    a.className = 'resource-card';
+    a.href = r.file;
+    a.target = '_blank';
+    a.innerHTML = `
+      <span class="file-icon">${r.icon}</span>
+      <div>
+        <div class="file-name">${r.name}</div>
+        <div class="file-type">PDF · ${r.desc}</div>
+      </div>
+      <span style="margin-left:4px;opacity:0.5;font-size:0.75rem;">↗</span>
+    `;
+    grid.appendChild(a);
+  });
+}
+
+// ─────────────────────────────────────────────
+//  RENDER HOME
+// ─────────────────────────────────────────────
+function openRefModal() {
+  renderResources();
+  document.getElementById('ref-modal').classList.add('open');
+}
+function closeRefModal(e) {
+  if (!e || e.target === document.getElementById('ref-modal') || e.currentTarget.classList.contains('modal-close')) {
+    document.getElementById('ref-modal').classList.remove('open');
+  }
+}
+
+function renderHome() {
+  const grid = document.getElementById('module-grid');
+  grid.innerHTML = '';
+  MODULES.forEach(mod => {
+    const score = state.moduleScores[mod.id];
+    const done = !!score;
+    const card = document.createElement('div');
+    card.className = 'module-card' + (done ? ' completed' : '');
+    card.innerHTML = `
+      <span class="badge">✓ Done</span>
+      <div class="icon">${mod.icon}</div>
+      <h3>${mod.title}</h3>
+      <p>${mod.desc}</p>
+      ${done ? `<div class="score-display">${score.correct}/${score.total} correct</div>` : ''}
+    `;
+    card.onclick = () => startModule(mod.id);
+    grid.appendChild(card);
+  });
+}
+
+// ─────────────────────────────────────────────
+//  NAVIGATION
+// ─────────────────────────────────────────────
+function show(id) {
+  ['home','scenario','results'].forEach(s => {
+    document.getElementById(s).style.display = 'none';
+  });
+  document.getElementById(id).style.display = 'flex';
+}
+
+function goHome() {
+  renderHome();
+  show('home');
+}
+
+function startModule(modId) {
+  state.currentModule = MODULES.find(m => m.id === modId);
+  state.currentStep = 0;
+  state.stepScores = [];
+  show('scenario');
+  document.getElementById('module-label').textContent = state.currentModule.icon + '  ' + state.currentModule.title;
+  renderStep();
+}
+
+function retryModule() {
+  startModule(state.currentModule.id);
+}
+
+// ─────────────────────────────────────────────
+//  RENDER STEP
+// ─────────────────────────────────────────────
+function renderStep() {
+  const mod = state.currentModule;
+  const step = mod.steps[state.currentStep];
+  const total = mod.steps.length;
+
+  document.getElementById('step-counter').textContent = `Scenario ${state.currentStep + 1} of ${total}`;
+  document.getElementById('progress-fill').style.width = `${(state.currentStep / total) * 100}%`;
+  document.getElementById('scene-image').textContent = step.image;
+  document.getElementById('scene-situation').textContent = step.situation;
+  document.getElementById('scene-text').textContent = step.text;
+
+  const choicesEl = document.getElementById('choices');
+  choicesEl.innerHTML = '';
+  step.choices.forEach((ch, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.textContent = ch.text;
+    btn.onclick = () => selectChoice(i);
+    choicesEl.appendChild(btn);
+  });
+
+  const fb = document.getElementById('feedback-box');
+  fb.style.display = 'none';
+  fb.className = 'feedback-box';
+
+  const nextBtn = document.getElementById('next-btn');
+  nextBtn.style.display = 'none';
+  nextBtn.textContent = state.currentStep < total - 1 ? 'Continue →' : 'See Results';
+}
+
+function selectChoice(idx) {
+  const mod = state.currentModule;
+  const step = mod.steps[state.currentStep];
+  const choice = step.choices[idx];
+  const buttons = document.querySelectorAll('.choice-btn');
+
+  // Disable all buttons
+  buttons.forEach(b => b.disabled = true);
+
+  const isCorrect = choice.correct;
+
+  // Mark chosen button
+  buttons[idx].classList.add(isCorrect ? 'correct' : 'incorrect');
+
+  // Highlight correct answer if user was wrong
+  if (!isCorrect) {
+    step.choices.forEach((ch, i) => {
+      if (ch.correct) buttons[i].classList.add('correct');
+    });
+  }
+
+  // Feedback
+  const fb = document.getElementById('feedback-box');
+  fb.style.display = 'block';
+  fb.className = 'feedback-box ' + (isCorrect ? 'correct' : 'incorrect');
+  fb.textContent = isCorrect ? step.feedback.correct : step.feedback.incorrect;
+
+  // Track score
+  state.stepScores.push(isCorrect);
+
+  // Show next
+  document.getElementById('next-btn').style.display = 'block';
+}
+
+// ─────────────────────────────────────────────
+//  NEXT STEP / RESULTS
+// ─────────────────────────────────────────────
+function nextStep() {
+  const mod = state.currentModule;
+  state.currentStep++;
+  if (state.currentStep < mod.steps.length) {
+    renderStep();
+  } else {
+    showResults();
+  }
+}
+
+function showResults() {
+  const mod = state.currentModule;
+  const correct = state.stepScores.filter(Boolean).length;
+  const total = state.stepScores.length;
+  const pct = Math.round((correct / total) * 100);
+
+  // Save module score
+  const pts = correct * 10;
+  state.moduleScores[mod.id] = { correct, total };
+
+  // Recalculate total score
+  state.totalScore = Object.values(state.moduleScores).reduce((sum, s) => sum + s.correct * 10, 0);
+  document.getElementById('total-score').textContent = state.totalScore;
+
+  // Emoji + title
+  let icon, title, msg;
+  if (pct === 100) {
+    icon = '🏆'; title = 'Perfect Score!';
+    msg = 'Outstanding! You demonstrated mastery of all scenarios in this module. Keep up this level of readiness.';
+  } else if (pct >= 75) {
+    icon = '⭐'; title = 'Great Job!';
+    msg = 'Solid performance. Review the scenarios you missed and you\'ll be fully prepared in the field.';
+  } else if (pct >= 50) {
+    icon = '📚'; title = 'Keep Practicing';
+    msg = 'You\'re building your knowledge. Study the feedback for each missed question and try again — repetition builds real-world readiness.';
+  } else {
+    icon = '🔄'; title = 'More Practice Needed';
+    msg = 'Emergency skills take time to learn. Review your CERT materials and try this module again. Every attempt improves retention.';
+  }
+
+  document.getElementById('results-icon').textContent = icon;
+  document.getElementById('results-title').textContent = title;
+  document.getElementById('results-score').innerHTML = `${correct}<span class="denom">/${total}</span>`;
+  document.getElementById('results-msg').textContent = msg;
+
+  // Breakdown
+  const breakdown = document.getElementById('results-breakdown');
+  breakdown.innerHTML = '<h3>Scenario Breakdown</h3>';
+  mod.steps.forEach((step, i) => {
+    const passed = state.stepScores[i];
+    const item = document.createElement('div');
+    item.className = 'breakdown-item';
+    item.innerHTML = `
+      <span class="breakdown-icon">${passed ? '✅' : '❌'}</span>
+      <span>${step.situation}</span>
+      <span class="breakdown-result ${passed ? 'pass' : 'fail'}">${passed ? '+10 pts' : '0 pts'}</span>
+    `;
+    breakdown.appendChild(item);
+  });
+
+  show('results');
+}
+
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+goHome();
+</script>
+</body>
+</html>

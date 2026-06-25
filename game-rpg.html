@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CERT RPG: Fire Scene — Abe L.</title>
+<style>
+:root {
+  --bg:#0e1208;--surface:#1a2012;--surface2:#243018;--border:#3a5228;
+  --primary:#5aaa3a;--primary-dark:#4a8f2e;--text:#eef2e8;--muted:#8aa87a;
+  --radius:8px;--danger:#cc4444;--warn:#ccaa00;
+  --imm:#cc2222;--del:#ccaa00;--min:#22aa22;--dead:#666;--info:#6699ff;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
+  height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+header{background:var(--surface);border-bottom:2px solid var(--primary);
+  padding:7px 14px;display:flex;align-items:center;gap:12px;flex-shrink:0;}
+.logo-img{height:38px;}
+.hdr-title h1{font-size:0.95rem;color:var(--primary);}
+.hdr-title p{font-size:0.7rem;color:var(--muted);}
+.hdr-menu{margin-left:auto;color:var(--primary);text-decoration:none;font-size:0.74rem;
+  font-weight:700;border:1px solid var(--border);padding:6px 12px;border-radius:6px;
+  font-family:'Courier New',monospace;white-space:nowrap;}
+.hdr-menu:hover{background:var(--surface2);border-color:var(--primary);}
+.hdr-phase{margin-left:18px;font-size:0.75rem;color:var(--muted);text-align:right;}
+.phase-val{color:var(--primary);font-weight:700;}
+.layout{display:grid;grid-template-columns:200px 1fr 224px;grid-template-rows:1fr 74px;flex:1;overflow:hidden;}
+.quest-panel{background:var(--surface);border-right:1px solid var(--border);padding:10px;overflow-y:auto;grid-row:1;}
+.panel-hdr{font-size:0.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.1em;border-bottom:1px solid var(--border);padding-bottom:5px;margin-bottom:8px;}
+.q-item{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);
+  padding:7px 9px;margin-bottom:6px;font-size:0.75rem;}
+.q-item.active{border-color:var(--primary);}
+.q-item.done{opacity:.6;}
+.q-item.locked{opacity:.32;}
+.q-item.side .q-name{color:#aac888;}
+.q-name{font-weight:700;color:var(--primary);font-size:0.72rem;}
+.q-item.side .q-name{color:#99bb77;}
+.q-step{font-size:0.68rem;color:var(--muted);margin-top:3px;}
+.q-step.done-step{color:var(--primary);}
+.q-step.done-step::before{content:'✓ ';}
+.scene-panel{display:flex;flex-direction:column;overflow:hidden;grid-row:1;align-items:center;justify-content:flex-start;padding:6px;gap:4px;}
+.map-frame{position:relative;width:100%;flex:1;min-height:0;display:flex;align-items:center;justify-content:center;}
+canvas#map{display:block;width:auto;height:auto;max-width:100%;max-height:100%;aspect-ratio:1/1;background:#11180c;border:2px solid var(--border);border-radius:6px;}
+.prompt-bar{width:100%;max-width:560px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:3px 8px;font-size:0.66rem;min-height:20px;display:flex;align-items:center;gap:6px;}
+.prompt-bar .key{background:var(--primary);color:var(--bg);font-weight:700;border-radius:4px;padding:1px 6px;font-size:0.64rem;}
+.prompt-bar .pmuted{color:var(--muted);}
+.controls{display:flex;gap:10px;align-items:center;max-width:560px;width:100%;justify-content:center;}
+.dpad{display:grid;grid-template-columns:repeat(3,18px);grid-template-rows:repeat(3,18px);gap:2px;}
+.dpad button{background:var(--surface2);border:1px solid var(--border);border-radius:3px;color:var(--text);font-family:inherit;font-size:0.58rem;cursor:pointer;padding:0;line-height:1;}
+.dpad button:hover{border-color:var(--primary);color:var(--primary);}
+.dpad .blank{visibility:hidden;}
+.act-key{background:var(--primary);border:none;border-radius:5px;color:var(--bg);font-family:inherit;font-weight:700;font-size:0.68rem;padding:5px 12px;cursor:pointer;}
+.act-key:hover{background:var(--primary-dark);}
+.ctrl-hint{font-size:0.54rem;color:var(--muted);text-align:center;margin-top:2px;}
+.char-panel{background:var(--surface);border-left:1px solid var(--border);padding:11px;overflow-y:auto;grid-row:1;display:flex;flex-direction:column;gap:9px;}
+.char-name{font-size:1rem;font-weight:700;color:var(--primary);}
+.char-rank{font-size:0.7rem;color:var(--muted);}
+.stat-row{display:flex;justify-content:space-between;font-size:0.73rem;margin-bottom:1px;}
+.stat-lbl{color:var(--muted);}
+.stat-val{font-weight:700;}
+.bar-wrap{background:var(--bg);border-radius:3px;height:6px;width:100%;margin-bottom:5px;}
+.bar-fill{height:100%;border-radius:3px;transition:width .4s;}
+.bar-xp{background:var(--primary);}
+.bar-hp{background:#44aa44;}
+.bar-cr{background:#4488cc;}
+.inv-item{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:7px 9px;margin-bottom:5px;
+  display:flex;justify-content:space-between;align-items:center;font-size:0.76rem;}
+.inv-item.on{border-color:var(--primary);}
+.sc-stat{font-size:0.7rem;color:var(--muted);line-height:1.65;}
+.sc-stat span{color:var(--text);}
+.log-panel{grid-column:1/-1;background:var(--bg);border-top:1px solid var(--border);padding:5px 12px;overflow-y:auto;grid-row:2;}
+.log-e{font-size:0.7rem;padding:1px 0;}
+.log-e.good{color:var(--primary);}.log-e.bad{color:var(--danger);}.log-e.info{color:var(--info);}.log-e.xp{color:var(--warn);}.log-e.neutral{color:var(--muted);}
+.toast{position:fixed;top:64px;left:50%;transform:translateX(-50%);z-index:90;background:var(--surface);border:1px solid var(--primary);
+  border-radius:var(--radius);padding:8px 16px;font-size:0.8rem;box-shadow:0 4px 16px rgba(0,0,0,.5);opacity:0;transition:opacity .2s;pointer-events:none;}
+.toast.show{opacity:1;}
+.toast.bad{border-color:var(--danger);color:#ffbcbc;}
+.toast.good{border-color:var(--primary);color:#d6f5c4;}
+.ov{position:fixed;inset:0;z-index:55;display:flex;align-items:center;justify-content:center;padding:16px;}
+.ov.h{display:none;}
+.menu-ov{background:rgba(0,0,0,.6);}
+.menu-box{background:var(--surface);border:2px solid var(--primary);border-radius:var(--radius);padding:18px 20px;max-width:520px;width:100%;}
+.menu-title{font-size:0.98rem;font-weight:700;color:var(--primary);margin-bottom:7px;}
+.menu-desc{font-size:0.8rem;color:var(--text);line-height:1.55;background:var(--surface2);padding:10px;border-radius:var(--radius);margin-bottom:12px;}
+.menu-choice{display:block;width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:9px 12px;margin-bottom:6px;
+  font-family:inherit;font-size:0.79rem;color:var(--text);cursor:pointer;text-align:left;}
+.menu-choice:hover{border-color:var(--primary);color:var(--primary);}
+.menu-choice::before{content:'▶ ';color:var(--primary);}
+.menu-leave{display:block;width:100%;background:none;border:1px solid var(--border);border-radius:6px;padding:7px;margin-top:4px;
+  font-family:inherit;font-size:0.74rem;color:var(--muted);cursor:pointer;}
+.menu-leave:hover{color:var(--text);border-color:var(--muted);}
+.dlg-ov{background:rgba(0,0,0,.55);align-items:flex-end;}
+.dlg-box{background:var(--surface);border:2px solid var(--primary);border-radius:var(--radius);width:100%;max-width:760px;}
+.dlg-hdr{background:var(--surface2);border-bottom:1px solid var(--border);padding:8px 14px;display:flex;align-items:center;gap:12px;border-radius:var(--radius) var(--radius) 0 0;}
+.dlg-portrait{width:46px;height:46px;flex-shrink:0;border-radius:4px;}
+.dlg-npc-name{font-size:0.85rem;font-weight:700;color:var(--primary);}
+.dlg-npc-role{font-size:0.68rem;color:var(--muted);}
+.dlg-text{padding:14px 16px;font-size:0.83rem;line-height:1.65;min-height:55px;}
+.dlg-choices{padding:6px 14px 12px;display:flex;flex-direction:column;gap:5px;}
+.dlg-choice{background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:7px 12px;font-family:inherit;font-size:0.78rem;color:var(--text);cursor:pointer;text-align:left;}
+.dlg-choice:hover{border-color:var(--primary);color:var(--primary);}
+.dlg-choice::before{content:'▶ ';color:var(--primary);}
+.ass-ov{background:rgba(0,0,0,.6);}
+.ass-box{background:var(--surface);border:2px solid var(--border);border-radius:var(--radius);padding:20px 22px;max-width:500px;width:100%;}
+.ass-title{font-size:0.95rem;font-weight:700;color:var(--primary);margin-bottom:7px;}
+.ass-findings{font-size:0.79rem;color:var(--text);line-height:1.55;background:var(--surface2);padding:10px;border-radius:var(--radius);margin-bottom:12px;}
+.ass-prompt{font-size:0.72rem;color:var(--muted);margin-bottom:7px;}
+.tag-row{display:flex;gap:7px;flex-wrap:wrap;}
+.tag-btn{flex:1;min-width:90px;padding:9px 6px;border-radius:var(--radius);border:2px solid;font-family:inherit;font-size:0.78rem;font-weight:700;cursor:pointer;background:none;text-align:center;}
+.tag-btn.I{border-color:var(--imm);color:var(--imm);}.tag-btn.D{border-color:var(--del);color:var(--del);}.tag-btn.M{border-color:var(--min);color:var(--min);}.tag-btn.Dead{border-color:var(--dead);color:var(--dead);}
+.tag-btn:hover:not([disabled]){opacity:.8;}
+.tag-btn[disabled]{opacity:.3;cursor:not-allowed;}
+.ass-action-btn{display:block;width:100%;background:var(--primary);border:none;border-radius:var(--radius);padding:9px;font-family:inherit;font-size:0.8rem;font-weight:700;color:var(--bg);cursor:pointer;margin-bottom:9px;}
+.ass-action-btn:hover{background:var(--primary-dark);}
+.lu-ov{background:rgba(0,0,0,.8);}
+.lu-box{background:var(--surface);border:2px solid var(--primary);border-radius:var(--radius);padding:30px 36px;text-align:center;max-width:380px;width:100%;}
+.lu-title{font-size:1.5rem;color:var(--primary);font-weight:700;margin-bottom:6px;}
+.lu-sub{font-size:0.88rem;color:var(--muted);margin-bottom:14px;}
+.lu-unlock{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:9px 13px;font-size:0.8rem;margin-bottom:16px;text-align:left;}
+.lu-btn{background:var(--primary);border:none;border-radius:var(--radius);padding:9px 26px;font-family:inherit;font-size:0.88rem;font-weight:700;color:var(--bg);cursor:pointer;}
+.lu-btn:hover{background:var(--primary-dark);}
+.end-ov{background:var(--bg);z-index:70;overflow-y:auto;}
+.end-box{background:var(--surface);border:2px solid var(--primary);border-radius:var(--radius);padding:28px;max-width:520px;width:100%;text-align:center;}
+.end-box.lose{border-color:var(--danger);}
+.end-title{font-size:1.5rem;color:var(--primary);font-weight:700;margin-bottom:6px;}
+.end-box.lose .end-title{color:var(--danger);}
+.end-icon{font-size:2rem;margin-bottom:6px;}
+.end-table{text-align:left;font-size:0.8rem;width:100%;border-collapse:collapse;margin:14px 0;}
+.end-table td{padding:5px 8px;border-bottom:1px solid var(--border);}
+.end-table td:first-child{color:var(--muted);}
+.rating{font-size:1.2rem;color:var(--primary);font-weight:700;margin:8px 0 16px;}
+</style>
+</head>
+<body>
+<header>
+  <img class="logo-img" src="cert-wallingford-logo.png" alt="CERT" onerror="this.style.display='none'">
+  <div class="hdr-title">
+    <h1>CERT RPG — Fire Scene Response</h1>
+    <p>123 Maple Street · Structure Fire · Residential</p>
+  </div>
+  <a class="hdr-menu" href="index.html">← Menu</a>
+  <div class="hdr-phase">Scene Phase: <span class="phase-val" id="phase-lbl">Arrival</span></div>
+</header>
+<div class="layout">
+  <div class="quest-panel">
+    <div class="panel-hdr">📋 Quest Log</div>
+    <div id="quest-list"></div>
+  </div>
+  <div class="scene-panel">
+    <div class="map-frame"><canvas id="map" width="576" height="576"></canvas></div>
+    <div class="prompt-bar" id="prompt-bar"></div>
+    <div class="controls">
+      <div class="dpad">
+        <span class="blank"></span><button onclick="move(0,-1)">▲</button><span class="blank"></span>
+        <button onclick="move(-1,0)">◀</button><span class="blank"></span><button onclick="move(1,0)">▶</button>
+        <span class="blank"></span><button onclick="move(0,1)">▼</button><span class="blank"></span>
+      </div>
+      <div style="text-align:center">
+        <button class="act-key" onclick="tryInteract()">Interact</button>
+        <div class="ctrl-hint">WASD / Arrows to move · E to interact</div>
+      </div>
+    </div>
+  </div>
+  <div class="char-panel">
+    <div><div class="char-name">Abe L.</div><div class="char-rank" id="char-rank">Level 1 — CERT Volunteer</div></div>
+    <div>
+      <div class="stat-row"><span class="stat-lbl">Level</span><span class="stat-val" id="s-lvl">1</span></div>
+      <div class="stat-row"><span class="stat-lbl">XP</span><span class="stat-val" id="s-xp">0 / 50</span></div>
+      <div class="bar-wrap"><div class="bar-fill bar-xp" id="b-xp" style="width:0%"></div></div>
+      <div class="stat-row"><span class="stat-lbl">HP</span><span class="stat-val" id="s-hp">100</span></div>
+      <div class="bar-wrap"><div class="bar-fill bar-hp" id="b-hp" style="width:100%"></div></div>
+      <div class="stat-row"><span class="stat-lbl">Credibility</span><span class="stat-val" id="s-cr">100</span></div>
+      <div class="bar-wrap"><div class="bar-fill bar-cr" id="b-cr" style="width:100%"></div></div>
+    </div>
+    <div><div class="panel-hdr">🎒 Inventory</div><div id="inv-panel"></div></div>
+    <div><div class="panel-hdr">👥 Scene Status</div><div class="sc-stat" id="sc-stat"></div></div>
+  </div>
+  <div class="log-panel" id="log-panel">
+    <div class="log-e info">▶ Abe L. arrives at staging. Structure fire, 123 Maple Street. PPE and radio are OFF — gear up at the equipment cache, then report to the IC. Explore the whole scene: more patients and hazards are spread out.</div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<div class="ov menu-ov h" id="menu-ov"><div class="menu-box"><div class="menu-title" id="menu-title"></div><div class="menu-desc" id="menu-desc"></div><div id="menu-choices"></div></div></div>
+<div class="ov dlg-ov h" id="dlg-ov"><div class="dlg-box"><div class="dlg-hdr"><canvas class="dlg-portrait" id="dlg-portrait" width="46" height="46"></canvas><div><div class="dlg-npc-name" id="dlg-name"></div><div class="dlg-npc-role" id="dlg-role"></div></div></div><div class="dlg-text" id="dlg-text"></div><div class="dlg-choices" id="dlg-choices"></div></div></div>
+<div class="ov ass-ov h" id="ass-ov"><div class="ass-box"><div class="ass-title" id="ass-title"></div><div class="ass-findings" id="ass-findings"></div><div id="ass-action-wrap"></div><div class="ass-prompt">Apply START triage tag:</div><div class="tag-row" id="tag-row"></div></div></div>
+<div class="ov lu-ov h" id="lu-ov"><div class="lu-box"><div class="lu-title">⬆ LEVEL UP!</div><div class="lu-sub">Abe L. — <span id="lu-lvl"></span></div><div class="lu-unlock" id="lu-unlock"></div><button class="lu-btn" onclick="closeLU()">Continue →</button></div></div>
+<div class="ov end-ov h" id="end-ov"><div class="end-box" id="end-box"><div class="end-icon" id="end-icon">🚒</div><div class="end-title" id="end-title">Mission Complete</div><div style="font-size:0.8rem;color:var(--muted);margin-bottom:14px;" id="end-sub">Fire Scene Response — 123 Maple Street</div><table class="end-table" id="end-tbl"></table><div class="rating" id="end-rating"></div><button class="lu-btn" onclick="location.reload()">Play Again</button></div></div>
+
+<script>
+/* ════════════ MAP (32 × 22) ════════════ */
+const MAP = [
+  "RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR",
+  "RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR",
+  "SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS",
+  "..............RRR...............",
+  "..............RRR...............",
+  ".......######.GGG....######.....",
+  "~~~....######.GGG....######.....",
+  "~~~....######.RRR....######.....",
+  "~~~....######.RRR....######.....",
+  "~~~....######.RRR....######.....",
+  "~~~...........RRR...............",
+  "~~~...........RRR...............",
+  "..............RRR...............",
+  "..............RRR...............",
+  "FF.FFFFFFFFFFFRRRFFFFFFFFFFFFFFF",
+  "........................GGG.....",
+  "........................GGG.....",
+  "................................",
+  "................................",
+  "................................",
+  "FF.FFFFFFFFFFFFFFFFFFFFFFFFF.FFF",
+  "RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR",
+];
+const COLS = 32, ROWS = 22, TILE = 64;
+const VIEW_W = 9, VIEW_H = 9;
+const SOLID_TILES = new Set(['#','G','T','P','F']);
+const MOVE_SPEED = 6, PT_SPEED = 4;
+
+const BUILDINGS = [
+  { x:7,  y:5, w:6, h:5, kind:'house', burning:true },
+  { x:21, y:5, w:6, h:5, kind:'house', burning:false },
+  { x:14, y:5, w:3, h:2, kind:'garage' },
+  { x:24, y:15,w:3, h:2, kind:'shed' },
+];
+const DECOR = [ { type:'truck', x:4, y:0, w:4, h:2 } ];
+
+/* ════════════ DATA ════════════ */
+const NPCS = {
+  rodriguez:{ name:'Capt. Rodriguez', role:'Fire Dept — Incident Commander', art:'IC' },
+  santos:   { name:'Paramedic Santos', role:'EMS — Paramedic', art:'EMS' },
+  kim:      { name:'Officer Kim', role:'Police — Scene Perimeter', art:'POLICE' },
+  dana:     { name:'CERT Dana', role:'Fellow CERT Volunteer', art:'DANA' },
+  neighbor: { name:'Neighbor', role:'Distressed Bystander', art:'CIVIL' },
+};
+const LVL_UNLOCKS = ['',
+  'Level 1: Equip PPE, use radio, check in with IC, size up the scene.',
+  'Level 2: Apply START triage tags and open airways.',
+  'Level 3: Treat patients — hemorrhage control, shock care, splinting.',
+  'Level 4: Establish the treatment area and delegate to CERT Dana.',
+  'Level 5: EMS handoff, formal IC briefing, scene close-out.'];
+const LVL_THRESH = [0, 50, 130, 250, 400];
+const RANK = ['','CERT Volunteer','CERT Member','CERT Responder','CERT Team Lead','CERT Specialist'];
+
+const PATIENTS = [
+  { id:'chen', name:'Mrs. Chen', age:72, x:4, y:11, color:'#9b7bb5', skin:'#e8c9a0', correctTag:'M',
+    desc:'Elderly woman on the front lawn, coughing. She rises when you approach.',
+    findings:'Ambulatory. Minor smoke inhalation. Respirations normal once away from smoke. Capillary refill < 2 sec. Follows commands.' },
+  { id:'tommy', name:'Tommy Chen', age:8, x:10, y:10, color:'#d9b53a', skin:'#f0d2a8', lying:true, correctTag:'I', needsAirway:true,
+    desc:'Boy in the front doorway, unconscious, not breathing. Mrs. Chen cries out his name.',
+    findings:'Unconscious. No spontaneous breathing. Pulse present. Requires head-tilt/chin-lift before tagging.' },
+  { id:'davis', name:'Frank Davis', age:45, x:6, y:10, color:'#3a6db0', skin:'#d9a06b', lying:true, correctTag:'I',
+    desc:'Man crawling from the side of the house. Partial-thickness burns on forearm and chest.',
+    findings:'Alert but in severe pain. Burns to forearm and chest. Capillary refill > 2 sec. Rapid shallow respirations. Cannot follow command.' },
+  { id:'park', name:'Sarah Park', age:28, x:5, y:12, color:'#c45a8a', skin:'#e8c9a0', correctTag:'D',
+    desc:'Young woman against a tree, clutching her leg. Obvious deformity at the mid-femur.',
+    findings:'Alert and talkative. Open femur fracture. Capillary refill normal. Respirations 16/min. Follows commands.' },
+  { id:'montez', name:'Ray Montez', age:55, x:15, y:9, color:'#5a6b7a', skin:'#cdb59a', lying:true, correctTag:'Dead', needsAirway:true, airwayAttempts:0,
+    desc:'Man face-up in the driveway, motionless. A bystander says he collapsed immediately.',
+    findings:'No breathing. Reposition the airway — head-tilt/chin-lift — twice before tagging.' },
+  { id:'vega', name:'Maria Vega', age:38, x:11, y:12, color:'#3f8f6a', skin:'#e0b489', correctTag:'I',
+    desc:'Woman on the lawn, breathing very fast and shallowly. Pale and clammy, confused.',
+    findings:'Respirations >30/min. Capillary refill > 2 sec. Cannot state her name or follow commands. No visible external bleeding.' },
+  { id:'torres', name:'Jake Torres', age:16, x:18, y:12, color:'#c46a3a', skin:'#e8c9a0', correctTag:'M',
+    desc:'Teen walking around the scene with cuts on his hands and face from broken glass.',
+    findings:'Ambulatory. Minor lacerations to hands and face. Normal breathing. Capillary refill normal. Asking about his dog.' },
+  { id:'lee', name:'Daniel Lee', age:34, x:24, y:10, color:'#5a8fb0', skin:'#d9b58c', correctTag:'M',
+    desc:'A neighbor in the next yard, holding a cloth to a small cut on his arm.',
+    findings:'Ambulatory, walked over from next door. Superficial cuts, normal breathing, capillary refill normal, follows commands.' },
+  { id:'gomez', name:'Luis Gomez', age:50, x:19, y:18, color:'#7a6ab0', skin:'#cdb59a', correctTag:'D',
+    desc:'A man seated by the back fence, a bloodied cloth pressed to his thigh.',
+    findings:'Alert. Deep laceration to the thigh, bleeding controlled with pressure. Capillary refill normal. Respirations 18/min.' },
+  { id:'reed', name:'Anna Reed', age:41, x:28, y:11, color:'#b0894f', skin:'#e0b489', correctTag:'I',
+    desc:'A woman slumped by the east fence, breathing fast and shallow.',
+    findings:'Respirations >30/min. Capillary refill > 2 sec. Not following commands. No major external bleeding found.' },
+];
+
+const HAZARDS = [
+  { id:'power', x:18, y:11, step:0, label:'downed power lines',
+    report:'Command, CERT — downed live power lines in the front yard. Recommend utility shutoff and keep crews clear.' },
+  { id:'gas', x:15, y:7, step:1, label:'leaking propane/gas',
+    report:'Command, CERT — gas leak near the garage and driveway, strong odor. Recommend ignition-source control.' },
+  { id:'structure', x:6, y:8, step:2, label:'unstable structure',
+    report:'Command, CERT — partial wall collapse on the west side, structural instability. Crews keep their distance.' },
+  { id:'fuel', x:9, y:12, step:3, label:'spilled fuel',
+    report:'Command, CERT — fuel spill in the front yard, ignition hazard. Requesting absorbent and a charged line.' },
+  { id:'hazmat', x:18, y:17, step:4, label:'a leaking hazmat drum',
+    report:'Command, CERT — a leaking chemical drum in the back yard, unknown contents. Recommend hazmat and isolation.' },
+  { id:'elec', x:22, y:18, step:5, label:'a sparking electrical panel',
+    report:'Command, CERT — an arcing electrical panel on the back of the house. Recommend power shutoff before crews approach.' },
+];
+
+const QUESTS = [
+  { id:'duty', name:'Report for Duty', type:'main', locked:false,
+    steps:['Equip PPE at the cache','Power on radio','Check in with IC Rodriguez'], done:[false,false,false], complete:false },
+  { id:'sizeup', name:'Know Your Scene', type:'main', locked:true,
+    steps:['Begin the size-up','Identify the hazards','Confirm an escape route'], done:[false,false,false], complete:false },
+  { id:'triage', name:'START Triage', type:'main', locked:true,
+    steps:['Assess and tag all 10 patients'], done:[false], complete:false },
+  { id:'treatment', name:'Establish Treatment', type:'main', locked:true,
+    steps:['Set up treatment area','Move Immediate patients','Treat all Immediate patients'], done:[false,false,false], complete:false },
+  { id:'handoff', name:'EMS Handoff', type:'main', locked:true,
+    steps:['Radio for EMS transport','Brief Paramedic Santos','Final report to IC'], done:[false,false,false], complete:false },
+  { id:'hazards', name:'Report Scene Hazards', type:'side', locked:false,
+    steps:['Downed power lines','Leaking propane/gas','Unstable structure','Spilled fuel','Leaking hazmat drum','Sparking electrical panel'], done:[false,false,false,false,false,false], complete:false },
+  { id:'utilities', name:'Control Utilities', type:'side', locked:true,
+    steps:['Shut off the gas main','Shut off the electrical main'], done:[false,false], complete:false },
+  { id:'spotfire', name:'Knock Down Spot Fire', type:'side', locked:true,
+    steps:['Grab a fire extinguisher','Extinguish the spot fire'], done:[false,false], complete:false },
+  { id:'tally', name:'Triage Tally Report', type:'side', locked:true,
+    steps:['Radio the triage tally to the IC'], done:[false], complete:false },
+  { id:'crowd', name:'Crowd Control', type:'side', locked:true,
+    steps:['Talk to Officer Kim','Help redirect bystanders'], done:[false,false], complete:false },
+  { id:'missing', name:'Missing Person', type:'side', locked:true,
+    steps:['Hear the neighbor out','Report to IC','Search the back yard','Update IC with findings'], done:[false,false,false,false], complete:false },
+];
+
+const ENTITIES = [
+  { id:'rodriguez', kind:'npc',     x:4,  y:3,  solid:true },
+  { id:'cache',     kind:'hotspot', x:6,  y:3,  solid:true },
+  { id:'dana',      kind:'npc',     x:8,  y:3,  solid:true },
+  { id:'treatment', kind:'hotspot', x:1,  y:8,  solid:true },
+  { id:'sizeup',    kind:'hotspot', x:4,  y:4,  solid:true },
+  { id:'utility',   kind:'hotspot', x:13, y:7,  solid:true },
+  { id:'spotfire',  kind:'hotspot', x:10, y:11, solid:true },
+  { id:'sideyard',  kind:'hotspot', x:20, y:17, solid:true },
+  { id:'kim',       kind:'npc',     x:24, y:12, solid:true },
+  { id:'neighbor',  kind:'npc',     x:26, y:12, solid:true },
+  { id:'santos',    kind:'npc',     x:3,  y:12, solid:true, hidden:() => !S.emsRadioed },
+];
+
+/* triage collection point (tagged patients gather here) */
+const TRIAGE_SLOTS = [];
+for (let y=7;y<=11;y++) for (let x=3;x<=6;x++) TRIAGE_SLOTS.push({x,y});
+let triageNext = 0;
+
+/* ════════════ STATE ════════════ */
+const S = {
+  lvl:1, xp:0, hp:100, cr:100,
+  ppe:false, radio:false, checkedIn:false, extinguisher:false,
+  surveyDone:false, hazardDone:false, escapeDone:false,
+  treatmentSet:false, immMoved:false, minorsMoved:false,
+  gasOff:false, elecOff:false, spotOut:false, tallyReported:false,
+  emsRadioed:false, briefedSantos:false, briefedIC:false,
+  talkKim:false, bystHelped:false,
+  neighborTip:false, missingReportedIC:false, sideSearched:false, missingUpdatedIC:false,
+  danaDelegated:false,
+  patients: PATIENTS.map(p => ({...p, px:p.x*TILE, py:p.y*TILE})),
+  quests: JSON.parse(JSON.stringify(QUESTS)),
+  hazards: HAZARDS.map(h => ({...h, discovered:false, reported:false, near:0})),
+  log: [], over:false,
+};
+const player = { x:2, y:3, px:2*TILE, py:3*TILE, moving:false };
+const cam = { x:0, y:0 };
+
+/* ════════════ ENGINE ════════════ */
+function gainXP(amt, reason){
+  S.xp += amt; addLog(`+${amt} XP — ${reason}`, 'xp');
+  const old = S.lvl;
+  while (S.lvl < 5 && S.xp >= LVL_THRESH[S.lvl]) S.lvl++;
+  if (S.lvl > old) showLU(S.lvl);
+}
+function loseXP(amt, reason){ S.xp = Math.max(0, S.xp - amt); addLog(`−${amt} XP — ${reason}`, 'bad'); render(); }
+function loseCR(amt, reason){ S.cr = Math.max(0, S.cr - amt); addLog(`−${amt} Credibility — ${reason}`, 'bad'); if (S.cr<=0 && !S.over) setTimeout(()=>showLose('cr'),400); }
+function loseHP(amt, reason){ S.hp = Math.max(0, S.hp - amt); addLog(`−${amt} HP — ${reason}`, 'bad'); if (S.hp<=0 && !S.over) setTimeout(()=>showLose('hp'),400); }
+function addLog(txt, type='neutral'){ S.log.unshift({txt,type}); if (S.log.length>40) S.log.pop(); }
+function advQ(qid, step){
+  const q = S.quests.find(x=>x.id===qid); if (!q || q.done[step]) return;
+  q.done[step] = true;
+  if (q.done.every(Boolean) && !q.complete){
+    q.complete = true; addLog(`Quest complete: "${q.name}"`,'good'); gainXP(35,`Quest: ${q.name}`); checkUnlocks(); checkWin();
+  }
+  render();
+}
+function checkUnlocks(){
+  const get = id => S.quests.find(x=>x.id===id);
+  if (get('duty').complete){ ['sizeup','crowd','missing','utilities','spotfire'].forEach(id=>get(id).locked=false); }
+  if (get('sizeup').complete) get('triage').locked=false;
+  if (get('triage').complete){ get('treatment').locked=false; get('tally').locked=false; }
+  if (get('treatment').complete) get('handoff').locked=false;
+  updatePhase();
+}
+function updatePhase(){
+  const done = id => S.quests.find(x=>x.id===id)?.complete;
+  let phase='Arrival';
+  if (done('duty')) phase='Size-Up';
+  if (done('sizeup')) phase='Triage';
+  if (done('triage')) phase='Treatment';
+  if (done('treatment')) phase='Handoff';
+  if (done('handoff')) phase='Complete';
+  document.getElementById('phase-lbl').textContent = phase;
+}
+function checkWin(){
+  const mainsDone = S.quests.filter(q=>q.type==='main').every(q=>q.complete);
+  if (mainsDone && !S.over) setTimeout(showWin,500);
+}
+function showLU(lvl){
+  document.getElementById('lu-lvl').textContent = `Level ${lvl} ${RANK[lvl]}`;
+  document.getElementById('lu-unlock').textContent = LVL_UNLOCKS[lvl];
+  document.getElementById('lu-ov').classList.remove('h');
+}
+function closeLU(){ document.getElementById('lu-ov').classList.add('h'); render(); }
+function patientsTagged(){ return S.patients.filter(p=>p.tagged).length; }
+function allTagged(){ return S.patients.every(p=>p.tagged); }
+function immsTagged(){ return S.patients.filter(p=>p.tagged==='I'); }
+function immsTreated(){ return S.patients.filter(p=>p.tagged==='I' && p.treated).length; }
+
+/* ════════════ TOAST ════════════ */
+let toastT=null;
+function toast(msg, kind=''){ const el=document.getElementById('toast'); el.textContent=msg; el.className='toast show '+kind; clearTimeout(toastT); toastT=setTimeout(()=>{el.className='toast '+kind;},2200); }
+function toastGood(m){ toast(m,'good'); addLog(m,'good'); }
+function toastBad(m){ toast(m,'bad'); }
+
+/* ════════════ MOVEMENT + CAMERA ════════════ */
+function inBounds(x,y){ return x>=0 && y>=0 && x<COLS && y<ROWS; }
+function tileAt(x,y){ return inBounds(x,y) ? MAP[y][x] : '#'; }
+function entityAt(x,y){ return ENTITIES.find(e=>e.x===x && e.y===y && !(e.hidden && e.hidden())); }
+function decorSolidAt(x,y){ return DECOR.some(d=> x>=d.x && x<d.x+d.w && y>=d.y && y<d.y+d.h); }
+function isWalkable(x,y){
+  if (!inBounds(x,y)) return false;
+  if (SOLID_TILES.has(tileAt(x,y))) return false;
+  if (decorSolidAt(x,y)) return false;
+  const e = entityAt(x,y); if (e && e.solid) return false;
+  return true;
+}
+function move(dx,dy){
+  if (S.over || anyOverlayOpen() || player.moving) return;
+  const nx=player.x+dx, ny=player.y+dy;
+  if (!isWalkable(nx,ny)) return;
+  player.x=nx; player.y=ny; player.moving=true;
+  checkHazards();
+}
+function checkHazards(){
+  for (const h of S.hazards){
+    const cheb = Math.max(Math.abs(h.x-player.x), Math.abs(h.y-player.y));
+    if (!h.discovered && cheb<=1){
+      h.discovered=true; addLog(`⚠ Hazard spotted: ${h.label}. Radio it to Command.`,'info'); toast(`Hazard spotted: ${h.label}`,'bad');
+    }
+    if (!h.reported && cheb<=1){
+      h.near = (h.near||0) + 1;
+      if (h.near === 1){
+        toastBad(`Too close to ${h.label} — radio it in!`); // grace: first step only warns
+      } else {
+        const dmg = cheb===0 ? 8 : 4;
+        loseHP(dmg, `Lingering near ${h.label}`);
+        toastBad(`Still too close to ${h.label} — it's hurting you!`);
+      }
+    } else {
+      h.near = 0; // left the danger zone (or reported) — grace resets
+    }
+  }
+}
+const NEIGH = [[0,0],[0,-1],[0,1],[-1,0],[1,0]];
+function nearestInteractable(){
+  for (const [dx,dy] of NEIGH){ const e=entityAt(player.x+dx,player.y+dy); if (e && !(e.hidden && e.hidden())) return e; }
+  for (const [dx,dy] of NEIGH){ const px=player.x+dx,py=player.y+dy; const p=S.patients.find(pt=>pt.x===px && pt.y===py); if (p) return {id:'patient',kind:'patient',patient:p,x:px,y:py}; }
+  for (const [dx,dy] of NEIGH){ const px=player.x+dx,py=player.y+dy; const h=S.hazards.find(z=>z.discovered && z.x===px && z.y===py); if (h) return {id:'hazard',kind:'hazard',hazard:h,x:px,y:py}; }
+  return null;
+}
+function tryInteract(){
+  if (S.over || anyOverlayOpen()) return;
+  const e = nearestInteractable();
+  if (!e){ toast('Nothing nearby. Walk up to a person, patient, marker, or hazard.'); return; }
+  if (e.kind==='patient'){ openAssess(e.patient.id); return; }
+  if (e.kind==='hazard'){ openHazard(e.hazard); return; }
+  switch(e.id){
+    case 'cache': openCache(); break;
+    case 'rodriguez': interactRodriguez(); break;
+    case 'dana': interactDana(); break;
+    case 'sizeup': openSizeup(); break;
+    case 'treatment': openTreatment(); break;
+    case 'utility': openUtility(); break;
+    case 'spotfire': openSpotfire(); break;
+    case 'sideyard': interactSideyard(); break;
+    case 'kim': interactKim(); break;
+    case 'neighbor': interactNeighbor(); break;
+    case 'santos': interactSantos(); break;
+  }
+}
+
+/* ════════════ HAZARD REPORTING ════════════ */
+function openHazard(h){
+  if (h.reported){ toast('Already reported to Command.'); return; }
+  if (!S.radio){ toast('Power on your radio first (at the Equipment Cache).'); return; }
+  openMenu('⚠ Hazard: '+h.label, `You're right next to ${h.label}. What do you do?`, [
+    { label:`📻 Radio Command and report the ${h.label}`, run:()=>reportHazard(h) },
+    { label:'Try to deal with the hazard yourself', run:()=>{ loseCR(10,'Tried to handle a scene hazard solo'); toastBad('That’s the fire crew’s job — report it, don’t touch it.'); }},
+  ]);
+}
+function reportHazard(h){
+  h.reported=true; gainXP(15,`Reported ${h.label} to Command`); advQ('hazards',h.step);
+  addLog('Abe: "'+h.report+'"','good'); addLog('Rodriguez: "Copy — flagging it for the crew. Good eyes."','info');
+  toastGood('Hazard reported to Command.'); closeMenu();
+}
+
+/* ════════════ EQUIPMENT CACHE ════════════ */
+function openCache(){
+  if (S.ppe && S.radio && S.extinguisher){ openMenu('🧰 Equipment Cache','Geared up — PPE on, radio active, extinguisher in hand. Report to IC Rodriguez.',[]); return; }
+  const c=[];
+  if (!S.ppe) c.push({label:'🪖 Don full PPE — helmet, eye pro, gloves, boots, vest', run:()=>{S.ppe=true;gainXP(15,'Equipped PPE');advQ('duty',0);toastGood('PPE on.');openCache();}});
+  if (!S.radio) c.push({label:'📻 Power on radio, confirm Command channel 7', run:()=>{S.radio=true;gainXP(15,'Radio active');advQ('duty',1);toastGood('Radio active — Channel 7.');openCache();}});
+  if (!S.extinguisher) c.push({label:'🧯 Grab a fire extinguisher', run:()=>{S.extinguisher=true;gainXP(5,'Picked up an extinguisher');advQ('spotfire',0);toastGood('Extinguisher in hand.');openCache();}});
+  c.push({label:'🏃 Skip the gear and rush straight into the yard', run:()=>{loseCR(10,'Tried to operate without PPE');toastBad('Never operate without PPE — gear up first.');}});
+  openMenu('🧰 Equipment Cache','Your PPE and radio start <strong>OFF</strong>. Grab the extinguisher too for the spot fire.', c);
+}
+
+/* ════════════ SIZE-UP ════════════ */
+function openSizeup(){
+  if (!S.checkedIn){ toast('Check in with IC Rodriguez before sizing up.'); return; }
+  if (S.escapeDone){ toast('Size-up already complete.'); return; }
+  if (!S.surveyDone) return sizeupQ1();
+  if (!S.hazardDone) return sizeupQ2();
+  return sizeupQ3();
+}
+function sizeupQ1(){
+  openMenu('🔭 Scene Size-Up (1/3)','You reach a vantage point on the perimeter. What is your first action?',[
+    {label:'Perform a 360° scene size-up before committing', run:()=>{S.surveyDone=true;gainXP(20,'Completed scene survey');advQ('sizeup',0);toastGood('Size-up underway.');sizeupQ2();}},
+    {label:'Run straight to the nearest victim', run:()=>{loseCR(10,'Entered before sizing up the scene');toastBad('Never rush in before a size-up.');}},
+    {label:'Grab a hose and start fighting the structure fire', run:()=>{loseCR(10,'Attempted structural suppression — not a CERT task');toastBad('Structural suppression is the fire department’s job.');}},
+  ]);
+}
+function sizeupQ2(){
+  openMenu('🔭 Scene Size-Up (2/3)','Scanning the scene, what do you do about the hazards you can see?',[
+    {label:'Note them and plan to radio each one in to Command as you reach it', run:()=>{S.hazardDone=true;gainXP(15,'Hazard plan set');advQ('sizeup',1);toastGood('Hazard plan set — report them as you go.');sizeupQ3();}},
+    {label:'There aren’t any real hazards here', run:()=>{loseCR(10,'Missed obvious scene hazards');toastBad('Look again — several hazards are visible.');}},
+    {label:'Ignore them, they’re the fire department’s problem', run:()=>{loseCR(8,'Failed to plan hazard communication');toastBad('You must communicate hazards to Command.');}},
+  ]);
+}
+function sizeupQ3(){
+  openMenu('🔭 Scene Size-Up (3/3)','Before you enter the triage zone, you confirm…',[
+    {label:'A clear escape route back to staging (west, upwind)', run:()=>{S.escapeDone=true;gainXP(15,'Escape route confirmed');advQ('sizeup',2);toastGood('Escape route confirmed. Size-up complete.');closeMenu();}},
+    {label:'That your phone has signal', run:()=>{loseCR(8,'Failed to confirm an escape route');toastBad('Always confirm a way out first.');}},
+    {label:'Nothing — just get in there', run:()=>{loseCR(10,'Entered with no escape route');toastBad('Going in blind gets responders hurt.');}},
+  ]);
+}
+
+/* ════════════ UTILITY SHUTOFF ════════════ */
+function openUtility(){
+  if (!S.ppe || !S.checkedIn){ toast('Gear up and check in before working the utilities.'); return; }
+  if (S.gasOff && S.elecOff){ openMenu('🔧 Utility Controls','Gas and electric are both secured. Good work.',[]); return; }
+  const c=[];
+  if (!S.gasOff) c.push({label:'🔧 Shut off the gas — quarter-turn so the valve sits crosswise to the pipe', run:()=>{S.gasOff=true;gainXP(15,'Shut off the gas main');advQ('utilities',0);toastGood('Gas main shut off.');openUtility();}});
+  if (!S.elecOff) c.push({label:'⚡ Trip the main breaker at the electrical panel', run:()=>{S.elecOff=true;gainXP(15,'Shut off the electrical main');advQ('utilities',1);toastGood('Electrical main off.');openUtility();}});
+  c.push({label:'Yank the gas meter out of the wall to be sure', run:()=>{loseCR(10,'Unsafe utility handling');toastBad('Never force a meter — a quarter-turn of the valve only.');}});
+  openMenu('🔧 Utility Controls','Secure the home’s utilities to reduce fire and shock hazards.', c);
+}
+
+/* ════════════ SPOT FIRE (extinguisher / P.A.S.S.) ════════════ */
+function openSpotfire(){
+  if (S.spotOut){ toast('The spot fire is already out.'); return; }
+  if (!S.extinguisher){ toast('You need a fire extinguisher — grab one at the Equipment Cache.'); return; }
+  openMenu('🧯 Spot Fire','A small, contained fire is burning in the yard, well clear of the structure. How do you attack it?',[
+    {label:'P.A.S.S. — Pull the pin, Aim at the base, Squeeze, Sweep side to side', run:()=>{S.spotOut=true;gainXP(20,'Knocked down the spot fire (P.A.S.S.)');advQ('spotfire',1);toastGood('Spot fire knocked down.');closeMenu();}},
+    {label:'Aim high at the top of the flames and hold the trigger', run:()=>{loseCR(8,'Wrong extinguisher technique');toastBad('Aim at the BASE of the fire, not the flames.');}},
+    {label:'It looks risky — back off and let this small fire burn', run:()=>{loseCR(6,'Failed to act on a contained incipient fire');toastBad('This one’s small and contained — you can safely knock it down.');}},
+  ]);
+}
+
+/* ════════════ TREATMENT AREA ════════════ */
+function openTreatment(){
+  if (!S.ppe){ toast('You need PPE before working the treatment area.'); return; }
+  if (!allTagged()){ toast('Finish START triage before establishing treatment.'); return; }
+  if (!S.treatmentSet){
+    openMenu('⛺ Treatment Area','Where do you establish the casualty treatment area?',[
+      {label:'Upwind and uphill, west of the structure, clear of hazards', run:()=>{ if (S.lvl<4){toastBad('You need Level 4 to run a treatment area.');loseCR(5,'Acted above skill level');return;} S.treatmentSet=true;gainXP(30,'Established treatment area');advQ('treatment',0);toastGood('Treatment area established.');openTreatment(); }},
+      {label:'Right beside the front door for quick patient access', run:()=>{loseCR(10,'Unsafe treatment-area placement');toastBad('Too close to the structure — unsafe.');}},
+      {label:'Downwind in the driveway near the gas leak', run:()=>{loseCR(10,'Unsafe treatment-area placement');toastBad('Downwind by the gas leak? Dangerous.');}},
+    ]);
+    return;
+  }
+  const c=[];
+  if (!S.minorsMoved) c.push({label:'🚶 Send walking wounded (Minor) to staging', run:()=>{S.minorsMoved=true;gainXP(10,'Directed Minor patients to staging');toastGood('Walking wounded moved to staging.');openTreatment();}});
+  if (!S.immMoved) c.push({label:'🚑 Bring Immediate patients to the treatment area', run:()=>{S.immMoved=true;gainXP(20,'Moved Immediate patients');advQ('treatment',1);toastGood('Immediate patients in the treatment area.');openTreatment();}});
+  immsTagged().forEach(p=>{ if (S.immMoved && !p.treated) c.push({label:`🩺 Treat ${p.name} (Immediate)`, run:()=>treatPatient(p.id)}); });
+  S.patients.filter(p=>p.tagged==='D').forEach(p=>{ if (!p.treated) c.push({label:`🦴 Splint ${p.name} (Delayed)`, run:()=>treatPatient(p.id)}); });
+  if (S.quests.find(q=>q.id==='treatment').complete && !S.emsRadioed) c.push({label:'📻 Radio Command for EMS transport', run:()=>radioEMS()});
+  if (c.length===0) c.push({label:'Nothing more to do here right now.', run:()=>{}});
+  const imms=immsTagged();
+  openMenu('⛺ Treatment Area',`Treatment area active — upwind, uphill, west of the structure.<br>Immediate: <strong>${imms.length}</strong> · Treated: <strong>${immsTreated()}</strong>`, c);
+}
+function treatPatient(pid){
+  const p=S.patients.find(x=>x.id===pid); if (!p || p.treated) return;
+  if (S.lvl<3){ toastBad('You need Level 3 to treat patients.'); loseCR(5,'Acted above skill level'); return; }
+  p.treated=true; gainXP(p.tagged==='I'?25:20,`Treated ${p.name}`);
+  addLog(`${p.name} treated. ${p.tagged==='I'?'Bleeding controlled, airway secured, shock positioning applied.':'Fracture splinted, limb immobilized, circulation checked.'}`,'good');
+  toastGood(`${p.name} treated.`);
+  if (immsTagged().length>0 && immsTreated()===immsTagged().length) advQ('treatment',2);
+  openTreatment();
+}
+function radioEMS(){
+  S.emsRadioed=true; gainXP(25,'Radioed for EMS transport'); advQ('handoff',0);
+  addLog('Abe: "Command, CERT — requesting EMS transport for the treatment area."','good');
+  addLog('Rodriguez: "Copy. EMS en route." Paramedic Santos arrives near the treatment area.','info');
+  toastGood('EMS en route. Walk to Paramedic Santos to give your handoff.'); closeMenu();
+}
+
+/* ════════════ BACK YARD SEARCH ════════════ */
+function interactSideyard(){
+  if (S.quests.find(q=>q.id==='missing').locked || !S.neighborTip){ toast('Nothing to search here yet.'); return; }
+  if (!S.missingReportedIC){ toast('Report the possible victim to IC Rodriguez before searching.'); return; }
+  if (S.sideSearched){ toast('Back yard already searched.'); return; }
+  openMenu('🔍 Back Yard & Shed','You reach the back of the property. The shed door is ajar; smoke drifts from the house. How do you search?',[
+    {label:'Search the back yard, shed, and exterior from outside only', run:()=>{S.sideSearched=true;gainXP(25,'Conducted exterior search');advQ('missing',2);addLog('Back yard and shed exterior searched — no victim. Ray Montez was already found in the driveway.','info');toastGood('Exterior search complete. Update the IC.');closeMenu();}},
+    {label:'Go into the smoke-filled house through the back door', run:()=>{loseCR(12,'Attempted entry into a smoke-filled structure');toastBad('CERT never enters a burning/smoke-filled structure.');}},
+  ]);
+}
+
+/* ════════════ NPC INTERACTIONS ════════════ */
+function interactRodriguez(){
+  if (!S.ppe || !S.radio) return openDlg('rodriguez-needgear');
+  if (!S.checkedIn) return openDlg('rodriguez-duty');
+  if (S.neighborTip && !S.missingReportedIC) return openDlg('rodriguez-missing');
+  if (S.sideSearched && !S.missingUpdatedIC) return openDlg('rodriguez-missing-update');
+  if (S.quests.find(q=>q.id==='triage').complete && !S.tallyReported) return openDlg('rodriguez-tally');
+  if (S.briefedSantos && !S.briefedIC) return openDlg('rodriguez-final');
+  return openDlg('rodriguez-smalltalk');
+}
+function interactDana(){
+  if (S.lvl>=4 && allTagged() && !S.danaDelegated){
+    openMenu('🦺 CERT Dana','Dana is ready for an assignment. What do you delegate?',[
+      {label:'Ask Dana to monitor and reassure the Minor patients at staging', run:()=>{S.danaDelegated=true;gainXP(20,'Delegated Minor monitoring to Dana');addLog('Dana: "On it — I’ll keep the Minors calm and track their status."','good');toastGood('Dana is monitoring the Minor patients.');closeMenu();}},
+      {label:'Send Dana into the structure to search', run:()=>{loseCR(10,'Ordered an unsafe interior search');toastBad('Never send CERT into a burning structure.');}},
+    ]);
+  } else if (S.danaDelegated){ toast('Dana is monitoring the Minor patients.'); }
+  else { openDlg('dana-chat'); }
+}
+function interactKim(){
+  if (S.quests.find(q=>q.id==='crowd').locked){ toast('Check in with the IC before assisting Officer Kim.'); return; }
+  if (S.bystHelped){ toast('Officer Kim has the perimeter under control.'); return; }
+  openDlg('kim-intro');
+}
+function interactNeighbor(){
+  if (S.neighborTip){ toast('You’ve already heard the neighbor — report it to the IC.'); return; }
+  openDlg('neighbor-tip');
+}
+function interactSantos(){
+  if (!S.emsRadioed){ toast('EMS isn’t on scene yet — radio for transport from the treatment area.'); return; }
+  if (S.briefedSantos){ toast('Santos is loading your patients for transport.'); return; }
+  openDlg('santos-handoff');
+}
+
+/* ════════════ DIALOGUE ════════════ */
+const chkIn   = () => { S.checkedIn=true; gainXP(20,'Checked in with IC'); advQ('duty',2); checkUnlocks(); };
+const repIC   = () => { S.missingReportedIC=true; gainXP(10,'Reported missing person to IC'); advQ('missing',1); };
+const updIC   = () => { S.missingUpdatedIC=true; gainXP(15,'Updated IC on search'); advQ('missing',3); };
+const finIC   = () => { S.briefedIC=true; gainXP(40,'Final IC briefing'); advQ('handoff',2); checkUnlocks(); };
+const briefED = () => { S.briefedSantos=true; gainXP(30,'Briefed EMS Paramedic Santos'); advQ('handoff',1); };
+const tallyOK = () => { S.tallyReported=true; gainXP(20,'Radioed the triage tally'); advQ('tally',0); };
+
+const DLGS = {
+  'rodriguez-needgear':{ npc:'rodriguez', text:`"Whoa — not yet. Nobody gets near my fireground without PPE and a working radio. Gear up at the cache first."`,
+    choices:[{ text:'Copy. Gearing up now.', close:true }] },
+  'rodriguez-duty':{ npc:'rodriguez', text:`"CERT, glad you made it. I’m Rodriguez, IC. What’s your status?"`,
+    choices:[
+      { text:'Abe L., CERT Wallingford. PPE on, radio on Command channel. Ready to assist.', action:chkIn, next:'rodriguez-duty2' },
+      { text:'I’ll just head into the yard and start helping.', action:()=>loseCR(10,'Freelanced instead of checking in'), next:'rodriguez-duty-wrong' },
+      { text:'Where’s the fire, exactly?', action:()=>loseCR(5,'Unprofessional check-in'), next:'rodriguez-duty-wrong' },
+    ] },
+  'rodriguez-duty-wrong':{ npc:'rodriguez', text:`"Negative — nobody freelances on my scene. Give me a proper check-in: who you are and that you’re geared up."`,
+    choices:[{ text:'Understood. Abe L., CERT, PPE and radio ready.', action:chkIn, next:'rodriguez-duty2' }] },
+  'rodriguez-duty2':{ npc:'rodriguez', text:`"Good. Big scene — patients are spread across the front yard, the neighbor’s lot, and the back. Size up first, then triage. Radio me every hazard you find, and shut down the utilities if you can. Stay out of the structure."`,
+    choices:[{ text:'Copy that. Starting the size-up.', close:true }] },
+  'rodriguez-missing':{ npc:'rodriguez', text:`"You flagged a possible victim still inside?"`,
+    choices:[
+      { text:'A neighbor says Ray may still be inside. Requesting permission for an exterior search.', action:repIC, next:'rodriguez-missing2' },
+      { text:'I’ll just run in and look for him.', action:()=>loseCR(15,'Proposed unsafe interior entry'), next:'rodriguez-missing-no' },
+    ] },
+  'rodriguez-missing-no':{ npc:'rodriguez', text:`"Absolutely not. CERT does NOT enter burning structures. Exterior search only — clear?"`,
+    choices:[{ text:'Understood. Exterior only.', action:repIC, next:'rodriguez-missing2' }] },
+  'rodriguez-missing2':{ npc:'rodriguez', text:`"Granted — exterior perimeter only. Check the back yard and report what you find."`,
+    choices:[{ text:'Copy.', close:true }] },
+  'rodriguez-missing-update':{ npc:'rodriguez', text:`"What did you find in the back?"`,
+    choices:[{ text:'No victim in the back yard or shed. The male in the driveway is likely your missing occupant.', action:updIC, next:'rodriguez-missing-update2' }] },
+  'rodriguez-missing-update2':{ npc:'rodriguez', text:`"Good work checking — we’ll confirm. Carry on."`,
+    choices:[{ text:'Copy.', close:true }] },
+  'rodriguez-tally':{ npc:'rodriguez', text:`"Give me your triage tally, CERT — exact counts by category."`,
+    choices:[
+      { text:'4 Immediate, 2 Delayed, 3 Minor, 1 deceased — ten patients total.', action:tallyOK, next:'rodriguez-tally2' },
+      { text:'A lot of injured, several serious.', action:()=>loseCR(8,'Vague triage tally'), next:'rodriguez-tally-wrong' },
+      { text:'Around five or six criticals, I think.', action:()=>loseCR(8,'Inaccurate triage tally'), next:'rodriguez-tally-wrong' },
+    ] },
+  'rodriguez-tally-wrong':{ npc:'rodriguez', text:`"I need exact numbers by category — go recount if you have to."`,
+    choices:[{ text:'4 Immediate, 2 Delayed, 3 Minor, 1 deceased.', action:tallyOK, next:'rodriguez-tally2' }] },
+  'rodriguez-tally2':{ npc:'rodriguez', text:`"Copy — four, two, three, and one. That matches my board. Good."`,
+    choices:[{ text:'Copy.', close:true }] },
+  'rodriguez-final':{ npc:'rodriguez', text:`"What’s your final status, CERT?"`,
+    choices:[
+      { text:'All Immediate treated and with EMS, Delayed splinted, Minor at staging, one deceased on scene. Scene accounted for.', action:finIC, next:'rodriguez-final2' },
+      { text:'Everyone’s fine, we’re all good here.', action:()=>loseCR(10,'Inaccurate final report'), next:'rodriguez-final-wrong' },
+    ] },
+  'rodriguez-final-wrong':{ npc:'rodriguez', text:`"That’s not a report. Give me status by triage category."`,
+    choices:[{ text:'Immediate treated and transported, Delayed splinted, Minor at staging, one deceased — all accounted for.', action:finIC, next:'rodriguez-final2' }] },
+  'rodriguez-final2':{ npc:'rodriguez', text:`"Outstanding work, Abe — triage, treatment, hazards, and handoff by the book. EMS has your patients. Stand down and report for debrief."`,
+    choices:[{ text:'Copy that, Captain.', close:true }] },
+  'rodriguez-smalltalk':{ npc:'rodriguez', text:`"Stay sharp out there, Abe. Keep radioing in any hazards you spot. What do you need?"`,
+    choices:[{ text:'Just checking in.', close:true }] },
+  'dana-chat':{ npc:'dana', text:`"Hey Abe — I’m right behind you. Size up the scene and start tagging; the patients you tag will gather here at the treatment area. I’ll help when you’re ready."`,
+    choices:[{ text:'Thanks, Dana. Stand by.', close:true }] },
+  'santos-handoff':{ npc:'santos', text:`"EMS on scene. What’ve you got?"`,
+    choices:[
+      { text:'Four Immediate (stabilized), two Delayed splinted, three Minor at staging, one deceased. Immediates are ready for transport.', action:briefED, next:'santos-handoff2' },
+      { text:'Some hurt folks over there — go check on them.', action:()=>loseCR(10,'Vague EMS handoff'), next:'santos-wrong' },
+    ] },
+  'santos-wrong':{ npc:'santos', text:`"I need a real report — counts and priorities, not a wave at the lawn."`,
+    choices:[{ text:'4 Immediate, 2 Delayed, 3 Minor, 1 deceased — here’s the breakdown.', action:briefED, next:'santos-handoff2' }] },
+  'santos-handoff2':{ npc:'santos', text:`"Good report. We’ll load the Immediates first. Nice work stabilizing them — you bought us time."`,
+    choices:[{ text:'Thank you. All yours.', close:true }] },
+  'kim-intro':{ npc:'kim', text:`"Hey CERT — a dozen bystanders pushing toward the tape, some say they’ve got family in the yard. Help me keep them back?"`,
+    choices:[
+      { text:'Absolutely. I’ll work the east side.', action:()=>{S.talkKim=true;gainXP(10,'Assisted Officer Kim');advQ('crowd',0);}, next:'kim-intro2' },
+      { text:'Not my job — I’m doing triage.', action:()=>{S.talkKim=true;loseCR(8,'Refused to assist Officer Kim');}, close:true },
+    ] },
+  'kim-intro2':{ npc:'kim', text:`"Thanks. Push them behind the tape — and that neighbor has been yelling about someone still inside. Worth hearing her out."`,
+    choices:[{ text:'On it. Let’s clear the perimeter.', action:()=>{S.bystHelped=true;gainXP(20,'Helped redirect bystanders');advQ('crowd',1);}, close:true }] },
+  'neighbor-tip':{ npc:'neighbor', text:`"Please! My husband Ray — he was in the house and I don’t see him out here!"`,
+    choices:[
+      { text:'Stay calm, ma’am. I’ll report it to the IC right away.', action:()=>{S.neighborTip=true;gainXP(5,'Took the missing-person report');advQ('missing',0);}, next:'neighbor-tip2' },
+      { text:'I’ll run in and get him.', action:()=>loseCR(10,'Promised unsafe entry to a bystander'), next:'neighbor-tip-wrong' },
+    ] },
+  'neighbor-tip-wrong':{ npc:'neighbor', text:`"(She grips your arm.) Please, hurry!"`,
+    choices:[{ text:'Actually — I’ll report it to the IC. We don’t enter burning buildings.', action:()=>{S.neighborTip=true;advQ('missing',0);}, close:true }] },
+  'neighbor-tip2':{ npc:'neighbor', text:`"Thank you, thank you. Please find him."`,
+    choices:[{ text:'Hang tight behind the tape.', close:true }] },
+};
+function openDlg(id){
+  const dlg=DLGS[id]; if (!dlg) return;
+  const npc=NPCS[dlg.npc];
+  drawPortrait(document.getElementById('dlg-portrait'), npc.art);
+  document.getElementById('dlg-name').textContent=npc.name;
+  document.getElementById('dlg-role').textContent=npc.role;
+  document.getElementById('dlg-text').textContent=dlg.text;
+  const box=document.getElementById('dlg-choices'); box.innerHTML='';
+  dlg.choices.forEach(ch=>{ const b=document.createElement('button'); b.className='dlg-choice'; b.textContent=ch.text;
+    b.onclick=()=>{ if (ch.action) ch.action(); if (ch.close) closeDlg(); else if (ch.next) openDlg(ch.next); render(); }; box.appendChild(b); });
+  document.getElementById('dlg-ov').classList.remove('h');
+}
+function closeDlg(){ document.getElementById('dlg-ov').classList.add('h'); render(); }
+document.getElementById('dlg-ov').addEventListener('click', e=>{ if (e.target===document.getElementById('dlg-ov')) closeDlg(); });
+document.getElementById('menu-ov').addEventListener('click', e=>{ if (e.target===document.getElementById('menu-ov')) closeMenu(); });
+
+/* ════════════ MENU ════════════ */
+function openMenu(title, desc, choices){
+  document.getElementById('menu-title').textContent=title;
+  document.getElementById('menu-desc').innerHTML=desc;
+  const box=document.getElementById('menu-choices'); box.innerHTML='';
+  choices.forEach(c=>{ const b=document.createElement('button'); b.className='menu-choice'; b.textContent=c.label; b.onclick=()=>{ c.run(); render(); }; box.appendChild(b); });
+  const leave=document.createElement('button'); leave.className='menu-leave'; leave.textContent='Step away'; leave.onclick=closeMenu; box.appendChild(leave);
+  document.getElementById('menu-ov').classList.remove('h');
+}
+function closeMenu(){ document.getElementById('menu-ov').classList.add('h'); render(); }
+
+/* ════════════ PATIENT ASSESSMENT ════════════ */
+function openAssess(pid){
+  const p=S.patients.find(x=>x.id===pid); if (!p || p.tagged) return;
+  if (!S.ppe){ toast('You need PPE before entering the triage zone.'); return; }
+  if (!S.checkedIn){ toast('Check in with the IC before triaging.'); return; }
+  if (S.quests.find(q=>q.id==='triage').locked){ toast('Complete the scene size-up before triage.'); return; }
+  if (S.lvl<2){ toast('You need Level 2 to apply START triage tags.'); return; }
+  document.getElementById('ass-title').textContent=`${p.name}, age ${p.age}`;
+  document.getElementById('ass-findings').innerHTML=`<strong>Observed:</strong> ${p.desc}<br><br><strong>Findings:</strong> ${p.findings}`;
+  const wrap=document.getElementById('ass-action-wrap'); wrap.innerHTML='';
+  if (p.needsAirway && !p.airwayDone){
+    const ab=document.createElement('button'); ab.className='ass-action-btn';
+    if (p.id==='montez'){
+      const a=p.airwayAttempts||0;
+      ab.textContent = a===0 ? '🫁 Reposition airway (1st attempt)' : '🫁 Reposition airway (2nd attempt)';
+      ab.onclick=()=>{ p.airwayAttempts=(p.airwayAttempts||0)+1; if (p.airwayAttempts>=2){ p.airwayDone=true; addLog('Ray Montez: two airway attempts, no breathing. Per START, tag as Dead.','neutral'); } else addLog('First airway attempt — still no breathing. Try once more.','neutral'); openAssess(pid); };
+    } else {
+      ab.textContent='🫁 Open airway: head-tilt / chin-lift';
+      ab.onclick=()=>{ p.airwayDone=true; gainXP(15,`Opened ${p.name}’s airway`); addLog(`${p.name}: airway opened — breathing resumes. Now tag with START.`,'good'); openAssess(pid); };
+    }
+    wrap.appendChild(ab);
+  }
+  const tagRow=document.getElementById('tag-row'); tagRow.innerHTML='';
+  const tags=['I','D','M','Dead']; const names={I:'🔴 IMMEDIATE',D:'🟡 DELAYED',M:'🟢 MINOR',Dead:'⬛ DEAD'};
+  tags.forEach(tag=>{ const b=document.createElement('button'); b.className=`tag-btn ${tag}`; b.textContent=names[tag];
+    const needsAirway=p.needsAirway && !p.airwayDone; const deadLocked=tag==='Dead' && p.id==='montez' && !p.airwayDone;
+    b.disabled=needsAirway || deadLocked; b.onclick=()=>applyTag(pid,tag); tagRow.appendChild(b); });
+  document.getElementById('ass-ov').classList.remove('h');
+}
+function applyTag(pid, tag){
+  const p=S.patients.find(x=>x.id===pid); const correct=tag===p.correctTag; p.tagged=tag;
+  document.getElementById('ass-ov').classList.add('h');
+  if (correct){ gainXP(20,`Correctly tagged ${p.name} — ${tag}`); addLog(`✓ ${p.name} tagged ${tag} (correct).`,'good'); toastGood(`${p.name}: correct tag.`); }
+  else { addLog(`✗ ${p.name} tagged ${tag} — incorrect (should be ${p.correctTag}).`,'bad'); loseCR(10,`Wrong triage tag for ${p.name}`); toastBad(`${p.name}: wrong tag (should be ${p.correctTag}).`); }
+  if (tag!=='Dead'){ const slot=TRIAGE_SLOTS[triageNext++ % TRIAGE_SLOTS.length]; p.x=slot.x; p.y=slot.y; } // walk to triage area
+  if (allTagged()) advQ('triage',0);
+  render();
+}
+
+/* ════════════ HUD ════════════ */
+function renderStats(){
+  const thresh=LVL_THRESH[S.lvl]||999, prev=LVL_THRESH[S.lvl-1]||0;
+  const pct=Math.max(0, Math.min(100, ((S.xp-prev)/(thresh-prev))*100));
+  document.getElementById('s-lvl').textContent=S.lvl;
+  document.getElementById('s-xp').textContent=S.lvl>=5?`${S.xp} (MAX)`:`${S.xp} / ${thresh}`;
+  document.getElementById('b-xp').style.width=(S.lvl>=5?100:pct)+'%';
+  document.getElementById('s-hp').textContent=S.hp; document.getElementById('b-hp').style.width=S.hp+'%';
+  document.getElementById('s-cr').textContent=S.cr; document.getElementById('b-cr').style.width=S.cr+'%';
+  document.getElementById('char-rank').textContent=`Level ${S.lvl} — ${RANK[S.lvl]}`;
+  document.getElementById('inv-panel').innerHTML=`
+    <div class="inv-item ${S.ppe?'on':''}"><span>🪖 PPE</span><span style="font-size:.68rem;color:${S.ppe?'var(--primary)':'var(--muted)'}">${S.ppe?'EQUIPPED':'OFF'}</span></div>
+    <div class="inv-item ${S.radio?'on':''}"><span>📻 Radio</span><span style="font-size:.68rem;color:${S.radio?'var(--primary)':'var(--muted)'}">${S.radio?'ACTIVE':'OFF'}</span></div>
+    <div class="inv-item ${S.extinguisher?'on':''}"><span>🧯 Extinguisher</span><span style="font-size:.68rem;color:${S.extinguisher?'var(--primary)':'var(--muted)'}">${S.extinguisher?(S.spotOut?'USED':'READY'):'—'}</span></div>`;
+  const treated=S.patients.filter(p=>p.treated).length;
+  const hz=S.hazards.filter(h=>h.reported).length;
+  document.getElementById('sc-stat').innerHTML=`
+    Patients tagged: <span>${patientsTagged()}/10</span><br>
+    Treated: <span>${treated}/10</span><br>
+    Hazards reported: <span>${hz}/${S.hazards.length}</span><br>
+    Side quests: <span>${S.quests.filter(q=>q.type==='side'&&q.complete).length}/6</span>`;
+}
+function renderQuests(){
+  const el=document.getElementById('quest-list'); el.innerHTML='';
+  S.quests.forEach(q=>{ const div=document.createElement('div'); let cls='q-item';
+    if (q.locked) cls+=' locked'; else if (q.complete) cls+=' done'; else cls+=' active';
+    if (q.type==='side') cls+=' side'; div.className=cls;
+    let steps=''; if (!q.locked && !q.complete) steps=q.steps.map((s,i)=>`<div class="q-step ${q.done[i]?'done-step':''}">${s}</div>`).join('');
+    div.innerHTML=`<div class="q-name">${q.type==='side'?'[Side] ':''}${q.name}</div>${steps}`; el.appendChild(div); });
+}
+function renderLog(){
+  const el=document.getElementById('log-panel');
+  el.innerHTML=S.log.slice(0,8).map(e=>`<div class="log-e ${e.type}">${e.txt}</div>`).join('')||'<div class="log-e neutral">No actions yet.</div>';
+}
+function render(){ renderStats(); renderQuests(); renderLog(); }
+
+/* ════════════ WIN / LOSE ════════════ */
+function anyOverlayOpen(){ return ['menu-ov','dlg-ov','ass-ov','lu-ov','end-ov'].some(id=>!document.getElementById(id).classList.contains('h')); }
+function showWin(){
+  if (S.over) return; S.over=true;
+  const correct=S.patients.filter(p=>p.tagged===p.correctTag).length;
+  const sides=S.quests.filter(q=>q.type==='side'&&q.complete).length;
+  const hz=S.hazards.filter(h=>h.reported).length;
+  const rating=(S.cr>=90&&correct===10&&hz===S.hazards.length)?'⭐⭐⭐ Outstanding':(S.cr>=75&&correct>=8)?'⭐⭐ Proficient':(S.cr>=60&&correct>=6)?'⭐ Satisfactory':'Mission Passed — Review Recommended';
+  document.getElementById('end-box').className='end-box';
+  document.getElementById('end-icon').textContent='🏆';
+  document.getElementById('end-title').textContent='MISSION ACCOMPLISHED';
+  document.getElementById('end-sub').textContent='All objectives complete — scene handed off to EMS.';
+  document.getElementById('end-tbl').innerHTML=`
+    <tr><td>Final Level</td><td><strong>Level ${S.lvl} — ${RANK[S.lvl]}</strong></td></tr>
+    <tr><td>Total XP</td><td><strong>${S.xp}</strong></td></tr>
+    <tr><td>Credibility</td><td><strong>${S.cr}/100</strong></td></tr>
+    <tr><td>Correct Triage Tags</td><td><strong>${correct}/10</strong></td></tr>
+    <tr><td>Patients Treated</td><td><strong>${S.patients.filter(p=>p.treated).length}/10</strong></td></tr>
+    <tr><td>Hazards Reported</td><td><strong>${hz}/${S.hazards.length}</strong></td></tr>
+    <tr><td>Side Quests</td><td><strong>${sides}/6</strong></td></tr>`;
+  document.getElementById('end-rating').textContent=rating;
+  document.getElementById('end-ov').classList.remove('h');
+}
+function showLose(reason){
+  if (S.over) return; S.over=true;
+  document.getElementById('end-box').className='end-box lose';
+  if (reason==='hp'){ document.getElementById('end-icon').textContent='🚑'; document.getElementById('end-title').textContent='INJURED — OUT OF ACTION'; document.getElementById('end-sub').textContent='You took too much harm from scene hazards. Always report and avoid them.'; }
+  else { document.getElementById('end-icon').textContent='🚫'; document.getElementById('end-title').textContent='RELIEVED OF DUTY'; document.getElementById('end-sub').textContent='Your credibility hit zero. The IC has pulled you from the scene.'; }
+  document.getElementById('end-tbl').innerHTML=`
+    <tr><td>Final Level</td><td><strong>Level ${S.lvl}</strong></td></tr>
+    <tr><td>Total XP</td><td><strong>${S.xp}</strong></td></tr>
+    <tr><td>HP</td><td><strong>${S.hp}/100</strong></td></tr>
+    <tr><td>Credibility</td><td><strong>${S.cr}/100</strong></td></tr>
+    <tr><td>Patients tagged</td><td><strong>${patientsTagged()}/10</strong></td></tr>`;
+  document.getElementById('end-rating').textContent='Regroup and try again — operate by the book.';
+  document.getElementById('end-ov').classList.remove('h');
+}
+
+/* ════════════ INPUT ════════════ */
+window.addEventListener('keydown', e=>{
+  if (anyOverlayOpen() || S.over) return;
+  const k=e.key.toLowerCase();
+  if (['arrowup','w'].includes(k)){ move(0,-1); e.preventDefault(); }
+  else if (['arrowdown','s'].includes(k)){ move(0,1); e.preventDefault(); }
+  else if (['arrowleft','a'].includes(k)){ move(-1,0); e.preventDefault(); }
+  else if (['arrowright','d'].includes(k)){ move(1,0); e.preventDefault(); }
+  else if (['e','enter',' '].includes(k)){ tryInteract(); e.preventDefault(); }
+});
+
+/* ════════════ FLAT-VECTOR RENDERER ════════════ */
+const canvas=document.getElementById('map'); const ctx=canvas.getContext('2d');
+function rr(x,y,w,h,r){ r=Math.min(r,w/2,h/2); ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+function stepTo(cur,target,sp){ const d=target-cur; return Math.abs(d)<=sp?d:Math.sign(d)*sp; }
+
+function groundColor(ch){ if (ch==='R') return '#3a3a40'; if (ch==='S') return '#6f6f66'; if (ch==='~') return '#2f6f7e'; return '#4d7c39'; }
+function drawGround(){
+  for (let y=0;y<ROWS;y++) for (let x=0;x<COLS;x++){
+    const ch=MAP[y][x]; ctx.fillStyle=groundColor(ch); ctx.fillRect(x*TILE,y*TILE,TILE,TILE);
+    if (groundColor(ch)==='#4d7c39' && ((x*3+y*7)%5===0)){ ctx.fillStyle='rgba(0,0,0,.06)'; ctx.fillRect(x*TILE+TILE*0.2,y*TILE+TILE*0.55,TILE*0.18,TILE*0.18); }
+    if (ch==='S'){ ctx.strokeStyle='rgba(0,0,0,.18)'; ctx.lineWidth=1; ctx.strokeRect(x*TILE+0.5,y*TILE+0.5,TILE-1,TILE-1); }
+    if (ch==='~'){ ctx.strokeStyle='rgba(255,255,255,.08)'; ctx.lineWidth=1; ctx.strokeRect(x*TILE+0.5,y*TILE+0.5,TILE-1,TILE-1); }
+  }
+  ctx.strokeStyle='#c9a23a'; ctx.lineWidth=2; ctx.setLineDash([12,9]);
+  ctx.beginPath(); ctx.moveTo(0,TILE); ctx.lineTo(COLS*TILE,TILE); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0,(ROWS-1)*TILE+TILE/2); ctx.lineTo(COLS*TILE,(ROWS-1)*TILE+TILE/2); ctx.stroke();
+  ctx.setLineDash([]);
+  // treatment cross on pad
+  let minx=99,miny=99,maxx=-1,maxy=-1;
+  for (let y=0;y<ROWS;y++) for (let x=0;x<COLS;x++) if (MAP[y][x]==='~'){ minx=Math.min(minx,x);miny=Math.min(miny,y);maxx=Math.max(maxx,x);maxy=Math.max(maxy,y); }
+  if (maxx>=0){ const cx=(minx+maxx+1)/2*TILE, cy=(miny+maxy+1)/2*TILE; ctx.fillStyle='#eef2e8'; rr(cx-4,cy-13,8,26,2); ctx.fill(); rr(cx-13,cy-4,26,8,2); ctx.fill(); }
+}
+function drawFences(){
+  for (let y=0;y<ROWS;y++) for (let x=0;x<COLS;x++) if (MAP[y][x]==='F'){
+    const px=x*TILE, py=y*TILE;
+    ctx.strokeStyle='#7a6038'; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.moveTo(px,py+TILE*0.45); ctx.lineTo(px+TILE,py+TILE*0.45); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(px,py+TILE*0.75); ctx.lineTo(px+TILE,py+TILE*0.75); ctx.stroke();
+    ctx.strokeStyle='#5e4a2c'; ctx.lineWidth=4;
+    [px+TILE*0.2,px+TILE*0.55,px+TILE*0.9].forEach(fx=>{ ctx.beginPath(); ctx.moveTo(fx,py+TILE*0.28); ctx.lineTo(fx,py+TILE*0.85); ctx.stroke(); });
+  }
+}
+function drawBuilding(b, ts){
+  const x=b.x*TILE, y=b.y*TILE, w=b.w*TILE, h=b.h*TILE;
+  if (b.kind==='garage' || b.kind==='shed'){
+    ctx.fillStyle='#8a8a82'; ctx.fillRect(x,y,w,h);
+    ctx.fillStyle='#5e3826'; ctx.fillRect(x,y,w,TILE*0.18);
+    ctx.fillStyle='#6f6f68'; rr(x+4,y+TILE*0.42,w-8,h-TILE*0.5,3); ctx.fill();
+    ctx.strokeStyle='#4a4a44'; ctx.lineWidth=1.5;
+    for (let i=1;i<3;i++){ const yy=y+TILE*0.42+i*(h-TILE*0.5)/3; ctx.beginPath(); ctx.moveTo(x+6,yy); ctx.lineTo(x+w-6,yy); ctx.stroke(); }
+    return;
+  }
+  const roofH=TILE*0.85;
+  ctx.fillStyle='#caa06a'; ctx.fillRect(x,y+roofH,w,h-roofH);
+  ctx.fillStyle='rgba(0,0,0,.12)'; ctx.fillRect(x,y+h-8,w,8);
+  const winY1=y+roofH+TILE*0.35, winY2=y+roofH+TILE*1.7, wx=[x+TILE*0.6, x+w-TILE*1.4];
+  wx.forEach(wxp=>{ [winY1,winY2].forEach(wy=>{ if (wy+TILE*0.75>y+h-6) return;
+    ctx.fillStyle='#bfe0f0'; rr(wxp,wy,TILE*0.8,TILE*0.7,3); ctx.fill();
+    ctx.strokeStyle='#6b4326'; ctx.lineWidth=2; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(wxp+TILE*0.4,wy); ctx.lineTo(wxp+TILE*0.4,wy+TILE*0.7); ctx.moveTo(wxp,wy+TILE*0.35); ctx.lineTo(wxp+TILE*0.8,wy+TILE*0.35); ctx.stroke(); }); });
+  ctx.fillStyle='#6b4326'; rr(x+w/2-TILE*0.4,y+h-TILE*1.2,TILE*0.8,TILE*1.2,4); ctx.fill();
+  ctx.fillStyle='#e8c060'; ctx.beginPath(); ctx.arc(x+w/2+TILE*0.2,y+h-TILE*0.6,3,0,7); ctx.fill();
+  ctx.fillStyle='#7a4a32'; ctx.beginPath(); ctx.moveTo(x-10,y+roofH); ctx.lineTo(x+w*0.5,y-2); ctx.lineTo(x+w+10,y+roofH); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle='#5e3826'; ctx.lineWidth=2; ctx.stroke();
+  if (b.burning){ const f=(Math.floor((ts||0)/170)%2)===0; drawFlame(wx[1]+TILE*0.4,winY1+TILE*0.3,f); drawFlame(x+w*0.5,y+roofH*0.55,!f); drawSmoke(x+w*0.5,y-4,ts); }
+}
+function drawFlame(x,y,big){ const s=big?1.15:0.9;
+  ctx.fillStyle='#e8612a'; ctx.beginPath(); ctx.moveTo(x,y-16*s); ctx.quadraticCurveTo(x+9*s,y-2,x,y+9*s); ctx.quadraticCurveTo(x-9*s,y-2,x,y-16*s); ctx.fill();
+  ctx.fillStyle='#ffce3a'; ctx.beginPath(); ctx.moveTo(x,y-9*s); ctx.quadraticCurveTo(x+5*s,y-1,x,y+6*s); ctx.quadraticCurveTo(x-5*s,y-1,x,y-9*s); ctx.fill();
+}
+function drawSmoke(x,y,ts){ const t=(ts||0)/600;
+  for (let i=0;i<4;i++){ const o=(t+i*0.5)%2; const sy=y-o*TILE*1.4; const r=9+o*9+i; ctx.fillStyle=`rgba(120,120,120,${0.32*(1-o/2)})`; ctx.beginPath(); ctx.arc(x+Math.sin((t+i)*2)*8,sy,r,0,7); ctx.fill(); }
+}
+function drawTruck(d){
+  const x=d.x*TILE, y=d.y*TILE, w=d.w*TILE, h=d.h*TILE, bodyY=y+h*0.22, bodyH=h*0.5;
+  ctx.fillStyle='rgba(0,0,0,.25)'; ctx.fillRect(x+6,y+h*0.78,w-12,6);
+  ctx.fillStyle='#c0392b'; rr(x+4,bodyY,w-8,bodyH,6); ctx.fill();
+  ctx.fillStyle='#a52f24'; rr(x+w-TILE*1.7,bodyY-h*0.12,TILE*1.5,bodyH+h*0.12,5); ctx.fill();
+  ctx.fillStyle='#bfe0f0'; rr(x+w-TILE*1.5,bodyY-h*0.05,TILE*0.7,bodyH*0.5,3); ctx.fill();
+  ctx.fillStyle='#f2f2ec'; ctx.fillRect(x+4,bodyY+bodyH*0.55,w-8,5);
+  ctx.strokeStyle='#cfcfc4'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(x+10,bodyY-3); ctx.lineTo(x+w*0.6,bodyY-3); ctx.stroke();
+  for (let i=0;i<6;i++){ const lx=x+12+i*(w*0.55/6); ctx.beginPath(); ctx.moveTo(lx,bodyY-7); ctx.lineTo(lx,bodyY+1); ctx.stroke(); }
+  ctx.fillStyle='#2266dd'; ctx.fillRect(x+w-TILE*1.4,bodyY-h*0.18,TILE*0.4,5);
+  ctx.fillStyle='#dd2222'; ctx.fillRect(x+w-TILE*1.0,bodyY-h*0.18,TILE*0.4,5);
+  ctx.fillStyle='#1c1c1c'; [x+TILE*0.9,x+w-TILE*1.1].forEach(wxp=>{ ctx.beginPath(); ctx.arc(wxp,bodyY+bodyH,TILE*0.26,0,7); ctx.fill(); });
+  ctx.fillStyle='#444'; [x+TILE*0.9,x+w-TILE*1.1].forEach(wxp=>{ ctx.beginPath(); ctx.arc(wxp,bodyY+bodyH,TILE*0.1,0,7); ctx.fill(); });
+}
+function drawPerson(cx,cy,o){
+  const s=TILE;
+  if (o.lying){
+    ctx.fillStyle='rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(cx,cy+s*0.16,s*0.36,s*0.12,0,0,7); ctx.fill();
+    ctx.fillStyle=o.outfit; rr(cx-s*0.30,cy-s*0.04,s*0.46,s*0.22,7); ctx.fill();
+    ctx.fillStyle=o.pants||'#2c3036'; rr(cx+s*0.14,cy+s*0.01,s*0.22,s*0.12,4); ctx.fill();
+    ctx.fillStyle=o.skin||'#e6b88f'; ctx.beginPath(); ctx.arc(cx-s*0.34,cy+s*0.07,s*0.12,0,7); ctx.fill(); return;
+  }
+  ctx.fillStyle='rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(cx,cy+s*0.34,s*0.24,s*0.08,0,0,7); ctx.fill();
+  ctx.fillStyle=o.pants||'#2c3036'; rr(cx-s*0.15,cy+s*0.06,s*0.12,s*0.22,2); ctx.fill(); rr(cx+s*0.03,cy+s*0.06,s*0.12,s*0.22,2); ctx.fill();
+  ctx.fillStyle=o.outfit; rr(cx-s*0.19,cy-s*0.20,s*0.38,s*0.32,5); ctx.fill();
+  if (o.accent){ ctx.fillStyle=o.accent; rr(cx-s*0.19,cy-s*0.04,s*0.38,s*0.07,2); ctx.fill(); }
+  ctx.fillStyle=o.skin||'#e6b88f'; ctx.beginPath(); ctx.arc(cx,cy-s*0.28,s*0.13,0,7); ctx.fill();
+  if (o.hat==='helmet'){ ctx.fillStyle=o.hatColor||'#ddd'; ctx.beginPath(); ctx.arc(cx,cy-s*0.30,s*0.15,Math.PI,0); ctx.fill(); rr(cx-s*0.17,cy-s*0.32,s*0.34,s*0.05,2); ctx.fill(); }
+  else if (o.hat==='cap'){ ctx.fillStyle=o.hatColor||'#333'; ctx.beginPath(); ctx.arc(cx,cy-s*0.31,s*0.14,Math.PI,0); ctx.fill(); rr(cx-s*0.02,cy-s*0.33,s*0.20,s*0.04,2); ctx.fill(); }
+}
+const ART={
+  IC:{outfit:'#c39a45',accent:'#ffd24a',skin:'#d9a06b',hat:'helmet',hatColor:'#d23b32'},
+  EMS:{outfit:'#2f6db0',accent:'#ffffff',skin:'#e0b489',hat:'cap',hatColor:'#21518a'},
+  POLICE:{outfit:'#2b3a67',accent:'#aebbd6',skin:'#d9a06b',hat:'cap',hatColor:'#1c2748'},
+  DANA:{outfit:'#3f7d2f',accent:'#ffd24a',skin:'#e8c9a0',hat:'helmet',hatColor:'#2c8a3a'},
+  CIVIL:{outfit:'#b0654f',accent:null,skin:'#e8c9a0'},
+  ABE:{outfit:'#3f7d2f',accent:'#ffd24a',skin:'#d9a06b',hat:'helmet',hatColor:'#f0f0f0'},
+};
+function drawLabel(t,cx,cy){
+  if (!t) return;
+  ctx.font='600 9px "Segoe UI",sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  const w=ctx.measureText(t).width+8; ctx.fillStyle='rgba(0,0,0,.6)'; rr(cx-w/2,cy+TILE*0.30,w,12,3); ctx.fill();
+  ctx.fillStyle='#eef2e8'; ctx.fillText(t,cx,cy+TILE*0.30+6);
+}
+function drawCache(cx,cy){ const s=TILE;
+  ctx.fillStyle='rgba(0,0,0,.22)'; ctx.beginPath(); ctx.ellipse(cx,cy+s*0.3,s*0.26,s*0.08,0,0,7); ctx.fill();
+  ctx.fillStyle='#b23a2a'; rr(cx-s*0.28,cy-s*0.1,s*0.56,s*0.36,4); ctx.fill();
+  ctx.fillStyle='#8a2a1e'; rr(cx-s*0.28,cy-s*0.22,s*0.56,s*0.14,4); ctx.fill();
+  ctx.fillStyle='#f2f2ec'; rr(cx-3,cy-s*0.04,6,s*0.2,1); ctx.fill(); rr(cx-s*0.12,cy+s*0.04,s*0.24,6,1); ctx.fill();
+}
+function drawScope(cx,cy){ const s=TILE;
+  ctx.fillStyle='rgba(0,0,0,.22)'; ctx.beginPath(); ctx.ellipse(cx,cy+s*0.3,s*0.2,s*0.07,0,0,7); ctx.fill();
+  ctx.strokeStyle='#cdd6c4'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(cx,cy+s*0.28); ctx.lineTo(cx,cy-s*0.05); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx-s*0.16,cy+s*0.28); ctx.lineTo(cx,cy+s*0.02); ctx.lineTo(cx+s*0.16,cy+s*0.28); ctx.stroke();
+  ctx.fillStyle='#3a3a40'; rr(cx-s*0.16,cy-s*0.22,s*0.32,s*0.16,3); ctx.fill();
+  ctx.fillStyle='#7fd0ff'; ctx.beginPath(); ctx.arc(cx-s*0.08,cy-s*0.14,s*0.05,0,7); ctx.fill(); ctx.beginPath(); ctx.arc(cx+s*0.08,cy-s*0.14,s*0.05,0,7); ctx.fill();
+}
+function drawTent(cx,cy){ const s=TILE;
+  ctx.fillStyle='rgba(0,0,0,.22)'; ctx.beginPath(); ctx.ellipse(cx,cy+s*0.3,s*0.3,s*0.08,0,0,7); ctx.fill();
+  ctx.fillStyle='#d8d8cf'; ctx.beginPath(); ctx.moveTo(cx,cy-s*0.28); ctx.lineTo(cx+s*0.34,cy+s*0.24); ctx.lineTo(cx-s*0.34,cy+s*0.24); ctx.closePath(); ctx.fill();
+  ctx.fillStyle='#b9b9b0'; ctx.beginPath(); ctx.moveTo(cx,cy-s*0.28); ctx.lineTo(cx+s*0.12,cy+s*0.24); ctx.lineTo(cx-s*0.12,cy+s*0.24); ctx.closePath(); ctx.fill();
+  ctx.fillStyle='#cc2222'; rr(cx-2,cy-s*0.12,4,s*0.2,1); ctx.fill(); rr(cx-s*0.08,cy-s*0.04,s*0.16,4,1); ctx.fill();
+}
+function drawSearch(cx,cy){ const s=TILE;
+  ctx.fillStyle='rgba(0,0,0,.22)'; ctx.beginPath(); ctx.ellipse(cx,cy+s*0.3,s*0.2,s*0.07,0,0,7); ctx.fill();
+  ctx.strokeStyle='#ffd24a'; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(cx-s*0.05,cy-s*0.05,s*0.16,0,7); ctx.stroke();
+  ctx.strokeStyle='#cdd6c4'; ctx.beginPath(); ctx.moveTo(cx+s*0.07,cy+s*0.07); ctx.lineTo(cx+s*0.22,cy+s*0.22); ctx.stroke();
+}
+function drawUtility(cx,cy){ const s=TILE;
+  ctx.fillStyle='rgba(0,0,0,.22)'; ctx.beginPath(); ctx.ellipse(cx,cy+s*0.3,s*0.2,s*0.07,0,0,7); ctx.fill();
+  ctx.fillStyle=S.gasOff?'#5aaa3a':'#c9b23a'; ctx.beginPath(); ctx.arc(cx-s*0.1,cy,s*0.13,0,7); ctx.fill(); // gas dial
+  ctx.fillStyle='#3a3a40'; rr(cx+s*0.02,cy-s*0.16,s*0.2,s*0.32,3); ctx.fill(); // panel
+  ctx.fillStyle=S.elecOff?'#5aaa3a':'#c94a3a'; rr(cx+s*0.07,cy-s*0.06,s*0.1,s*0.12,1); ctx.fill();
+}
+function drawExtinguisher(cx,cy){ const s=TILE; // spot-fire marker (small fire + can hint)
+  if (!S.spotOut){ drawFlame(cx,cy+s*0.05,true); drawFlame(cx-s*0.16,cy+s*0.12,false); }
+  else { ctx.fillStyle='#5a6b5a'; ctx.font='bold 12px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('✓', cx, cy); }
+}
+function drawHazard(h,ts){
+  const cx=h.x*TILE+TILE/2, cy=h.y*TILE+TILE/2, s=TILE;
+  ctx.fillStyle=h.reported?'rgba(90,170,58,.16)':'rgba(204,40,40,.20)'; ctx.fillRect(h.x*TILE,h.y*TILE,TILE,TILE);
+  if (h.id==='power'){
+    ctx.strokeStyle='#6b4a2a'; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(cx-s*0.05,cy-s*0.28); ctx.lineTo(cx-s*0.05,cy+s*0.28); ctx.stroke();
+    ctx.strokeStyle='#1a1a1a'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(cx-s*0.34,cy-s*0.18); ctx.quadraticCurveTo(cx,cy+s*0.2,cx+s*0.34,cy-s*0.1); ctx.stroke();
+    ctx.strokeStyle='#ffe23a'; ctx.lineWidth=2.5; ctx.beginPath(); ctx.moveTo(cx+s*0.12,cy+s*0.04); ctx.lineTo(cx+s*0.2,cy+s*0.12); ctx.lineTo(cx+s*0.11,cy+s*0.16); ctx.lineTo(cx+s*0.2,cy+s*0.24); ctx.stroke();
+  } else if (h.id==='gas'){
+    ctx.fillStyle='rgba(175,205,140,.7)'; [[0,0.05,0.2],[0.16,0,0.15],[-0.16,0.02,0.14],[0.05,-0.12,0.13]].forEach(c=>{ ctx.beginPath(); ctx.arc(cx+c[0]*s,cy+c[1]*s,c[2]*s,0,7); ctx.fill(); });
+  } else if (h.id==='structure'){
+    ctx.fillStyle='#7a6a55'; ctx.beginPath(); ctx.moveTo(cx-s*0.3,cy+s*0.26); ctx.lineTo(cx-s*0.08,cy-s*0.04); ctx.lineTo(cx+s*0.06,cy+s*0.26); ctx.closePath(); ctx.fill();
+    ctx.fillStyle='#5f5346'; ctx.beginPath(); ctx.moveTo(cx-s*0.02,cy+s*0.26); ctx.lineTo(cx+s*0.2,cy+s*0.02); ctx.lineTo(cx+s*0.32,cy+s*0.26); ctx.closePath(); ctx.fill();
+  } else if (h.id==='fuel'){
+    ctx.fillStyle='rgba(40,40,62,.78)'; ctx.beginPath(); ctx.ellipse(cx,cy+s*0.14,s*0.32,s*0.16,0,0,7); ctx.fill();
+    ctx.fillStyle='rgba(120,90,160,.4)'; ctx.beginPath(); ctx.ellipse(cx-s*0.06,cy+s*0.1,s*0.14,s*0.06,0,0,7); ctx.fill();
+    ctx.fillStyle='#c0392b'; rr(cx-s*0.16,cy-s*0.2,s*0.2,s*0.24,3); ctx.fill();
+  } else if (h.id==='hazmat'){
+    ctx.fillStyle='#3a7d36'; rr(cx-s*0.14,cy-s*0.18,s*0.28,s*0.36,4); ctx.fill();
+    ctx.fillStyle='#2c5f2a'; rr(cx-s*0.14,cy-s*0.06,s*0.28,s*0.08,1); ctx.fill();
+    ctx.fillStyle='#d8e84a'; ctx.beginPath(); ctx.arc(cx,cy+s*0.02,s*0.07,0,7); ctx.fill();
+    ctx.fillStyle='rgba(120,200,90,.4)'; ctx.beginPath(); ctx.arc(cx+s*0.18,cy+s*0.18,s*0.1,0,7); ctx.fill();
+  } else if (h.id==='elec'){
+    ctx.fillStyle='#5a5a62'; rr(cx-s*0.14,cy-s*0.2,s*0.28,s*0.4,3); ctx.fill();
+    ctx.fillStyle='#3a3a40'; rr(cx-s*0.08,cy-s*0.12,s*0.16,s*0.24,1); ctx.fill();
+    ctx.strokeStyle='#ffe23a'; ctx.lineWidth=2.5; ctx.beginPath(); ctx.moveTo(cx,cy-s*0.05); ctx.lineTo(cx+s*0.1,cy+s*0.04); ctx.lineTo(cx,cy+s*0.08); ctx.lineTo(cx+s*0.1,cy+s*0.18); ctx.stroke();
+  }
+  if (!h.reported){ const bob=Math.sin((ts||0)/200)*2; drawWarn(cx,cy-s*0.44+bob); }
+  else { ctx.fillStyle='#5aaa3a'; ctx.beginPath(); ctx.arc(cx,cy-s*0.44,7,0,7); ctx.fill(); ctx.strokeStyle='#0e1208'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(cx-3,cy-s*0.44); ctx.lineTo(cx-1,cy-s*0.44+3); ctx.lineTo(cx+3.5,cy-s*0.44-3); ctx.stroke(); }
+}
+function drawWarn(cx,cy){ ctx.fillStyle='#f5c542'; ctx.strokeStyle='#1a1a1a'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(cx,cy-9); ctx.lineTo(cx+9,cy+7); ctx.lineTo(cx-9,cy+7); ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.fillStyle='#1a1a1a'; ctx.font='bold 10px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('!',cx,cy+1); }
+function drawPatient(p){
+  const cx=p.px+TILE/2, cy=p.py+TILE/2;
+  drawPerson(cx,cy,{outfit:p.color,skin:p.skin,pants:'#3a3f46',lying:p.lying});
+  if (p.tagged){
+    const c=p.tagged==='I'?'#cc2222':p.tagged==='D'?'#ccaa00':p.tagged==='M'?'#22aa22':'#888';
+    ctx.fillStyle=c; rr(cx+TILE*0.1,cy-TILE*0.42,TILE*0.2,TILE*0.16,2); ctx.fill();
+    ctx.fillStyle='#000'; ctx.font='bold 10px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(p.tagged==='Dead'?'X':p.tagged,cx+TILE*0.2,cy-TILE*0.34);
+  } else if (!S.quests.find(q=>q.id==='triage').locked){
+    ctx.fillStyle='#ffd24a'; ctx.font='bold 14px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('!',cx,cy-TILE*0.5);
+  }
+}
+const ENTITY_LABEL={rodriguez:'IC',cache:'Cache',dana:'Dana',sizeup:'Size-Up',treatment:'Treatment',utility:'Utilities',spotfire:'Spot Fire',sideyard:'Search',kim:'Police',neighbor:'Civilian',santos:'EMS'};
+function drawEntity(e,ts){
+  const cx=e.x*TILE+TILE/2, cy=e.y*TILE+TILE/2;
+  switch(e.id){
+    case 'rodriguez': drawPerson(cx,cy,ART.IC); break;
+    case 'dana': drawPerson(cx,cy,ART.DANA); break;
+    case 'kim': drawPerson(cx,cy,ART.POLICE); break;
+    case 'neighbor': drawPerson(cx,cy,ART.CIVIL); break;
+    case 'santos': drawPerson(cx,cy,ART.EMS); break;
+    case 'cache': drawCache(cx,cy); break;
+    case 'sizeup': drawScope(cx,cy); break;
+    case 'treatment': drawTent(cx,cy); break;
+    case 'utility': drawUtility(cx,cy); break;
+    case 'spotfire': drawExtinguisher(cx,cy); break;
+    case 'sideyard': drawSearch(cx,cy); break;
+  }
+  drawLabel(ENTITY_LABEL[e.id]||'',cx,cy);
+}
+function drawPortrait(cv,art){
+  const c=cv.getContext('2d'); c.clearRect(0,0,cv.width,cv.height); c.fillStyle='#243018'; c.fillRect(0,0,cv.width,cv.height);
+  const o=ART[art]||ART.CIVIL; const cx=23,cy=30,s=58;
+  c.fillStyle=o.outfit; c.beginPath(); c.moveTo(cx-s*0.32,cy+s*0.3); c.quadraticCurveTo(cx,cy+s*0.05,cx+s*0.32,cy+s*0.3); c.lineTo(cx+s*0.32,cy+s*0.4); c.lineTo(cx-s*0.32,cy+s*0.4); c.closePath(); c.fill();
+  if (o.accent){ c.fillStyle=o.accent; c.fillRect(cx-s*0.32,cy+s*0.18,s*0.64,4); }
+  c.fillStyle=o.skin; c.beginPath(); c.arc(cx,cy-s*0.05,s*0.2,0,7); c.fill();
+  if (o.hat==='helmet'){ c.fillStyle=o.hatColor; c.beginPath(); c.arc(cx,cy-s*0.08,s*0.23,Math.PI,0); c.fill(); c.fillRect(cx-s*0.26,cy-s*0.1,s*0.52,5); }
+  else if (o.hat==='cap'){ c.fillStyle=o.hatColor; c.beginPath(); c.arc(cx,cy-s*0.1,s*0.21,Math.PI,0); c.fill(); c.fillRect(cx-s*0.03,cy-s*0.13,s*0.3,4); }
+}
+
+function updateCamera(){
+  // locked to player — always dead-center (no edge clamp; off-map shows a dark border)
+  cam.x = player.px+TILE/2-VIEW_W*TILE/2;
+  cam.y = player.py+TILE/2-VIEW_H*TILE/2;
+}
+function tick(ts){
+  // smooth player
+  const tx=player.x*TILE, ty=player.y*TILE;
+  player.px+=stepTo(player.px,tx,MOVE_SPEED); player.py+=stepTo(player.py,ty,MOVE_SPEED);
+  if (player.px===tx && player.py===ty) player.moving=false;
+  // smooth patients (relocate to triage after tagging)
+  for (const p of S.patients){ p.px+=stepTo(p.px,p.x*TILE,PT_SPEED); p.py+=stepTo(p.py,p.y*TILE,PT_SPEED); }
+  updateCamera();
+  drawWorld(ts);
+  requestAnimationFrame(tick);
+}
+function drawWorld(ts){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle='#0a0e07'; ctx.fillRect(0,0,canvas.width,canvas.height); // off-map dark border
+  ctx.save();
+  ctx.translate(-Math.round(cam.x),-Math.round(cam.y));
+  drawGround();
+  drawFences();
+  for (const b of BUILDINGS) drawBuilding(b,ts);
+  for (const d of DECOR) if (d.type==='truck') drawTruck(d);
+  for (const h of S.hazards) if (h.discovered) drawHazard(h,ts);
+  for (const p of S.patients) drawPatient(p);
+  for (const e of ENTITIES){ if (e.hidden && e.hidden()) continue; drawEntity(e,ts); }
+  const e=nearestInteractable();
+  if (e){ const pulse=0.5+0.5*Math.sin((ts||0)/220); ctx.strokeStyle=`rgba(90,170,58,${0.45+0.45*pulse})`; ctx.lineWidth=3; ctx.strokeRect(e.x*TILE+2,e.y*TILE+2,TILE-4,TILE-4); ctx.lineWidth=1; }
+  ctx.fillStyle='rgba(255,220,90,.18)'; ctx.fillRect(player.px+1,player.py+1,TILE-2,TILE-2);
+  drawPerson(player.px+TILE/2,player.py+TILE/2,ART.ABE);
+  ctx.strokeStyle='#ffdc5a'; ctx.lineWidth=2; ctx.strokeRect(player.px+2,player.py+2,TILE-4,TILE-4); ctx.lineWidth=1;
+  drawLabel('ABE',player.px+TILE/2,player.py+TILE/2);
+  ctx.restore();
+  updatePrompt(e);
+}
+function promptLabel(e){
+  if (!e) return null;
+  if (e.kind==='patient') return `Assess ${e.patient.name}`;
+  if (e.kind==='hazard') return `Report ${e.hazard.label}`;
+  const map={cache:'Equipment Cache',rodriguez:'Talk to IC Rodriguez',dana:'Talk to CERT Dana',sizeup:'Scene Size-Up Point',treatment:'Treatment Area',utility:'Utility Controls',spotfire:'Spot Fire (extinguisher)',sideyard:'Search Back Yard',kim:'Talk to Officer Kim',neighbor:'Talk to the Neighbor',santos:'Brief Paramedic Santos'};
+  return map[e.id]||'Interact';
+}
+function updatePrompt(e){
+  const bar=document.getElementById('prompt-bar'); const label=promptLabel(e);
+  if (label) bar.innerHTML=`<span class="key">E</span> ${label}`;
+  else bar.innerHTML=`<span class="pmuted">Move with WASD / arrows. Explore — the camera follows you. Walk up to anything to interact.</span>`;
+}
+
+/* ════════════ INIT ════════════ */
+render();
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>

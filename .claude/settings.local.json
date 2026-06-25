@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p \"D:\\\\Claude\\\\CERT Lab\\\\.claude\")",
+      "mcp__Claude_Preview__preview_start",
+      "Read(//c/Users/swarr/AppData/Roaming/Claude/local-agent-mode-sessions/skills-plugin/e8da7ba4-0dd9-43c2-b7dc-3076ecff96a3/7f11243b-f68a-4bc9-b34d-193230a88cf9/skills/docx/**)",
+      "Bash(python scripts/office/unpack.py \"D:\\\\Claude\\\\CERT Lab\\\\CERT BASIC TRAINING FINAL EXAM ANSWER KEY.docx\" \"D:\\\\Claude\\\\CERT Lab\\\\exam_unpacked/\")",
+      "Bash(extract-text \"D:\\\\Claude\\\\CERT Lab\\\\CERT BASIC TRAINING FINAL EXAM ANSWER KEY.docx\")",
+      "Bash(pandoc \"D:\\\\Claude\\\\CERT Lab\\\\CERT BASIC TRAINING FINAL EXAM ANSWER KEY.docx\" -t markdown)",
+      "PowerShell(python -c \"import pypdf; print\\('ok'\\)\" 2>&1)",
+      "PowerShell(python -c \"import pdfminer; print\\('ok'\\)\" 2>&1)",
+      "PowerShell(python -c \"import fitz; print\\('ok'\\)\" 2>&1)",
+      "PowerShell(pip install pypdf -q)",
+      "Read(//c/Users/swarr/AppData/Roaming/Claude/local-agent-mode-sessions/skills-plugin/e8da7ba4-0dd9-43c2-b7dc-3076ecff96a3/7f11243b-f68a-4bc9-b34d-193230a88cf9/skills/pptx/**)",
+      "Bash(extract-text \"D:\\\\Claude\\\\CERT Lab\\\\section_01_unit_1_ppt_508.pptx\")",
+      "Bash(copy \"D:\\\\Claude\\\\CERT Lab\\\\index.html\" \"D:\\\\Claude\\\\CERT Lab\\\\game-scenarios.html\")",
+      "PowerShell(Copy-Item \"D:\\\\Claude\\\\CERT Lab\\\\index.html\" \"D:\\\\Claude\\\\CERT Lab\\\\game-scenarios.html\")",
+      "Bash(awk '{print $5, $9}')",
+      "Bash(git --version)"
+    ]
+  }
+}
