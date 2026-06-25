@@ -19,10 +19,16 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);
 .logo-img{height:38px;}
 .hdr-title h1{font-size:0.95rem;color:var(--primary);}
 .hdr-title p{font-size:0.7rem;color:var(--muted);}
-.hdr-menu{margin-left:auto;color:var(--primary);text-decoration:none;font-size:0.74rem;
+.hdr-menu{margin-left:10px;color:var(--primary);text-decoration:none;font-size:0.74rem;
   font-weight:700;border:1px solid var(--border);padding:6px 12px;border-radius:6px;
   font-family:'Courier New',monospace;white-space:nowrap;}
 .hdr-menu:hover{background:var(--surface2);border-color:var(--primary);}
+.hdr-audio{margin-left:auto;display:flex;gap:6px;}
+.aud-btn{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);
+  font-size:0.9rem;width:32px;height:30px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;padding:0;}
+.aud-btn:hover{border-color:var(--primary);}
+.aud-btn.on{border-color:var(--primary);box-shadow:0 0 0 1px var(--primary) inset;}
+.aud-btn.off{opacity:0.4;}
 .hdr-phase{margin-left:18px;font-size:0.75rem;color:var(--muted);text-align:right;}
 .phase-val{color:var(--primary);font-weight:700;}
 .layout{display:grid;grid-template-columns:200px 1fr 224px;grid-template-rows:1fr 74px;flex:1;overflow:hidden;}
@@ -159,6 +165,7 @@ canvas#map{display:block;width:auto;height:auto;max-width:100%;max-height:100%;a
   .ctrl-hint{font-size:0.66rem;}
   .prompt-bar{font-size:0.8rem;min-height:32px;max-width:100%;}
   .obj-banner{font-size:0.86rem;max-width:100%;}
+  .aud-btn{width:40px;height:36px;font-size:1.05rem;}
 }
 @media (max-width:480px){
   .hdr-title h1{font-size:0.8rem;}
@@ -177,6 +184,10 @@ canvas#map{display:block;width:auto;height:auto;max-width:100%;max-height:100%;a
   <div class="hdr-title">
     <h1>CERT RPG — Fire Scene Response</h1>
     <p>143 Hopehill Road · Structure Fire · Residential</p>
+  </div>
+  <div class="hdr-audio">
+    <button class="aud-btn" id="btn-music" onclick="uiToggleMusic()" title="Music" aria-label="Toggle music">🎵</button>
+    <button class="aud-btn" id="btn-sfx" onclick="uiToggleSfx()" title="Sound effects" aria-label="Toggle sound effects">🔊</button>
   </div>
   <a class="hdr-menu" href="index.html">← Menu</a>
   <div class="hdr-phase">Scene Phase: <span class="phase-val" id="phase-lbl">Arrival</span></div>
@@ -396,20 +407,20 @@ const cam = { x:0, y:0 };
 
 /* ════════════ ENGINE ════════════ */
 function gainXP(amt, reason){
-  S.xp += amt; addLog(`+${amt} XP — ${reason}`, 'xp');
+  S.xp += amt; addLog(`+${amt} XP — ${reason}`, 'xp'); SND.sfx('xp');
   const old = S.lvl;
   while (S.lvl < 5 && S.xp >= LVL_THRESH[S.lvl]) S.lvl++;
   if (S.lvl > old) showLU(S.lvl);
 }
 function loseXP(amt, reason){ S.xp = Math.max(0, S.xp - amt); addLog(`−${amt} XP — ${reason}`, 'bad'); render(); }
-function loseCR(amt, reason){ S.cr = Math.max(0, S.cr - amt); addLog(`−${amt} Credibility — ${reason}`, 'bad'); if (S.cr<=0 && !S.over) setTimeout(()=>showLose('cr'),400); }
-function loseHP(amt, reason){ S.hp = Math.max(0, S.hp - amt); addLog(`−${amt} HP — ${reason}`, 'bad'); if (S.hp<=0 && !S.over) setTimeout(()=>showLose('hp'),400); }
+function loseCR(amt, reason){ S.cr = Math.max(0, S.cr - amt); addLog(`−${amt} Credibility — ${reason}`, 'bad'); SND.sfx('bad'); if (S.cr<=0 && !S.over) setTimeout(()=>showLose('cr'),400); }
+function loseHP(amt, reason){ S.hp = Math.max(0, S.hp - amt); addLog(`−${amt} HP — ${reason}`, 'bad'); SND.sfx('hurt'); if (S.hp<=0 && !S.over) setTimeout(()=>showLose('hp'),400); }
 function addLog(txt, type='neutral'){ S.log.unshift({txt,type}); if (S.log.length>40) S.log.pop(); }
 function advQ(qid, step){
   const q = S.quests.find(x=>x.id===qid); if (!q || q.done[step]) return;
   q.done[step] = true;
   if (q.done.every(Boolean) && !q.complete){
-    q.complete = true; addLog(`Quest complete: "${q.name}"`,'good'); gainXP(35,`Quest: ${q.name}`); checkUnlocks(); checkWin();
+    q.complete = true; addLog(`Quest complete: "${q.name}"`,'good'); SND.sfx('good'); gainXP(35,`Quest: ${q.name}`); checkUnlocks(); checkWin();
   }
   render();
 }
@@ -439,6 +450,7 @@ function showLU(lvl){
   document.getElementById('lu-lvl').textContent = `Level ${lvl} ${RANK[lvl]}`;
   document.getElementById('lu-unlock').textContent = LVL_UNLOCKS[lvl];
   document.getElementById('lu-ov').classList.remove('h');
+  SND.sfx('levelup');
 }
 function closeLU(){ document.getElementById('lu-ov').classList.add('h'); render(); }
 function patientsTagged(){ return S.patients.filter(p=>p.tagged).length; }
@@ -469,6 +481,7 @@ function move(dx,dy){
   const nx=player.x+dx, ny=player.y+dy;
   if (!isWalkable(nx,ny)) return;
   player.x=nx; player.y=ny; player.moving=true;
+  SND.sfx('move');
   checkHazards();
 }
 function checkHazards(){
@@ -531,15 +544,15 @@ function openHazard(h){
 function reportHazard(h){
   h.reported=true; gainXP(15,`Reported ${h.label} to Command`); advQ('hazards',h.step);
   addLog('Abe: "'+h.report+'"','good'); addLog('Rodriguez: "Copy — flagging it for the crew. Good eyes."','info');
-  toastGood('Hazard reported to Command.'); noteFireKnockdown(); closeMenu();
+  SND.sfx('radio'); toastGood('Hazard reported to Command.'); noteFireKnockdown(); closeMenu();
 }
 
 /* ════════════ EQUIPMENT CACHE ════════════ */
 function openCache(){
   if (S.ppe && S.radio && S.extinguisher){ openMenu('🧰 Equipment Cache','Geared up — PPE on, radio active, extinguisher in hand. Report to IC Rodriguez.',[]); return; }
   const c=[];
-  if (!S.ppe) c.push({label:'🪖 Don full PPE — helmet, eye pro, gloves, boots, vest', run:()=>{S.ppe=true;gainXP(15,'Equipped PPE');advQ('duty',0);toastGood('PPE on.');openCache();}});
-  if (!S.radio) c.push({label:'📻 Power on radio, confirm Command channel 7', run:()=>{S.radio=true;gainXP(15,'Radio active');advQ('duty',1);toastGood('Radio active — Channel 7.');openCache();}});
+  if (!S.ppe) c.push({label:'🪖 Don full PPE — helmet, eye pro, gloves, boots, vest', run:()=>{S.ppe=true;SND.sfx('gear');gainXP(15,'Equipped PPE');advQ('duty',0);toastGood('PPE on.');openCache();}});
+  if (!S.radio) c.push({label:'📻 Power on radio, confirm Command channel 7', run:()=>{S.radio=true;SND.sfx('radio');gainXP(15,'Radio active');advQ('duty',1);toastGood('Radio active — Channel 7.');openCache();}});
   if (!S.extinguisher) c.push({label:'🧯 Grab a fire extinguisher', run:()=>{S.extinguisher=true;gainXP(5,'Picked up an extinguisher');advQ('spotfire',0);toastGood('Extinguisher in hand.');openCache();}});
   c.push({label:'🏃 Skip the gear and rush straight into the yard', run:()=>{loseCR(10,'Tried to operate without PPE');toastBad('Never operate without PPE — gear up first.');}});
   openMenu('🧰 Equipment Cache','Your PPE and radio start <strong>OFF</strong>. Grab the extinguisher too for the spot fire.', c);
@@ -772,7 +785,7 @@ function openDlg(id){
   document.getElementById('dlg-text').textContent=dlg.text;
   const box=document.getElementById('dlg-choices'); box.innerHTML='';
   dlg.choices.forEach(ch=>{ const b=document.createElement('button'); b.className='dlg-choice'; b.textContent=ch.text;
-    b.onclick=()=>{ if (ch.action) ch.action(); if (ch.close) closeDlg(); else if (ch.next) openDlg(ch.next); render(); }; box.appendChild(b); });
+    b.onclick=()=>{ SND.sfx('select'); if (ch.action) ch.action(); if (ch.close) closeDlg(); else if (ch.next) openDlg(ch.next); render(); }; box.appendChild(b); });
   document.getElementById('dlg-ov').classList.remove('h');
 }
 function closeDlg(){ document.getElementById('dlg-ov').classList.add('h'); render(); }
@@ -784,9 +797,10 @@ function openMenu(title, desc, choices){
   document.getElementById('menu-title').textContent=title;
   document.getElementById('menu-desc').innerHTML=desc;
   const box=document.getElementById('menu-choices'); box.innerHTML='';
-  choices.forEach(c=>{ const b=document.createElement('button'); b.className='menu-choice'; b.textContent=c.label; b.onclick=()=>{ c.run(); render(); }; box.appendChild(b); });
+  choices.forEach(c=>{ const b=document.createElement('button'); b.className='menu-choice'; b.textContent=c.label; b.onclick=()=>{ SND.sfx('select'); c.run(); render(); }; box.appendChild(b); });
   const leave=document.createElement('button'); leave.className='menu-leave'; leave.textContent='Step away'; leave.onclick=closeMenu; box.appendChild(leave);
   document.getElementById('menu-ov').classList.remove('h');
+  SND.sfx('open');
 }
 function closeMenu(){ document.getElementById('menu-ov').classList.add('h'); render(); }
 
@@ -822,7 +836,7 @@ function openAssess(pid){
 function applyTag(pid, tag){
   const p=S.patients.find(x=>x.id===pid); const correct=tag===p.correctTag; p.tagged=tag;
   document.getElementById('ass-ov').classList.add('h');
-  if (correct){ gainXP(20,`Correctly tagged ${p.name} — ${tag}`); addLog(`✓ ${p.name} tagged ${tag} (correct).`,'good'); toastGood(`${p.name}: correct tag.`); }
+  if (correct){ SND.sfx('tag'); gainXP(20,`Correctly tagged ${p.name} — ${tag}`); addLog(`✓ ${p.name} tagged ${tag} (correct).`,'good'); toastGood(`${p.name}: correct tag.`); }
   else { addLog(`✗ ${p.name} tagged ${tag} — incorrect (should be ${p.correctTag}).`,'bad'); loseCR(10,`Wrong triage tag for ${p.name}`); toastBad(`${p.name}: wrong tag (should be ${p.correctTag}).`); }
   if (tag!=='Dead'){ const slot=TRIAGE_SLOTS[triageNext++ % TRIAGE_SLOTS.length]; p.x=slot.x; p.y=slot.y; } // walk to triage area
   if (allTagged()) advQ('triage',0);
@@ -869,7 +883,7 @@ function render(){ renderStats(); renderQuests(); renderLog(); }
 /* ════════════ WIN / LOSE ════════════ */
 function anyOverlayOpen(){ return ['menu-ov','dlg-ov','ass-ov','lu-ov','end-ov'].some(id=>!document.getElementById(id).classList.contains('h')); }
 function showWin(){
-  if (S.over) return; S.over=true;
+  if (S.over) return; S.over=true; SND.sfx('win');
   const correct=S.patients.filter(p=>p.tagged===p.correctTag).length;
   const sides=S.quests.filter(q=>q.type==='side'&&q.complete).length;
   const hz=S.hazards.filter(h=>h.reported).length;
@@ -890,7 +904,7 @@ function showWin(){
   document.getElementById('end-ov').classList.remove('h');
 }
 function showLose(reason){
-  if (S.over) return; S.over=true;
+  if (S.over) return; S.over=true; SND.sfx('lose');
   document.getElementById('end-box').className='end-box lose';
   if (reason==='hp'){ document.getElementById('end-icon').textContent='🚑'; document.getElementById('end-title').textContent='INJURED — OUT OF ACTION'; document.getElementById('end-sub').textContent='You took too much harm from scene hazards. Always report and avoid them.'; }
   else { document.getElementById('end-icon').textContent='🚫'; document.getElementById('end-title').textContent='RELIEVED OF DUTY'; document.getElementById('end-sub').textContent='Your credibility hit zero. The IC has pulled you from the scene.'; }
@@ -958,6 +972,7 @@ function fireLevel(){ // 1 = fully involved, 0 = out. Driven by fire-suppression
 }
 function noteFireKnockdown(){
   addLog(`🔥 Scene safer — the fire crew knocks the flames down further (${Math.round((1-fireLevel())*100)}% controlled).`,'info');
+  SND.sfx('fire');
 }
 function drawBuilding(b, ts){
   const x=b.x*TILE, y=b.y*TILE, w=b.w*TILE, h=b.h*TILE;
@@ -1287,7 +1302,76 @@ function updatePrompt(e){
   else bar.innerHTML=`<span class="pmuted">Move with WASD / arrows. Explore — the camera follows you. Walk up to anything to interact.</span>`;
 }
 
+/* ════════════ AUDIO (Web Audio, self-contained) ════════════ */
+const SND = (function(){
+  let ctx=null, musicGain=null, sfxGain=null, started=false, musicNodes=[], musicTimer=null;
+  let musicOn = localStorage.getItem('cert_music')!=='off';
+  let sfxOn   = localStorage.getItem('cert_sfx')!=='off';
+  function ensure(){
+    if (ctx) return;
+    const AC = window.AudioContext||window.webkitAudioContext; if (!AC) return;
+    ctx = new AC();
+    musicGain = ctx.createGain(); musicGain.gain.value = musicOn?0.16:0; musicGain.connect(ctx.destination);
+    sfxGain   = ctx.createGain(); sfxGain.gain.value   = sfxOn?0.5:0;  sfxGain.connect(ctx.destination);
+  }
+  function resume(){ ensure(); if (!ctx) return; if (ctx.state==='suspended') ctx.resume(); if (!started){ started=true; if (musicOn) startMusic(); } }
+  function note(freq,start,dur,type,peak){
+    if (!ctx) return; const t=ctx.currentTime+start;
+    const o=ctx.createOscillator(), g=ctx.createGain(); o.type=type||'square'; o.frequency.value=freq;
+    g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(peak||0.35,t+0.012);
+    g.gain.exponentialRampToValueAtTime(0.0008,t+dur);
+    o.connect(g); g.connect(sfxGain); o.start(t); o.stop(t+dur+0.03);
+  }
+  function sfx(name){
+    if (!sfxOn || !ctx) return;
+    switch(name){
+      case 'move':    note(196,0,0.05,'square',0.10); break;
+      case 'select':  note(540,0,0.06,'square',0.22); break;
+      case 'open':    note(330,0,0.07,'triangle',0.26); note(450,0.05,0.08,'triangle',0.22); break;
+      case 'good':    note(523,0,0.1,'triangle',0.28); note(659,0.08,0.12,'triangle',0.28); note(784,0.16,0.16,'triangle',0.26); break;
+      case 'bad':     note(311,0,0.16,'sawtooth',0.26); note(233,0.09,0.22,'sawtooth',0.24); break;
+      case 'tag':     note(660,0,0.07,'square',0.22); note(880,0.06,0.1,'square',0.22); break;
+      case 'radio':   note(900,0,0.04,'square',0.18); note(1250,0.05,0.05,'square',0.16); break;
+      case 'gear':    note(170,0,0.11,'square',0.26); note(135,0.1,0.13,'square',0.22); break;
+      case 'levelup': [523,659,784,1047].forEach((f,i)=>note(f,i*0.09,0.18,'triangle',0.3)); break;
+      case 'xp':      note(940,0,0.045,'sine',0.12); break;
+      case 'hurt':    note(150,0,0.18,'sawtooth',0.3); note(110,0.07,0.2,'sawtooth',0.26); break;
+      case 'fire':    note(85,0,0.32,'sawtooth',0.16); break;
+      case 'win':     [523,659,784,1047,1319].forEach((f,i)=>note(f,i*0.12,0.3,'triangle',0.3)); break;
+      case 'lose':    [392,330,262,196].forEach((f,i)=>note(f,i*0.16,0.32,'sawtooth',0.26)); break;
+    }
+  }
+  function mtof(m){ return 440*Math.pow(2,(m-69)/12); }
+  function startMusic(){
+    if (!ctx) return; stopMusic();
+    const triad=[0,3,7], roots=[57,55,53,52]; let ri=0; // calm minor pad, slow descent
+    const filter=ctx.createBiquadFilter(); filter.type='lowpass'; filter.frequency.value=620; filter.Q.value=1.5; filter.connect(musicGain);
+    const lfo=ctx.createOscillator(), lfoGain=ctx.createGain(); lfo.frequency.value=0.05; lfoGain.gain.value=240;
+    lfo.connect(lfoGain); lfoGain.connect(filter.frequency); lfo.start();
+    const oscs=[];
+    for (let i=0;i<3;i++){ const o=ctx.createOscillator(), g=ctx.createGain(); o.type=i===0?'sine':'triangle'; g.gain.value=0; o.connect(g); g.connect(filter); o.start(); oscs.push({o,g}); }
+    function setChord(root){ for (let i=0;i<3;i++){ const m=root+triad[i]+(i===2?12:0); oscs[i].o.frequency.setTargetAtTime(mtof(m),ctx.currentTime,0.9); oscs[i].g.gain.setTargetAtTime(0.5,ctx.currentTime,1.4); } }
+    setChord(roots[0]);
+    musicNodes=[filter,lfo,lfoGain].concat(oscs.map(x=>x.o)).concat(oscs.map(x=>x.g));
+    musicTimer=setInterval(()=>{ ri=(ri+1)%roots.length; setChord(roots[ri]); }, 9000);
+  }
+  function stopMusic(){ if (musicTimer){ clearInterval(musicTimer); musicTimer=null; } musicNodes.forEach(n=>{ try{ if (n.stop) n.stop(); n.disconnect(); }catch(e){} }); musicNodes=[]; }
+  function toggleMusic(){ musicOn=!musicOn; localStorage.setItem('cert_music',musicOn?'on':'off'); ensure();
+    if (ctx){ musicGain.gain.setTargetAtTime(musicOn?0.16:0, ctx.currentTime,0.1); if (musicOn && started) startMusic(); else if (!musicOn) stopMusic(); } }
+  function toggleSfx(){ sfxOn=!sfxOn; localStorage.setItem('cert_sfx',sfxOn?'on':'off'); ensure(); if (ctx) sfxGain.gain.setTargetAtTime(sfxOn?0.5:0, ctx.currentTime,0.05); if (sfxOn) sfx('select'); }
+  return { resume, sfx, toggleMusic, toggleSfx, isMusicOn:()=>musicOn, isSfxOn:()=>sfxOn };
+})();
+function updateAudioBtns(){
+  const m=document.getElementById('btn-music'), s=document.getElementById('btn-sfx');
+  if (m){ m.classList.toggle('on',SND.isMusicOn()); m.classList.toggle('off',!SND.isMusicOn()); m.title=SND.isMusicOn()?'Music: on':'Music: off'; }
+  if (s){ s.textContent=SND.isSfxOn()?'🔊':'🔇'; s.classList.toggle('on',SND.isSfxOn()); s.classList.toggle('off',!SND.isSfxOn()); s.title=SND.isSfxOn()?'Sound effects: on':'Sound effects: off'; }
+}
+function uiToggleMusic(){ SND.resume(); SND.toggleMusic(); updateAudioBtns(); }
+function uiToggleSfx(){ SND.resume(); SND.toggleSfx(); updateAudioBtns(); }
+
 /* ════════════ INIT ════════════ */
+['keydown','pointerdown','touchstart'].forEach(ev=>document.addEventListener(ev,()=>SND.resume(),{passive:true}));
+updateAudioBtns();
 render();
 requestAnimationFrame(tick);
 </script>
