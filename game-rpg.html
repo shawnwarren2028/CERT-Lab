@@ -95,7 +95,8 @@ canvas#map{display:block;width:auto;height:auto;max-width:100%;max-height:100%;a
 .log-e{font-size:0.7rem;padding:1px 0;}
 .log-e.good{color:var(--primary);}.log-e.bad{color:var(--danger);}.log-e.info{color:var(--info);}.log-e.xp{color:var(--warn);}.log-e.neutral{color:var(--muted);}
 .toast{position:fixed;top:64px;left:50%;transform:translateX(-50%);z-index:90;background:var(--surface);border:1px solid var(--primary);
-  border-radius:var(--radius);padding:8px 16px;font-size:0.8rem;box-shadow:0 4px 16px rgba(0,0,0,.5);opacity:0;transition:opacity .2s;pointer-events:none;}
+  border-radius:var(--radius);padding:8px 16px;font-size:0.8rem;box-shadow:0 4px 16px rgba(0,0,0,.5);opacity:0;transition:opacity .2s;pointer-events:none;
+  max-width:min(90vw,460px);text-align:center;line-height:1.4;}
 .toast.show{opacity:1;}
 .toast.bad{border-color:var(--danger);color:#ffbcbc;}
 .toast.good{border-color:var(--primary);color:#d6f5c4;}
@@ -151,6 +152,15 @@ canvas#map{display:block;width:auto;height:auto;max-width:100%;max-height:100%;a
 .tag-btn[disabled]{opacity:.3;cursor:not-allowed;}
 .ass-action-btn{display:block;width:100%;background:var(--primary);border:none;border-radius:var(--radius);padding:9px;font-family:inherit;font-size:0.8rem;font-weight:700;color:var(--bg);cursor:pointer;margin-bottom:9px;}
 .ass-action-btn:hover{background:var(--primary-dark);}
+.tri-ov{background:rgba(0,0,0,.62);}
+.tri-box{background:var(--surface);border:2px solid var(--danger);border-radius:var(--radius);padding:20px 22px;max-width:430px;width:100%;text-align:center;}
+.tri-title{font-size:1.05rem;font-weight:700;color:#ffbcbc;margin-bottom:12px;}
+.tri-tags{font-size:0.78rem;color:var(--muted);margin-bottom:13px;}
+.tri-badge{display:inline-block;font-weight:800;font-size:0.7rem;padding:3px 9px;border-radius:5px;letter-spacing:.03em;}
+.tri-reason{font-size:0.86rem;line-height:1.6;color:var(--text);background:var(--surface2);border-radius:var(--radius);padding:12px 14px;margin-bottom:16px;text-align:left;}
+.tri-reason strong{color:var(--primary);}
+.tri-btn{background:var(--primary);border:none;border-radius:var(--radius);padding:9px 28px;font-family:inherit;font-size:0.86rem;font-weight:700;color:var(--bg);cursor:pointer;}
+.tri-btn:hover{background:var(--primary-dark);}
 .lu-ov{background:rgba(0,0,0,.8);}
 .lu-box{background:var(--surface);border:2px solid var(--primary);border-radius:var(--radius);padding:30px 36px;text-align:center;max-width:380px;width:100%;}
 .lu-title{font-size:1.5rem;color:var(--primary);font-weight:700;margin-bottom:6px;}
@@ -263,6 +273,7 @@ canvas#map{display:block;width:auto;height:auto;max-width:100%;max-height:100%;a
 <div class="step-flash hidden" id="step-flash"></div>
 <div class="ov dlg-ov h" id="dlg-ov"><div class="dlg-box"><div class="dlg-hdr"><canvas class="dlg-portrait" id="dlg-portrait" width="46" height="46"></canvas><div><div class="dlg-npc-name" id="dlg-name"></div><div class="dlg-npc-role" id="dlg-role"></div></div></div><div class="dlg-text" id="dlg-text"></div><div class="dlg-choices" id="dlg-choices"></div></div></div>
 <div class="ov ass-ov h" id="ass-ov"><div class="ass-box"><div class="ass-title" id="ass-title"></div><div class="ass-findings" id="ass-findings"></div><div id="ass-action-wrap"></div><div class="ass-prompt">Apply START triage tag:</div><div class="tag-row" id="tag-row"></div></div></div>
+<div class="ov tri-ov h" id="tri-ov"><div class="tri-box"><div class="tri-title" id="tri-title"></div><div class="tri-tags" id="tri-tags"></div><div class="tri-reason" id="tri-reason"></div><button class="tri-btn" onclick="closeTri()">Got it →</button></div></div>
 <div class="ov lu-ov h" id="lu-ov"><div class="lu-box"><div class="lu-title">⬆ LEVEL UP!</div><div class="lu-sub">Abe L. — <span id="lu-lvl"></span></div><div class="lu-unlock" id="lu-unlock"></div><button class="lu-btn" onclick="closeLU()">Continue →</button></div></div>
 <div class="ov end-ov h" id="end-ov"><div class="end-box" id="end-box"><div class="end-icon" id="end-icon">🚒</div><div class="end-title" id="end-title">Mission Complete</div><div style="font-size:0.8rem;color:var(--muted);margin-bottom:14px;" id="end-sub">Fire Scene Response — 143 Hopehill Road</div><table class="end-table" id="end-tbl"></table><div class="rating" id="end-rating"></div><button class="lu-btn" onclick="location.reload()">Play Again</button></div></div>
 
@@ -325,34 +336,44 @@ const RANK = ['','CERT Volunteer','CERT Member','CERT Responder','CERT Team Lead
 const PATIENTS = [
   { id:'chen', name:'Mrs. Chen', age:72, x:4, y:11, color:'#9b7bb5', skin:'#e8c9a0', correctTag:'M',
     desc:'Elderly woman on the front lawn, coughing. She rises when you approach.',
-    findings:'Ambulatory. Minor smoke inhalation. Respirations normal once away from smoke. Capillary refill < 2 sec. Follows commands.' },
+    findings:'Ambulatory. Minor smoke inhalation. Respirations normal once away from smoke. Capillary refill < 2 sec. Follows commands.',
+    reason:'She can walk (ambulatory) → MINOR. In START, anyone who can get up and walk is tagged Minor, whatever their injuries.' },
   { id:'tommy', name:'Tommy Chen', age:8, x:10, y:10, color:'#d9b53a', skin:'#f0d2a8', lying:true, correctTag:'I', needsAirway:true,
     desc:'Boy in the front doorway, unconscious, not breathing. Mrs. Chen cries out his name.',
-    findings:'Unconscious. No spontaneous breathing. Pulse present. Requires head-tilt/chin-lift before tagging.' },
+    findings:'Unconscious. No spontaneous breathing. Pulse present. Requires head-tilt/chin-lift before tagging.',
+    reason:'Not breathing until you open the airway — then breathing resumes → IMMEDIATE. A patient who breathes only after you reposition the airway is always Immediate.' },
   { id:'davis', name:'Frank Davis', age:45, x:6, y:10, color:'#3a6db0', skin:'#d9a06b', lying:true, correctTag:'I',
     desc:'Man crawling from the side of the house. Partial-thickness burns on forearm and chest.',
-    findings:'Alert but in severe pain. Burns to forearm and chest. Capillary refill > 2 sec. Rapid shallow respirations. Cannot follow command.' },
+    findings:'Alert but in severe pain. Burns to forearm and chest. Capillary refill > 2 sec. Rapid shallow respirations. Cannot follow command.',
+    reason:'Breathing is rapid/shallow (>30/min) and perfusion is poor (capillary refill > 2 sec) → IMMEDIATE.' },
   { id:'park', name:'Sarah Park', age:28, x:5, y:12, color:'#c45a8a', skin:'#e8c9a0', correctTag:'D',
     desc:'Young woman against a tree, clutching her leg. Obvious deformity at the mid-femur.',
-    findings:'Alert and talkative. Open femur fracture. Capillary refill normal. Respirations 16/min. Follows commands.' },
+    findings:'Alert and talkative. Open femur fracture. Capillary refill normal. Respirations 16/min. Follows commands.',
+    reason:'Breathing < 30/min, perfusion normal, and she follows commands → DELAYED. A bad fracture, but she is stable right now.' },
   { id:'montez', name:'Ray Montez', age:55, x:15, y:9, color:'#5a6b7a', skin:'#cdb59a', lying:true, correctTag:'Dead', needsAirway:true, airwayAttempts:0,
     desc:'Man face-up in the driveway, motionless. A bystander says he collapsed immediately.',
-    findings:'No breathing. Reposition the airway — head-tilt/chin-lift — twice before tagging.' },
+    findings:'No breathing. Reposition the airway — head-tilt/chin-lift — twice before tagging.',
+    reason:'Still not breathing after the airway is repositioned twice → DECEASED / expectant (black) under START.' },
   { id:'vega', name:'Maria Vega', age:38, x:11, y:12, color:'#3f8f6a', skin:'#e0b489', correctTag:'I',
     desc:'Woman on the lawn, breathing very fast and shallowly. Pale and clammy, confused.',
-    findings:'Respirations >30/min. Capillary refill > 2 sec. Cannot state her name or follow commands. No visible external bleeding.' },
+    findings:'Respirations >30/min. Capillary refill > 2 sec. Cannot state her name or follow commands. No visible external bleeding.',
+    reason:'Respirations over 30/min → IMMEDIATE. A breathing rate above 30 is the first START red flag, on its own.' },
   { id:'torres', name:'Jake Torres', age:16, x:18, y:12, color:'#c46a3a', skin:'#e8c9a0', correctTag:'M',
     desc:'Teen walking around the scene with cuts on his hands and face from broken glass.',
-    findings:'Ambulatory. Minor lacerations to hands and face. Normal breathing. Capillary refill normal. Asking about his dog.' },
+    findings:'Ambulatory. Minor lacerations to hands and face. Normal breathing. Capillary refill normal. Asking about his dog.',
+    reason:'Walking wounded with only minor cuts → MINOR.' },
   { id:'lee', name:'Daniel Lee', age:34, x:24, y:10, color:'#5a8fb0', skin:'#d9b58c', correctTag:'M',
     desc:'A neighbor in the next yard, holding a cloth to a small cut on his arm.',
-    findings:'Ambulatory, walked over from next door. Superficial cuts, normal breathing, capillary refill normal, follows commands.' },
+    findings:'Ambulatory, walked over from next door. Superficial cuts, normal breathing, capillary refill normal, follows commands.',
+    reason:'He walked over to you on his own → MINOR.' },
   { id:'gomez', name:'Luis Gomez', age:50, x:19, y:18, color:'#7a6ab0', skin:'#cdb59a', correctTag:'D',
     desc:'A man seated by the back fence, a bloodied cloth pressed to his thigh.',
-    findings:'Alert. Deep laceration to the thigh, bleeding controlled with pressure. Capillary refill normal. Respirations 18/min.' },
+    findings:'Alert. Deep laceration to the thigh, bleeding controlled with pressure. Capillary refill normal. Respirations 18/min.',
+    reason:'Breathing < 30/min, perfusion normal, follows commands, and bleeding is controlled → DELAYED.' },
   { id:'reed', name:'Anna Reed', age:41, x:28, y:11, color:'#b0894f', skin:'#e0b489', correctTag:'I',
     desc:'A woman slumped by the east fence, breathing fast and shallow.',
-    findings:'Respirations >30/min. Capillary refill > 2 sec. Not following commands. No major external bleeding found.' },
+    findings:'Respirations >30/min. Capillary refill > 2 sec. Not following commands. No major external bleeding found.',
+    reason:'Respirations over 30/min → IMMEDIATE.' },
 ];
 
 const HAZARDS = [
@@ -488,9 +509,19 @@ function immsTreated(){ return S.patients.filter(p=>p.tagged==='I' && p.treated)
 
 /* ════════════ TOAST ════════════ */
 let toastT=null;
-function toast(msg, kind=''){ const el=document.getElementById('toast'); el.textContent=msg; el.className='toast show '+kind; clearTimeout(toastT); toastT=setTimeout(()=>{el.className='toast '+kind;},2200); }
+function toast(msg, kind='', dur=2200){ const el=document.getElementById('toast'); el.textContent=msg; el.className='toast show '+kind; clearTimeout(toastT); toastT=setTimeout(()=>{el.className='toast '+kind;},dur); }
 function toastGood(m){ toast(m,'good'); addLog(m,'good'); }
 function toastBad(m){ toast(m,'bad'); }
+function shuffle(a){ for (let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+const TAG_INFO={ I:['IMMEDIATE','var(--imm)','#fff'], D:['DELAYED','var(--del)','#1a1a1a'], M:['MINOR','var(--min)','#06210a'], Dead:['DECEASED','var(--dead)','#fff'] };
+function tagBadge(t){ const x=TAG_INFO[t]||['?','#888','#fff']; return `<span class="tri-badge" style="background:${x[1]};color:${x[2]}">${x[0]}</span>`; }
+function openTriExplain(p, chosen){
+  document.getElementById('tri-title').textContent='⚠ Reassess: '+p.name;
+  document.getElementById('tri-tags').innerHTML=`You tagged ${tagBadge(chosen)} &nbsp;·&nbsp; Correct tag is ${tagBadge(p.correctTag)}`;
+  document.getElementById('tri-reason').innerHTML=`<strong>START says:</strong> ${p.reason}`;
+  document.getElementById('tri-ov').classList.remove('h');
+}
+function closeTri(){ document.getElementById('tri-ov').classList.add('h'); render(); }
 
 /* ════════════ MOVEMENT + CAMERA ════════════ */
 function inBounds(x,y){ return x>=0 && y>=0 && x<COLS && y<ROWS; }
@@ -812,7 +843,7 @@ function openDlg(id){
   document.getElementById('dlg-role').textContent=npc.role;
   document.getElementById('dlg-text').textContent=dlg.text;
   const box=document.getElementById('dlg-choices'); box.innerHTML='';
-  dlg.choices.forEach(ch=>{ const b=document.createElement('button'); b.className='dlg-choice'; b.textContent=ch.text;
+  shuffle(dlg.choices.slice()).forEach(ch=>{ const b=document.createElement('button'); b.className='dlg-choice'; b.textContent=ch.text;
     b.onclick=()=>{ const crB=S.cr; SND.beginChoice(); if (ch.action) ch.action(); SND.endChoice(); SND.sfx(S.cr<crB?'dong':'ding'); if (ch.close) closeDlg(); else if (ch.next) openDlg(ch.next); render(); }; box.appendChild(b); });
   document.getElementById('dlg-ov').classList.remove('h');
 }
@@ -829,7 +860,7 @@ function openMenu(title, desc, choices, step){
   else stepEl.classList.add('hidden');
   document.getElementById('menu-desc').innerHTML=desc;
   const box=document.getElementById('menu-choices'); box.innerHTML='';
-  choices.forEach(c=>{ const b=document.createElement('button'); b.className='menu-choice'; b.textContent=c.label; b.onclick=()=>{ const crB=S.cr; SND.beginChoice(); c.run(); SND.endChoice(); SND.sfx(S.cr<crB?'dong':'ding'); render(); }; box.appendChild(b); });
+  shuffle(choices.slice()).forEach(c=>{ const b=document.createElement('button'); b.className='menu-choice'; b.textContent=c.label; b.onclick=()=>{ const crB=S.cr; SND.beginChoice(); c.run(); SND.endChoice(); SND.sfx(S.cr<crB?'dong':'ding'); render(); }; box.appendChild(b); });
   const leave=document.createElement('button'); leave.className='menu-leave'; leave.textContent='Step away'; leave.onclick=closeMenu; box.appendChild(leave);
   document.getElementById('menu-ov').classList.remove('h');
   SND.sfx('open');
@@ -876,8 +907,8 @@ function openAssess(pid){
 function applyTag(pid, tag){
   const p=S.patients.find(x=>x.id===pid); const correct=tag===p.correctTag; p.tagged=tag;
   document.getElementById('ass-ov').classList.add('h');
-  if (correct){ SND.sfx('tag'); gainXP(20,`Correctly tagged ${p.name} — ${tag}`); addLog(`✓ ${p.name} tagged ${tag} (correct).`,'good'); toastGood(`${p.name}: correct tag.`); }
-  else { addLog(`✗ ${p.name} tagged ${tag} — incorrect (should be ${p.correctTag}).`,'bad'); loseCR(10,`Wrong triage tag for ${p.name}`); toastBad(`${p.name}: wrong tag (should be ${p.correctTag}).`); }
+  if (correct){ SND.sfx('tag'); gainXP(20,`Correctly tagged ${p.name} — ${tag}`); addLog(`✓ ${p.name} tagged ${tag} (correct). ${p.reason}`,'good'); toast(`✓ Correct — ${p.reason}`,'good',4200); }
+  else { addLog(`✗ ${p.name} tagged ${tag} — incorrect (should be ${p.correctTag}). ${p.reason}`,'bad'); loseCR(10,`Wrong triage tag for ${p.name}`); openTriExplain(p, tag); }
   if (tag!=='Dead'){ const slot=TRIAGE_SLOTS[triageNext++ % TRIAGE_SLOTS.length]; p.x=slot.x; p.y=slot.y; } // walk to triage area
   if (allTagged()) advQ('triage',0);
   render();
@@ -921,7 +952,7 @@ function renderLog(){
 function render(){ renderStats(); renderQuests(); renderLog(); }
 
 /* ════════════ WIN / LOSE ════════════ */
-function anyOverlayOpen(){ return ['menu-ov','dlg-ov','ass-ov','lu-ov','end-ov'].some(id=>!document.getElementById(id).classList.contains('h')) || !document.getElementById('step-flash').classList.contains('hidden'); }
+function anyOverlayOpen(){ return ['menu-ov','dlg-ov','ass-ov','lu-ov','end-ov','tri-ov'].some(id=>!document.getElementById(id).classList.contains('h')) || !document.getElementById('step-flash').classList.contains('hidden'); }
 function showWin(){
   if (S.over) return; S.over=true; SND.sfx('win');
   const correct=S.patients.filter(p=>p.tagged===p.correctTag).length;
