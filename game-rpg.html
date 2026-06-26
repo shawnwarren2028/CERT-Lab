@@ -269,6 +269,8 @@ canvas#map{display:block;width:auto;height:auto;max-width:100%;max-height:100%;a
   </div>
 </div>
 <div class="toast" id="toast"></div>
+<!-- Background music: drop a file named rpg-bgmusic.mp3 in this folder to use it; the built-in synth groove plays as a fallback until then. Controlled by the 🎵 volume. -->
+<audio id="bgm" src="rpg-bgmusic.mp3" loop preload="auto"></audio>
 <div class="ov menu-ov h" id="menu-ov"><div class="menu-box"><div class="menu-step hidden" id="menu-step"></div><div class="menu-title" id="menu-title"></div><div class="menu-desc" id="menu-desc"></div><div id="menu-choices"></div></div></div>
 <div class="step-flash hidden" id="step-flash"></div>
 <div class="ov dlg-ov h" id="dlg-ov"><div class="dlg-box"><div class="dlg-hdr"><canvas class="dlg-portrait" id="dlg-portrait" width="46" height="46"></canvas><div><div class="dlg-npc-name" id="dlg-name"></div><div class="dlg-npc-role" id="dlg-role"></div></div></div><div class="dlg-text" id="dlg-text"></div><div class="dlg-choices" id="dlg-choices"></div></div></div>
@@ -546,20 +548,13 @@ function move(dx,dy){
 function checkHazards(){
   for (const h of S.hazards){
     const cheb = Math.max(Math.abs(h.x-player.x), Math.abs(h.y-player.y));
-    if (!h.discovered && cheb<=1){
-      h.discovered=true; addLog(`⚠ Hazard spotted: ${h.label}. Radio it to Command.`,'info'); toast(`Hazard spotted: ${h.label}`,'bad');
+    if (!h.discovered && cheb<=2){ // spotted from 2 tiles away — you can radio it in from here, safely
+      h.discovered=true; addLog(`⚠ Hazard spotted: ${h.label}. Radio it to Command now — you can call it in from 2 tiles away.`,'info'); toast(`Hazard spotted: ${h.label}`,'bad');
     }
-    if (!h.reported && cheb<=1){
-      h.near = (h.near||0) + 1;
-      if (h.near === 1){
-        toastBad(`Too close to ${h.label} — radio it in!`); // grace: first step only warns
-      } else {
-        const dmg = cheb===0 ? 8 : 4;
-        loseHP(dmg, `Lingering near ${h.label}`);
-        toastBad(`Still too close to ${h.label} — it's hurting you!`);
-      }
-    } else {
-      h.near = 0; // left the danger zone (or reported) — grace resets
+    if (!h.reported && cheb<=1){ // inside 1 tile of an un-reported hazard → immediate penalty (no grace)
+      const dmg = cheb===0 ? 8 : 4;
+      loseHP(dmg, `Too close to ${h.label}`);
+      toastBad(`Too close to ${h.label} — it's hurting you! Radio it in.`);
     }
   }
 }
@@ -567,7 +562,10 @@ const NEIGH = [[0,0],[0,-1],[0,1],[-1,0],[1,0]];
 function nearestInteractable(){
   for (const [dx,dy] of NEIGH){ const e=entityAt(player.x+dx,player.y+dy); if (e && !(e.hidden && e.hidden())) return e; }
   for (const [dx,dy] of NEIGH){ const px=player.x+dx,py=player.y+dy; const p=S.patients.find(pt=>pt.x===px && pt.y===py); if (p) return {id:'patient',kind:'patient',patient:p,x:px,y:py}; }
-  for (const [dx,dy] of NEIGH){ const px=player.x+dx,py=player.y+dy; const h=S.hazards.find(z=>z.discovered && z.x===px && z.y===py); if (h) return {id:'hazard',kind:'hazard',hazard:h,x:px,y:py}; }
+  // hazards: reportable from up to 2 tiles away (nearest un-reported, discovered)
+  let bestH=null,bd=99;
+  for (const h of S.hazards){ if (!h.discovered || h.reported) continue; const d=Math.max(Math.abs(h.x-player.x),Math.abs(h.y-player.y)); if (d<=2 && d<bd){ bd=d; bestH=h; } }
+  if (bestH) return {id:'hazard',kind:'hazard',hazard:bestH,x:bestH.x,y:bestH.y};
   return null;
 }
 function tryInteract(){
@@ -1376,6 +1374,7 @@ function updatePrompt(e){
 /* ════════════ AUDIO (Web Audio, self-contained) ════════════ */
 const SND = (function(){
   let ctx=null, musicGain=null, sfxGain=null, started=false, musicNodes=[], musicTimer=null, _inChoice=false;
+  let bgmEl=null, bgmSrc=null, bgmOk=false, musicPlaying=false;
   const MUSIC_UNIT=0.08, SFX_UNIT=0.25; // level 2 → 0.16 music / 0.5 sfx (≈ original)
   function loadLvl(key,oldKey){ const v=localStorage.getItem(key); if (v!==null){ const n=parseInt(v,10); return isNaN(n)?2:Math.max(0,Math.min(10,n)); } return localStorage.getItem(oldKey)==='off'?0:2; }
   let musicLevel=loadLvl('cert_music_vol','cert_music');
@@ -1388,6 +1387,13 @@ const SND = (function(){
     comp.threshold.value=-3; comp.knee.value=14; comp.ratio.value=12; comp.attack.value=0.003; comp.release.value=0.25; comp.connect(ctx.destination);
     musicGain = ctx.createGain(); musicGain.gain.value = MUSIC_UNIT*musicLevel; musicGain.connect(comp);
     sfxGain   = ctx.createGain(); sfxGain.gain.value   = SFX_UNIT*sfxLevel;     sfxGain.connect(comp);
+    // background-music file (rpg-bgmusic.mp3) routed through musicGain; synth groove is the fallback if it's missing
+    bgmEl=document.getElementById('bgm');
+    if (bgmEl){
+      try{ bgmSrc=ctx.createMediaElementSource(bgmEl); bgmSrc.connect(musicGain); }catch(e){}
+      bgmEl.addEventListener('canplay',()=>{ bgmOk=true; if (musicPlaying && musicLevel>0){ stopSynth(); try{ bgmEl.currentTime=0; bgmEl.play().catch(()=>{}); }catch(e){} } });
+      bgmEl.addEventListener('error',()=>{ bgmOk=false; });
+    }
   }
   function resume(){ ensure(); if (!ctx) return; if (ctx.state==='suspended') ctx.resume(); if (!started){ started=true; if (musicLevel>0) startMusic(); } }
   function note(freq,start,dur,type,peak){
@@ -1420,8 +1426,13 @@ const SND = (function(){
     }
   }
   function mtof(m){ return 440*Math.pow(2,(m-69)/12); }
-  function startMusic(){
-    if (!ctx) return; stopMusic();
+  function startMusic(){ // play the real file if it loaded, otherwise the built-in synth groove
+    if (!ctx) return; musicPlaying=true;
+    if (bgmEl && bgmOk){ stopSynth(); try{ bgmEl.currentTime=0; bgmEl.play().catch(()=>{}); }catch(e){} return; }
+    startSynth();
+  }
+  function startSynth(){
+    if (!ctx) return; stopSynth();
     // smooth & upbeat loop: mellow lead + warm 7th chords + soft bass groove + light beat (Cmaj7–Am7–Fmaj7–G7)
     const bpm=104, step=(60/bpm)/2, SPB=8, BARS=4, loopDur=SPB*BARS*step;
     const chords=[[60,64,67,71],[57,60,64,67],[53,57,60,64],[55,59,62,65]];
@@ -1453,9 +1464,10 @@ const SND = (function(){
     musicTimer=setInterval(()=>{ loopStart+=loopDur; schedule(loopStart); }, loopDur*1000);
     musicNodes=[filt];
   }
-  function stopMusic(){ if (musicTimer){ clearInterval(musicTimer); musicTimer=null; } musicNodes.forEach(n=>{ try{ if (n.stop) n.stop(); n.disconnect(); }catch(e){} }); musicNodes=[]; }
+  function stopSynth(){ if (musicTimer){ clearInterval(musicTimer); musicTimer=null; } musicNodes.forEach(n=>{ try{ if (n.stop) n.stop(); n.disconnect(); }catch(e){} }); musicNodes=[]; }
+  function stopMusic(){ musicPlaying=false; stopSynth(); if (bgmEl){ try{ bgmEl.pause(); }catch(e){} } }
   function setMusicLevel(n){ musicLevel=Math.max(0,Math.min(10,n|0)); localStorage.setItem('cert_music_vol',musicLevel); ensure();
-    if (ctx){ musicGain.gain.setTargetAtTime(MUSIC_UNIT*musicLevel, ctx.currentTime,0.1); if (musicLevel>0 && started){ if (!musicTimer) startMusic(); } else if (musicLevel<=0){ stopMusic(); } } }
+    if (ctx){ musicGain.gain.setTargetAtTime(MUSIC_UNIT*musicLevel, ctx.currentTime,0.1); if (musicLevel>0 && started){ if (!musicPlaying) startMusic(); } else if (musicLevel<=0){ stopMusic(); } } }
   function setSfxLevel(n){ sfxLevel=Math.max(0,Math.min(10,n|0)); localStorage.setItem('cert_sfx_vol',sfxLevel); ensure(); if (ctx) sfxGain.gain.setTargetAtTime(SFX_UNIT*sfxLevel, ctx.currentTime,0.05); }
   return { resume, sfx, setMusicLevel, setSfxLevel, getMusicLevel:()=>musicLevel, getSfxLevel:()=>sfxLevel,
     beginChoice:()=>{_inChoice=true;}, endChoice:()=>{_inChoice=false;} };
