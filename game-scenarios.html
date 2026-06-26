@@ -74,6 +74,10 @@
     color: var(--text-muted);
   }
   .scorebar span { color: var(--primary); font-weight: 700; font-size: 1.1rem; }
+  .snd-btn { margin-left: 14px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); font-size: 1rem; width: 36px; height: 34px; cursor: pointer; line-height: 1; }
+  .snd-btn:hover { border-color: var(--primary); }
+  .snd-btn.off { opacity: .45; }
 
   main {
     width: 100%;
@@ -350,6 +354,7 @@
   </div>
   <a class="home-link" href="index.html">← Menu</a>
   <div class="scorebar">Total Score<br><span id="total-score">0</span> pts</div>
+  <button class="snd-btn" id="snd-btn" onclick="toggleMute()" title="Sound" aria-label="Toggle sound">🔊</button>
 </header>
 
 <main>
@@ -1423,6 +1428,28 @@ let state = {
 };
 
 // ─────────────────────────────────────────────
+//  AUDIO (self-contained sound effects)
+// ─────────────────────────────────────────────
+const SND = (function(){
+  let ctx=null; let muted = localStorage.getItem('cert_g1_sfx')==='off';
+  function ensure(){ if(ctx) return; const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return; ctx=new AC(); }
+  function note(f,start,dur,type,peak){ const t=ctx.currentTime+start; const o=ctx.createOscillator(),g=ctx.createGain();
+    o.type=type||'triangle'; o.frequency.value=f; g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(peak||0.25,t+0.012);
+    g.gain.exponentialRampToValueAtTime(0.0008,t+dur); o.connect(g); g.connect(ctx.destination); o.start(t); o.stop(t+dur+0.03); }
+  function sfx(name){ if(muted) return; ensure(); if(!ctx) return; if(ctx.state==='suspended') ctx.resume();
+    if(name==='click') note(480,0,0.06,'square',0.15);
+    else if(name==='correct'){ note(660,0,0.1,'triangle',0.26); note(990,0.085,0.16,'triangle',0.26); }      // cheerful ding
+    else if(name==='wrong'){ note(300,0,0.16,'sine',0.28); note(225,0.11,0.22,'sine',0.26); }                // gentle dong
+    else if(name==='win'){ [523,659,784,1047,1319].forEach((f,i)=>note(f,i*0.12,0.3,'triangle',0.27)); }
+  }
+  function toggle(){ muted=!muted; localStorage.setItem('cert_g1_sfx',muted?'off':'on'); if(!muted) sfx('click'); return muted; }
+  return { sfx, isMuted:()=>muted, toggle };
+})();
+function updateMuteBtn(){ const b=document.getElementById('snd-btn'); if(!b) return;
+  b.textContent=SND.isMuted()?'🔇':'🔊'; b.classList.toggle('off',SND.isMuted()); b.title=SND.isMuted()?'Sound off':'Sound on'; }
+function toggleMute(){ SND.toggle(); updateMuteBtn(); }
+
+// ─────────────────────────────────────────────
 //  RESOURCES
 // ─────────────────────────────────────────────
 const RESOURCES = [
@@ -1505,6 +1532,7 @@ function goHome() {
 }
 
 function startModule(modId) {
+  SND.sfx('click');
   state.currentModule = MODULES.find(m => m.id === modId);
   state.currentStep = 0;
   state.stepScores = [];
@@ -1571,6 +1599,8 @@ function selectChoice(idx) {
     });
   }
 
+  SND.sfx(isCorrect ? 'correct' : 'wrong');
+
   // Feedback
   const fb = document.getElementById('feedback-box');
   fb.style.display = 'block';
@@ -1591,6 +1621,7 @@ function nextStep() {
   const mod = state.currentModule;
   state.currentStep++;
   if (state.currentStep < mod.steps.length) {
+    SND.sfx('click');
     renderStep();
   } else {
     showResults();
@@ -1648,11 +1679,13 @@ function showResults() {
   });
 
   show('results');
+  SND.sfx('win');
 }
 
 // ─────────────────────────────────────────────
 //  INIT
 // ─────────────────────────────────────────────
+updateMuteBtn();
 goHome();
 </script>
 </body>

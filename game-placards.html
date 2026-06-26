@@ -391,7 +391,7 @@ function updHud(){ document.getElementById('hud-pairs').textContent=mastered.siz
 function renderBoard(){
   const board=document.getElementById('board');
   board.style.gridTemplateColumns='repeat('+cols+',1fr)';
-  board.style.maxWidth=(cols*92)+'px';
+  board.style.maxWidth=(cols*120)+'px';
   board.innerHTML='';
   layout.forEach(uid=>{
     if(uid==null){ const g=document.createElement('div'); g.className='card gap'; board.appendChild(g); return; }
