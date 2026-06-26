@@ -166,8 +166,11 @@ canvas#map{display:block;width:auto;height:auto;max-width:100%;max-height:100%;a
 .lu-title{font-size:1.5rem;color:var(--primary);font-weight:700;margin-bottom:6px;}
 .lu-sub{font-size:0.88rem;color:var(--muted);margin-bottom:14px;}
 .lu-unlock{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:9px 13px;font-size:0.8rem;margin-bottom:16px;text-align:left;}
-.lu-btn{background:var(--primary);border:none;border-radius:var(--radius);padding:9px 26px;font-family:inherit;font-size:0.88rem;font-weight:700;color:var(--bg);cursor:pointer;}
+.lu-btn{background:var(--primary);border:none;border-radius:var(--radius);padding:9px 26px;font-family:inherit;font-size:0.88rem;font-weight:700;color:var(--bg);cursor:pointer;text-decoration:none;display:inline-block;}
 .lu-btn:hover{background:var(--primary-dark);}
+.end-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+.lu-btn-alt{background:var(--surface2);color:var(--primary);border:1px solid var(--border);}
+.lu-btn-alt:hover{background:var(--surface);border-color:var(--primary);}
 .end-ov{background:var(--bg);z-index:70;overflow-y:auto;}
 .end-box{background:var(--surface);border:2px solid var(--primary);border-radius:var(--radius);padding:28px;max-width:520px;width:100%;text-align:center;}
 .end-box.lose{border-color:var(--danger);}
@@ -277,7 +280,7 @@ canvas#map{display:block;width:auto;height:auto;max-width:100%;max-height:100%;a
 <div class="ov ass-ov h" id="ass-ov"><div class="ass-box"><div class="ass-title" id="ass-title"></div><div class="ass-findings" id="ass-findings"></div><div id="ass-action-wrap"></div><div class="ass-prompt">Apply START triage tag:</div><div class="tag-row" id="tag-row"></div></div></div>
 <div class="ov tri-ov h" id="tri-ov"><div class="tri-box"><div class="tri-title" id="tri-title"></div><div class="tri-tags" id="tri-tags"></div><div class="tri-reason" id="tri-reason"></div><button class="tri-btn" onclick="closeTri()">Got it →</button></div></div>
 <div class="ov lu-ov h" id="lu-ov"><div class="lu-box"><div class="lu-title">⬆ LEVEL UP!</div><div class="lu-sub">Abe L. — <span id="lu-lvl"></span></div><div class="lu-unlock" id="lu-unlock"></div><button class="lu-btn" onclick="closeLU()">Continue →</button></div></div>
-<div class="ov end-ov h" id="end-ov"><div class="end-box" id="end-box"><div class="end-icon" id="end-icon">🚒</div><div class="end-title" id="end-title">Mission Complete</div><div style="font-size:0.8rem;color:var(--muted);margin-bottom:14px;" id="end-sub">Fire Scene Response — 143 Hopehill Road</div><table class="end-table" id="end-tbl"></table><div class="rating" id="end-rating"></div><button class="lu-btn" onclick="location.reload()">Play Again</button></div></div>
+<div class="ov end-ov h" id="end-ov"><div class="end-box" id="end-box"><div class="end-icon" id="end-icon">🚒</div><div class="end-title" id="end-title">Mission Complete</div><div style="font-size:0.8rem;color:var(--muted);margin-bottom:14px;" id="end-sub">Fire Scene Response — 143 Hopehill Road</div><table class="end-table" id="end-tbl"></table><div class="rating" id="end-rating"></div><div class="end-btns"><button class="lu-btn" onclick="location.reload()">Play Again</button><a class="lu-btn lu-btn-alt" href="index.html">← Return to Menu</a></div></div></div>
 
 <script>
 /* ════════════ MAP (32 × 22) ════════════ */
