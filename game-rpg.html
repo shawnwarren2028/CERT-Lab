@@ -540,6 +540,25 @@ function isWalkable(x,y){
   const e = entityAt(x,y); if (e && e.solid) return false;
   return true;
 }
+// BFS path on the walkable grid → patients route through the gates/driveway instead of through walls
+function findPath(sx,sy,gx,gy){
+  if (sx===gx && sy===gy) return [];
+  const key=(x,y)=>y*COLS+x, start=key(sx,sy), goal=key(gx,gy);
+  const prev=new Map([[start,null]]); const q=[start]; let qi=0, found=false;
+  while (qi<q.length){
+    const cur=q[qi++]; if (cur===goal){ found=true; break; }
+    const cx=cur%COLS, cy=(cur-cx)/COLS;
+    for (const [dx,dy] of [[0,-1],[0,1],[-1,0],[1,0]]){
+      const nx=cx+dx, ny=cy+dy, nk=key(nx,ny);
+      if (prev.has(nk) || !isWalkable(nx,ny)) continue;
+      prev.set(nk,cur); q.push(nk);
+    }
+  }
+  if (!found) return [{x:gx,y:gy}]; // graceful fallback: straight to the slot
+  const path=[]; let c=goal;
+  while (c!==null && c!==start){ const cx=c%COLS, cy=(c-cx)/COLS; path.unshift({x:cx,y:cy}); c=prev.get(c); }
+  return path;
+}
 function move(dx,dy){
   if (S.over || anyOverlayOpen() || player.moving) return;
   const nx=player.x+dx, ny=player.y+dy;
@@ -910,7 +929,7 @@ function applyTag(pid, tag){
   document.getElementById('ass-ov').classList.add('h');
   if (correct){ SND.sfx('tag'); gainXP(20,`Correctly tagged ${p.name} — ${tag}`); addLog(`✓ ${p.name} tagged ${tag} (correct). ${p.reason}`,'good'); toast(`✓ Correct — ${p.reason}`,'good',4200); }
   else { addLog(`✗ ${p.name} tagged ${tag} — incorrect (should be ${p.correctTag}). ${p.reason}`,'bad'); loseCR(10,`Wrong triage tag for ${p.name}`); openTriExplain(p, tag); }
-  if (tag!=='Dead'){ const slot=TRIAGE_SLOTS[triageNext++ % TRIAGE_SLOTS.length]; p.x=slot.x; p.y=slot.y; } // walk to triage area
+  if (tag!=='Dead'){ const slot=TRIAGE_SLOTS[triageNext++ % TRIAGE_SLOTS.length]; p.path=findPath(p.x,p.y,slot.x,slot.y); p.x=slot.x; p.y=slot.y; } // route through the gates to the CCP
   if (allTagged()) advQ('triage',0);
   render();
 }
@@ -1247,7 +1266,13 @@ function tick(ts){
   player.px+=stepTo(player.px,tx,MOVE_SPEED); player.py+=stepTo(player.py,ty,MOVE_SPEED);
   if (player.px===tx && player.py===ty) player.moving=false;
   // smooth patients (relocate to triage after tagging)
-  for (const p of S.patients){ p.px+=stepTo(p.px,p.x*TILE,PT_SPEED); p.py+=stepTo(p.py,p.y*TILE,PT_SPEED); }
+  for (const p of S.patients){
+    if (p.path && p.path.length){
+      const wp=p.path[0], tx=wp.x*TILE, ty=wp.y*TILE;
+      p.px+=stepTo(p.px,tx,PT_SPEED); p.py+=stepTo(p.py,ty,PT_SPEED);
+      if (p.px===tx && p.py===ty) p.path.shift();
+    } else { p.px+=stepTo(p.px,p.x*TILE,PT_SPEED); p.py+=stepTo(p.py,p.y*TILE,PT_SPEED); }
+  }
   updateCamera();
   drawWorld(ts);
   requestAnimationFrame(tick);
