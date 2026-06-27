@@ -291,19 +291,19 @@ const MAP = [
   "..............RRR...............",
   "..............RRR...............",
   ".......######.GGG....######.....",
-  "~~~....######.GGG....######.....",
-  "~~~....######.RRR....######.....",
-  "~~~....######.RRR....######.....",
-  "~~~....######.RRR....######.....",
-  "~~~...........RRR...............",
-  "~~~...........RRR...............",
+  ".......######.GGG....######.....",
+  ".......######.RRR....######.....",
+  ".......######.RRR....######.....",
+  ".......######.RRR....######.....",
+  ".............RRR................",
+  ".............RRR................",
   "..............RRR...............",
   "..............RRR...............",
   "FF.FFFFFFFFFFFRRRFFFFFFFFFFFFFFF",
   "........................GGG.....",
-  "........................GGG.....",
-  "................................",
-  "................................",
+  "...~~~~.................GGG.....",
+  "...~~~~.........................",
+  "...~~~~.........................",
   "................................",
   "FF.FFFFFFFFFFFFFFFFFFFFFFFFF.FFF",
   "RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR",
@@ -425,19 +425,19 @@ const ENTITIES = [
   { id:'rodriguez', kind:'npc',     x:4,  y:3,  solid:true },
   { id:'cache',     kind:'hotspot', x:6,  y:3,  solid:true },
   { id:'dana',      kind:'npc',     x:8,  y:3,  solid:true },
-  { id:'treatment', kind:'hotspot', x:1,  y:8,  solid:true },
+  { id:'treatment', kind:'hotspot', x:7,  y:17, solid:true },
   { id:'sizeup',    kind:'hotspot', x:4,  y:4,  solid:true },
   { id:'utility',   kind:'hotspot', x:13, y:7,  solid:true },
   { id:'spotfire',  kind:'hotspot', x:10, y:11, solid:true },
   { id:'sideyard',  kind:'hotspot', x:20, y:17, solid:true },
   { id:'kim',       kind:'npc',     x:24, y:12, solid:true },
   { id:'neighbor',  kind:'npc',     x:26, y:12, solid:true },
-  { id:'santos',    kind:'npc',     x:3,  y:12, solid:true, hidden:() => !S.emsRadioed },
+  { id:'santos',    kind:'npc',     x:8,  y:18, solid:true, hidden:() => !S.emsRadioed },
 ];
 
 /* triage collection point (tagged patients gather here) */
 const TRIAGE_SLOTS = [];
-for (let y=7;y<=11;y++) for (let x=3;x<=6;x++) TRIAGE_SLOTS.push({x,y});
+for (let y=16;y<=18;y++) for (let x=3;x<=6;x++) TRIAGE_SLOTS.push({x,y});
 let triageNext = 0;
 
 /* ════════════ STATE ════════════ */
@@ -676,7 +676,7 @@ function openTreatment(){
   if (!allTagged()){ toast('Finish START triage before establishing treatment.'); return; }
   if (!S.treatmentSet){
     openMenu('⛺ Treatment Area','Where do you establish the casualty treatment area?',[
-      {label:'Upwind and uphill, west of the structure, clear of hazards', run:()=>{ if (S.lvl<4){toastBad('You need Level 4 to run a treatment area.');loseCR(5,'Acted above skill level');return;} S.treatmentSet=true;gainXP(30,'Established treatment area');advQ('treatment',0);toastGood('Treatment area established.');openTreatment(); }},
+      {label:'In the open back yard, below the fence line — clear of the structure and hazards', run:()=>{ if (S.lvl<4){toastBad('You need Level 4 to run a treatment area.');loseCR(5,'Acted above skill level');return;} S.treatmentSet=true;gainXP(30,'Established treatment area');advQ('treatment',0);toastGood('Treatment area established.');openTreatment(); }},
       {label:'Right beside the front door for quick patient access', run:()=>{loseCR(10,'Unsafe treatment-area placement');toastBad('Too close to the structure — unsafe.');}},
       {label:'Downwind in the driveway near the gas leak', run:()=>{loseCR(10,'Unsafe treatment-area placement');toastBad('Downwind by the gas leak? Dangerous.');}},
     ]);
@@ -808,7 +808,7 @@ const DLGS = {
     choices:[{ text:'Copy that, Captain.', close:true }] },
   'rodriguez-smalltalk':{ npc:'rodriguez', text:`"Stay sharp out there, Abe. Keep radioing in any hazards you spot. What do you need?"`,
     choices:[{ text:'Just checking in.', close:true }] },
-  'dana-chat':{ npc:'dana', text:`"Hey Abe — I’m right behind you. Size up the scene and start tagging; the patients you tag will gather here at the treatment area. I’ll help when you’re ready."`,
+  'dana-chat':{ npc:'dana', text:`"Hey Abe — I’m right behind you. Size up the scene and start tagging; the patients you tag will be moved to the casualty collection point in the back yard, below the fence line. I’ll help when you’re ready."`,
     choices:[{ text:'Thanks, Dana. Stand by.', close:true }] },
   'santos-handoff':{ npc:'santos', text:`"EMS on scene. What’ve you got?"`,
     choices:[
