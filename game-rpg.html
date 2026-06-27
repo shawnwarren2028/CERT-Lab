@@ -467,8 +467,8 @@ function gainXP(amt, reason){
   if (S.lvl > old) showLU(S.lvl);
 }
 function loseXP(amt, reason){ S.xp = Math.max(0, S.xp - amt); addLog(`−${amt} XP — ${reason}`, 'bad'); render(); }
-function loseCR(amt, reason){ S.cr = Math.max(0, S.cr - amt); addLog(`−${amt} Credibility — ${reason}`, 'bad'); SND.sfx('bad'); if (S.cr<=0 && !S.over) setTimeout(()=>showLose('cr'),400); }
-function loseHP(amt, reason){ S.hp = Math.max(0, S.hp - amt); addLog(`−${amt} HP — ${reason}`, 'bad'); SND.sfx('hurt'); if (S.hp<=0 && !S.over) setTimeout(()=>showLose('hp'),400); }
+function loseCR(amt, reason){ S.cr = Math.max(0, S.cr - amt); addLog(`−${amt} Credibility — ${reason}`, 'bad'); SND.sfx('bad'); render(); if (S.cr<=0 && !S.over) setTimeout(()=>showLose('cr'),400); }
+function loseHP(amt, reason){ S.hp = Math.max(0, S.hp - amt); addLog(`−${amt} HP — ${reason}`, 'bad'); SND.sfx('hurt'); render(); if (S.hp<=0 && !S.over) setTimeout(()=>showLose('hp'),400); }
 function addLog(txt, type='neutral'){ S.log.unshift({txt,type}); if (S.log.length>40) S.log.pop(); }
 function advQ(qid, step){
   const q = S.quests.find(x=>x.id===qid); if (!q || q.done[step]) return;
