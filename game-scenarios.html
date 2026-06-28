@@ -244,6 +244,24 @@
   .breakdown-result.pass { color: var(--success); }
   .breakdown-result.fail { color: var(--danger); }
 
+  .results-review {
+    width: 100%; background: var(--surface);
+    border: 1px solid var(--border); border-radius: var(--radius); padding: 20px;
+    text-align: left;
+  }
+  .results-review h3 { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.08em; }
+  .review-item { padding: 14px 0; border-bottom: 1px solid var(--border); }
+  .review-item:last-child { border-bottom: none; }
+  .review-q { font-weight: 700; margin-bottom: 8px; }
+  .review-line { font-size: 0.88rem; line-height: 1.45; margin-bottom: 5px; display: flex; gap: 8px; align-items: baseline; }
+  .review-tag {
+    flex-shrink: 0; font-size: 0.66rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .05em; padding: 2px 7px; border-radius: 20px; min-width: 78px; text-align: center;
+  }
+  .review-wrong .review-tag { background: rgba(214,77,77,.18); color: var(--danger); border: 1px solid var(--danger); }
+  .review-right .review-tag { background: rgba(90,170,58,.18); color: var(--success); border: 1px solid var(--success); }
+  .review-why { font-size: 0.84rem; color: var(--text-muted); line-height: 1.55; margin-top: 8px; }
+
   .btn-row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
   .btn-secondary {
     background: var(--surface2); border: 1px solid var(--border);
@@ -395,6 +413,7 @@
     <div class="results-score" id="results-score"></div>
     <div class="results-msg" id="results-msg"></div>
     <div class="results-breakdown" id="results-breakdown"></div>
+    <div class="results-review" id="results-review" style="display:none"></div>
     <div class="btn-row">
       <button class="btn-secondary" onclick="retryModule()">Retry This Module</button>
       <button class="btn-primary" onclick="goHome()">Back to Modules</button>
@@ -1424,7 +1443,8 @@ let state = {
   moduleScores: {},   // id -> { correct, total }
   currentModule: null,
   currentStep: 0,
-  stepScores: []      // bool per step
+  stepScores: [],     // bool per step
+  stepPicks: []       // chosen choice index per step
 };
 
 // ─────────────────────────────────────────────
@@ -1536,6 +1556,7 @@ function startModule(modId) {
   state.currentModule = MODULES.find(m => m.id === modId);
   state.currentStep = 0;
   state.stepScores = [];
+  state.stepPicks = [];
   show('scenario');
   document.getElementById('module-label').textContent = state.currentModule.icon + '  ' + state.currentModule.title;
   renderStep();
@@ -1607,8 +1628,9 @@ function selectChoice(idx) {
   fb.className = 'feedback-box ' + (isCorrect ? 'correct' : 'incorrect');
   fb.textContent = isCorrect ? step.feedback.correct : step.feedback.incorrect;
 
-  // Track score
+  // Track score + which choice was picked
   state.stepScores.push(isCorrect);
+  state.stepPicks.push(idx);
 
   // Show next
   document.getElementById('next-btn').style.display = 'block';
@@ -1677,6 +1699,34 @@ function showResults() {
     `;
     breakdown.appendChild(item);
   });
+
+  // Review of missed questions — show the correct answer + why
+  const review = document.getElementById('results-review');
+  const missed = mod.steps
+    .map((step, i) => ({ step, i }))
+    .filter(({ i }) => !state.stepScores[i]);
+  if (missed.length === 0) {
+    review.style.display = 'none';
+    review.innerHTML = '';
+  } else {
+    review.style.display = 'block';
+    let html = `<h3>Review Missed Questions (${missed.length})</h3>`;
+    missed.forEach(({ step, i }) => {
+      const pickIdx = state.stepPicks[i];
+      const yourChoice = (pickIdx != null && step.choices[pickIdx]) ? step.choices[pickIdx].text : '(no answer)';
+      const correctChoice = (step.choices.find(c => c.correct) || {}).text || '';
+      // Strip leading ❌/✅ markers from the teaching feedback
+      const why = (step.feedback.incorrect || '').replace(/^[❌✅]\s*/, '');
+      html += `
+        <div class="review-item">
+          <div class="review-q">${step.image ? step.image + ' ' : ''}${step.situation}</div>
+          <div class="review-line review-wrong"><span class="review-tag">Your answer</span>${yourChoice}</div>
+          <div class="review-line review-right"><span class="review-tag">Correct</span>${correctChoice}</div>
+          <div class="review-why">${why}</div>
+        </div>`;
+    });
+    review.innerHTML = html;
+  }
 
   show('results');
   SND.sfx('win');
