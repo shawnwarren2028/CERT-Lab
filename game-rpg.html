@@ -181,6 +181,18 @@ canvas#map{display:block;width:auto;height:auto;max-width:100%;max-height:100%;a
 .end-table td{padding:5px 8px;border-bottom:1px solid var(--border);}
 .end-table td:first-child{color:var(--muted);}
 .rating{font-size:1.2rem;color:var(--primary);font-weight:700;margin:8px 0 16px;}
+.end-detail{text-align:left;margin:4px 0 16px;max-height:230px;overflow-y:auto;}
+.end-detail .aar-sec{font-size:0.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700;margin:12px 0 7px;}
+.end-detail .aar-row{display:flex;align-items:center;gap:8px;font-size:0.78rem;padding:4px 0;border-bottom:1px solid var(--border);}
+.end-detail .aar-row:last-child{border-bottom:none;}
+.end-detail .aar-name{flex:1;}
+.end-detail .aar-arrow{color:var(--muted);font-size:0.72rem;}
+.end-detail .aar-mark{width:16px;text-align:center;font-weight:700;}
+.end-detail .aar-mark.ok{color:var(--min);}
+.end-detail .aar-mark.no{color:var(--imm);}
+.end-detail .tri-badge{font-size:0.6rem;padding:1px 6px;border-radius:10px;font-weight:700;white-space:nowrap;}
+.end-detail .aar-hz{font-size:0.78rem;padding:4px 0;border-bottom:1px solid var(--border);display:flex;gap:8px;}
+.end-detail .aar-hz:last-child{border-bottom:none;}
 
 /* ════════ RESPONSIVE: tablet + phone ════════ */
 @media (max-width:860px){
@@ -280,7 +292,7 @@ canvas#map{display:block;width:auto;height:auto;max-width:100%;max-height:100%;a
 <div class="ov ass-ov h" id="ass-ov"><div class="ass-box"><div class="ass-title" id="ass-title"></div><div class="ass-findings" id="ass-findings"></div><div id="ass-action-wrap"></div><div class="ass-prompt">Apply START triage tag:</div><div class="tag-row" id="tag-row"></div></div></div>
 <div class="ov tri-ov h" id="tri-ov"><div class="tri-box"><div class="tri-title" id="tri-title"></div><div class="tri-tags" id="tri-tags"></div><div class="tri-reason" id="tri-reason"></div><button class="tri-btn" onclick="closeTri()">Got it →</button></div></div>
 <div class="ov lu-ov h" id="lu-ov"><div class="lu-box"><div class="lu-title">⬆ LEVEL UP!</div><div class="lu-sub">Abe L. — <span id="lu-lvl"></span></div><div class="lu-unlock" id="lu-unlock"></div><button class="lu-btn" onclick="closeLU()">Continue →</button></div></div>
-<div class="ov end-ov h" id="end-ov"><div class="end-box" id="end-box"><div class="end-icon" id="end-icon">🚒</div><div class="end-title" id="end-title">Mission Complete</div><div style="font-size:0.8rem;color:var(--muted);margin-bottom:14px;" id="end-sub">Fire Scene Response — 143 Hopehill Road</div><table class="end-table" id="end-tbl"></table><div class="rating" id="end-rating"></div><div class="end-btns"><button class="lu-btn" onclick="location.reload()">Play Again</button><a class="lu-btn lu-btn-alt" href="index.html">← Return to Menu</a></div></div></div>
+<div class="ov end-ov h" id="end-ov"><div class="end-box" id="end-box"><div class="end-icon" id="end-icon">🚒</div><div class="end-title" id="end-title">Mission Complete</div><div style="font-size:0.8rem;color:var(--muted);margin-bottom:14px;" id="end-sub">Fire Scene Response — 143 Hopehill Road</div><table class="end-table" id="end-tbl"></table><div class="rating" id="end-rating"></div><div class="end-detail" id="end-detail"></div><div class="end-btns"><button class="lu-btn" onclick="location.reload()">Play Again</button><a class="lu-btn lu-btn-alt" href="index.html">← Return to Menu</a></div></div></div>
 
 <script>
 /* ════════════ MAP (32 × 22) ════════════ */
@@ -454,7 +466,7 @@ const S = {
   patients: PATIENTS.map(p => ({...p, px:p.x*TILE, py:p.y*TILE})),
   quests: JSON.parse(JSON.stringify(QUESTS)),
   hazards: HAZARDS.map(h => ({...h, discovered:false, reported:false, near:0})),
-  log: [], over:false,
+  log: [], over:false, t0:Date.now(),
 };
 const player = { x:2, y:3, px:2*TILE, py:3*TILE, moving:false };
 const cam = { x:0, y:0 };
@@ -508,6 +520,22 @@ function showLU(lvl){
 }
 function closeLU(){ document.getElementById('lu-ov').classList.add('h'); render(); }
 function patientsTagged(){ return S.patients.filter(p=>p.tagged).length; }
+function fmtElapsed(){ const s=Math.max(0,Math.round((Date.now()-S.t0)/1000)); const m=Math.floor(s/60); return `${m}:${String(s%60).padStart(2,'0')}`; }
+function buildAAR(){
+  // Per-patient triage accuracy
+  let rows = S.patients.map(p=>{
+    const ok = p.tagged===p.correctTag;
+    const yours = p.tagged ? tagBadge(p.tagged) : '<span class="tri-badge" style="background:#333;color:#aaa">NOT TAGGED</span>';
+    const mark = p.tagged ? (ok?'<span class="aar-mark ok">✓</span>':'<span class="aar-mark no">✗</span>') : '<span class="aar-mark no">—</span>';
+    return `<div class="aar-row">${mark}<span class="aar-name">${p.name}</span>${yours}${ok?'':`<span class="aar-arrow">→</span>${tagBadge(p.correctTag)}`}</div>`;
+  }).join('');
+  // Hazards
+  let hz = S.hazards.map(h=>{
+    const ok=h.reported;
+    return `<div class="aar-hz"><span class="aar-mark ${ok?'ok':'no'}">${ok?'✓':'✗'}</span><span class="aar-name">${h.label}</span><span class="aar-arrow">${ok?'reported':'not reported'}</span></div>`;
+  }).join('');
+  return `<div class="aar-sec">Patient Triage Accuracy</div>${rows}<div class="aar-sec">Scene Hazards</div>${hz}`;
+}
 function allTagged(){ return S.patients.every(p=>p.tagged); }
 function immsTagged(){ return S.patients.filter(p=>p.tagged==='I'); }
 function immsTreated(){ return S.patients.filter(p=>p.tagged==='I' && p.treated).length; }
@@ -990,8 +1018,10 @@ function showWin(){
     <tr><td>Correct Triage Tags</td><td><strong>${correct}/10</strong></td></tr>
     <tr><td>Patients Treated</td><td><strong>${S.patients.filter(p=>p.treated).length}/10</strong></td></tr>
     <tr><td>Hazards Reported</td><td><strong>${hz}/${S.hazards.length}</strong></td></tr>
-    <tr><td>Side Quests</td><td><strong>${sides}/6</strong></td></tr>`;
+    <tr><td>Side Quests</td><td><strong>${sides}/6</strong></td></tr>
+    <tr><td>Time on Scene</td><td><strong>${fmtElapsed()}</strong></td></tr>`;
   document.getElementById('end-rating').textContent=rating;
+  document.getElementById('end-detail').innerHTML=buildAAR();
   document.getElementById('end-ov').classList.remove('h');
 }
 function showLose(reason){
@@ -1004,8 +1034,10 @@ function showLose(reason){
     <tr><td>Total XP</td><td><strong>${S.xp}</strong></td></tr>
     <tr><td>HP</td><td><strong>${S.hp}/100</strong></td></tr>
     <tr><td>Credibility</td><td><strong>${S.cr}/100</strong></td></tr>
-    <tr><td>Patients tagged</td><td><strong>${patientsTagged()}/10</strong></td></tr>`;
+    <tr><td>Patients tagged</td><td><strong>${patientsTagged()}/10</strong></td></tr>
+    <tr><td>Time on Scene</td><td><strong>${fmtElapsed()}</strong></td></tr>`;
   document.getElementById('end-rating').textContent='Regroup and try again — operate by the book.';
+  document.getElementById('end-detail').innerHTML=buildAAR();
   document.getElementById('end-ov').classList.remove('h');
 }
 
@@ -1383,8 +1415,43 @@ function drawWorld(ts){
   if (obj && objVisible(obj)) drawWaypoint(obj.x,obj.y,ts);
   ctx.restore();
   if (obj && !objVisible(obj)) drawEdgeArrow(obj,ts);
+  drawMinimap(ts);
   updateObjBanner(obj);
   updatePrompt(e);
+}
+const MM_TILE=3;
+function drawMinimap(ts){
+  const mmW=COLS*MM_TILE, mmH=ROWS*MM_TILE, pad=4, margin=8;
+  const boxW=mmW+pad*2, boxH=mmH+pad*2;
+  const ox=canvas.width-boxW-margin, oy=margin;
+  // backing panel
+  ctx.fillStyle='rgba(8,14,7,.80)'; rr(ox,oy,boxW,boxH,6); ctx.fill();
+  ctx.strokeStyle='rgba(90,170,58,.7)'; ctx.lineWidth=1.5; rr(ox,oy,boxW,boxH,6); ctx.stroke(); ctx.lineWidth=1;
+  const ix=ox+pad, iy=oy+pad;
+  ctx.save();
+  ctx.beginPath(); ctx.rect(ix,iy,mmW,mmH); ctx.clip();
+  // terrain
+  for (let y=0;y<ROWS;y++) for (let x=0;x<COLS;x++){
+    const ch=MAP[y][x];
+    ctx.fillStyle = ch==='F' ? '#27331a' : (ch==='G'||ch==='T'||ch==='P'||ch==='#') ? '#33402a' : groundColor(ch);
+    ctx.fillRect(ix+x*MM_TILE, iy+y*MM_TILE, MM_TILE, MM_TILE);
+  }
+  // buildings
+  for (const b of BUILDINGS){ ctx.fillStyle = b.burning ? '#5e4338' : '#5b5347'; ctx.fillRect(ix+b.x*MM_TILE, iy+b.y*MM_TILE, b.w*MM_TILE, b.h*MM_TILE); }
+  // CCP marker (treatment tent)
+  const tent=ENTITIES.find(e=>e.id==='treatment');
+  if (tent){ ctx.fillStyle='#3fd0c0'; ctx.fillRect(ix+tent.x*MM_TILE-1, iy+tent.y*MM_TILE-1, MM_TILE+2, MM_TILE+2); }
+  // hazards (discovered): orange = unreported, dim = reported
+  for (const h of S.hazards){ if (!h.discovered) continue; ctx.fillStyle=h.reported?'#6a5a2a':'#ff9a2a'; ctx.fillRect(ix+h.x*MM_TILE-1, iy+h.y*MM_TILE-1, MM_TILE+2, MM_TILE+2); }
+  // patients (dot colored by tag; white = untagged)
+  const TC={I:'#ff4d4d',D:'#ffcc33',M:'#3ddc5a',Dead:'#888'};
+  for (const p of S.patients){ const cx=ix+(p.px/TILE+0.5)*MM_TILE, cy=iy+(p.py/TILE+0.5)*MM_TILE; ctx.fillStyle=p.tagged?(TC[p.tagged]||'#fff'):'#ffffff'; ctx.beginPath(); ctx.arc(cx,cy,1.7,0,7); ctx.fill(); }
+  // player (yellow, pulsing ring)
+  const pcx=ix+(player.px/TILE+0.5)*MM_TILE, pcy=iy+(player.py/TILE+0.5)*MM_TILE;
+  const pulse=0.5+0.5*Math.sin((ts||0)/300);
+  ctx.fillStyle='#ffe14d'; ctx.beginPath(); ctx.arc(pcx,pcy,2.1,0,7); ctx.fill();
+  ctx.strokeStyle=`rgba(255,225,77,${0.4+0.5*pulse})`; ctx.lineWidth=1; ctx.beginPath(); ctx.arc(pcx,pcy,3.6,0,7); ctx.stroke();
+  ctx.restore();
 }
 function promptLabel(e){
   if (!e) return null;
