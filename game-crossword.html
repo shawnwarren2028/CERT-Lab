@@ -600,6 +600,7 @@ function paint(){
     li.classList.toggle('done', wordComplete(PZ.words[wi]));
   });
   updateStats();
+  keepActiveVisible();
 }
 function updateStats(){
   let filled=0,total=0;
@@ -699,6 +700,30 @@ function canType(){
 }
 function focusInput(){ if (hInput){ hInput.value=''; try{ hInput.focus({preventScroll:true}); }catch(e){ hInput.focus(); } } }
 function blurInput(){ if (hInput) hInput.blur(); }
+
+/* Keep the active cell visible — horizontally within the board, and vertically
+   above the on-screen keyboard (visualViewport-aware) on touch devices. */
+const isTouch = (window.matchMedia && matchMedia('(pointer:coarse)').matches) || ('ontouchstart' in window) || (navigator.maxTouchPoints||0)>0;
+function keepActiveVisible(){
+  if (!PZ || document.getElementById('game').style.display==='none') return;
+  const w=PZ.words[active.wi]; if (!w) return;
+  const [r,c]=w.cells[active.ci]; const el=cellEl(r,c); if (!el || !el.getClientRects().length) return;
+  // horizontal: scroll the board-wrap so the cell isn't clipped
+  const wrap=document.querySelector('.board-wrap');
+  if (wrap){ const er=el.getBoundingClientRect(), wr=wrap.getBoundingClientRect();
+    if (er.left < wr.left+4) wrap.scrollLeft += er.left - wr.left - 6;
+    else if (er.right > wr.right-4) wrap.scrollLeft += er.right - wr.right + 6;
+  }
+  if (!isTouch) return;
+  // vertical: keep the cell above the keyboard using the visual viewport
+  const er=el.getBoundingClientRect();
+  const vv=window.visualViewport, vTop=vv?vv.offsetTop:0, vh=vv?vv.height:window.innerHeight;
+  if (er.top < vTop+70 || er.bottom > vTop+vh-16){
+    const target=vTop+Math.max(64, vh*0.30);
+    window.scrollBy({ top: er.top-target, behavior:'smooth' });
+  }
+}
+if (window.visualViewport) window.visualViewport.addEventListener('resize', keepActiveVisible);
 let _kdLetter=0, _kdBack=0;
 if (hInput){
   // Hardware keys while focused (cancelable keydown) — handle and flag.
