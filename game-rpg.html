@@ -78,6 +78,7 @@ canvas#map{display:block;width:auto;height:auto;max-width:100%;max-height:100%;a
 .char-panel{background:var(--surface);border-left:1px solid var(--border);padding:11px;overflow-y:auto;grid-row:1;display:flex;flex-direction:column;gap:9px;}
 .char-name{font-size:1rem;font-weight:700;color:var(--primary);}
 .char-rank{font-size:0.7rem;color:var(--muted);}
+.stat-block{display:flex;flex-direction:column;gap:9px;}
 .stat-row{display:flex;justify-content:space-between;font-size:0.73rem;margin-bottom:1px;}
 .stat-lbl{color:var(--muted);}
 .stat-val{font-weight:700;}
@@ -202,6 +203,15 @@ canvas#map{display:block;width:auto;height:auto;max-width:100%;max-height:100%;a
   .hdr-menu{order:3;}
   .hdr-phase{margin-left:0;order:4;width:100%;text-align:left;}
   .layout{display:flex;flex-direction:column;height:auto;}
+  /* stat block (name/rank + bars) moved above the map as a compact strip */
+  #stat-block{order:0;background:var(--surface);border-bottom:1px solid var(--border);padding:7px 12px;gap:5px;}
+  #stat-block .char-id{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;}
+  #stat-block .char-name{font-size:0.92rem;}
+  #stat-block .stats{display:flex;gap:12px;align-items:flex-end;}
+  #stat-block .stats > .lvl-row{display:none;} /* Level already shown in the rank line */
+  #stat-block .metric{flex:1;min-width:0;}
+  #stat-block .metric .stat-row{font-size:0.66rem;margin-bottom:2px;}
+  #stat-block .bar-wrap{margin-bottom:0;}
   .scene-panel{order:1;padding:8px;}
   .quest-panel{order:2;border-right:none;border-top:1px solid var(--border);}
   .char-panel{order:3;border-left:none;border-top:1px solid var(--border);}
@@ -266,15 +276,23 @@ canvas#map{display:block;width:auto;height:auto;max-width:100%;max-height:100%;a
     </div>
   </div>
   <div class="char-panel">
-    <div><div class="char-name">Abe L.</div><div class="char-rank" id="char-rank">Level 1 — CERT Volunteer</div></div>
-    <div>
-      <div class="stat-row"><span class="stat-lbl">Level</span><span class="stat-val" id="s-lvl">1</span></div>
-      <div class="stat-row"><span class="stat-lbl">XP</span><span class="stat-val" id="s-xp">0 / 50</span></div>
-      <div class="bar-wrap"><div class="bar-fill bar-xp" id="b-xp" style="width:0%"></div></div>
-      <div class="stat-row"><span class="stat-lbl">HP</span><span class="stat-val" id="s-hp">100</span></div>
-      <div class="bar-wrap"><div class="bar-fill bar-hp" id="b-hp" style="width:100%"></div></div>
-      <div class="stat-row"><span class="stat-lbl">Credibility</span><span class="stat-val" id="s-cr">100</span></div>
-      <div class="bar-wrap"><div class="bar-fill bar-cr" id="b-cr" style="width:100%"></div></div>
+    <div class="stat-block" id="stat-block">
+      <div class="char-id"><div class="char-name">Abe L.</div><div class="char-rank" id="char-rank">Level 1 — CERT Volunteer</div></div>
+      <div class="stats">
+        <div class="stat-row lvl-row"><span class="stat-lbl">Level</span><span class="stat-val" id="s-lvl">1</span></div>
+        <div class="metric">
+          <div class="stat-row"><span class="stat-lbl">XP</span><span class="stat-val" id="s-xp">0 / 50</span></div>
+          <div class="bar-wrap"><div class="bar-fill bar-xp" id="b-xp" style="width:0%"></div></div>
+        </div>
+        <div class="metric">
+          <div class="stat-row"><span class="stat-lbl">HP</span><span class="stat-val" id="s-hp">100</span></div>
+          <div class="bar-wrap"><div class="bar-fill bar-hp" id="b-hp" style="width:100%"></div></div>
+        </div>
+        <div class="metric">
+          <div class="stat-row"><span class="stat-lbl">Credibility</span><span class="stat-val" id="s-cr">100</span></div>
+          <div class="bar-wrap"><div class="bar-fill bar-cr" id="b-cr" style="width:100%"></div></div>
+        </div>
+      </div>
     </div>
     <div><div class="panel-hdr">🎒 Inventory</div><div id="inv-panel"></div></div>
     <div><div class="panel-hdr">👥 Scene Status</div><div class="sc-stat" id="sc-stat"></div></div>
@@ -1610,6 +1628,20 @@ function closeVolPop(){ const pop=document.getElementById('vol-pop'); pop.classL
 function uiToggleMusic(){ SND.resume(); openVolPop('music'); }
 function uiToggleSfx(){ SND.resume(); openVolPop('sfx'); }
 document.addEventListener('click',e=>{ const pop=document.getElementById('vol-pop'); if (!pop||pop.classList.contains('hidden')) return; if (pop.contains(e.target)||e.target.closest('.hdr-audio')) return; closeVolPop(); });
+
+/* On mobile, relocate the stat block (name/rank + bars) above the map; on
+   desktop it lives in the right-hand character panel. One DOM node, no dupes. */
+(function(){
+  const mq=matchMedia('(max-width:860px)');
+  const sb=document.getElementById('stat-block');
+  const cp=document.querySelector('.char-panel');
+  const lay=document.querySelector('.layout');
+  function place(){
+    if (mq.matches){ if (lay.firstElementChild!==sb) lay.insertBefore(sb, lay.firstElementChild); }
+    else if (cp.firstElementChild!==sb){ cp.insertBefore(sb, cp.firstElementChild); }
+  }
+  mq.addEventListener('change', place); place();
+})();
 
 /* ════════════ INIT ════════════ */
 ['keydown','pointerdown','touchstart'].forEach(ev=>document.addEventListener(ev,()=>SND.resume(),{passive:true}));
