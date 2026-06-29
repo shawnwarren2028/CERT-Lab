@@ -110,14 +110,11 @@
   .tool-btn.primary{background:var(--primary);color:#06210a;border-color:var(--primary);}
   .tool-btn.primary:hover{background:var(--primary-light);}
 
-  /* ── On-screen keyboard (mobile) ── */
-  .kbd{display:none;margin-top:16px;gap:6px;flex-direction:column;}
-  .kbd-row{display:flex;gap:5px;justify-content:center;}
-  .kbd-key{flex:1;max-width:42px;height:46px;background:var(--surface2);border:1px solid var(--border);
-    color:var(--text);border-radius:7px;font-size:1rem;font-weight:600;cursor:pointer;}
-  .kbd-key.wide{max-width:90px;flex:1.6;font-size:0.8rem;}
-  .kbd-key:active{background:var(--primary);color:#06210a;}
-  @media (max-width:820px){ .kbd{display:flex;} }
+  /* Hidden input: summons the device's native keyboard on mobile.
+     Kept focusable (not display:none) but visually hidden; font-size 16px
+     prevents iOS auto-zoom on focus. */
+  #hidden-input{position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;border:0;padding:0;margin:0;
+    font-size:16px;background:transparent;color:transparent;caret-color:transparent;z-index:-1;}
 
   /* ── Overlays ── */
   .ov{position:fixed;inset:0;background:rgba(5,8,4,.82);display:flex;align-items:center;justify-content:center;
@@ -217,7 +214,9 @@
           <button class="tool-btn" onclick="printPuzzle()">🖨️ Print</button>
           <button class="tool-btn" onclick="newPuzzle()">🔁 New Puzzle</button>
         </div>
-        <div class="kbd" id="kbd"></div>
+        <input id="hidden-input" type="text" autocomplete="off" autocorrect="off"
+          autocapitalize="characters" spellcheck="false" inputmode="text"
+          aria-label="Crossword letter input" tabindex="-1">
       </div>
     </div>
   </section>
@@ -530,7 +529,7 @@ function newPuzzle(){
   updateStats();
 }
 function goLevels(){
-  stopTimer(); closeWin(); closeTeach();
+  stopTimer(); closeWin(); closeTeach(); blurInput();
   document.getElementById('game').style.display='none';
   document.getElementById('level-select').style.display='block';
   renderLevels();
@@ -567,7 +566,7 @@ function renderClues(){
   PZ.words.forEach((w,wi)=>{
     const li=document.createElement('li');
     li.innerHTML=`<span class="ln">${w.num}</span><span>${w.clue}</span>`;
-    li.onclick=()=>{ setActiveWord(wi,0,true); };
+    li.onclick=()=>{ setActiveWord(wi,0,true); focusInput(); };
     li.dataset.wi=wi;
     (w.dir==="A"?aEl:dEl).appendChild(li);
   });
@@ -623,6 +622,7 @@ function cellClick(r,c){
   if (wi<0) return;
   const ci=PZ.words[wi].cells.findIndex(([cr,cc])=>cr===r&&cc===c);
   setActiveWord(wi, ci<0?0:ci, false);
+  focusInput();
 }
 function setActiveWord(wi, ci, scroll){
   active.wi=wi; active.ci=Math.max(0,ci);
@@ -632,6 +632,7 @@ function setActiveWord(wi, ci, scroll){
 function navWord(step){
   let wi=(active.wi+step+PZ.words.length)%PZ.words.length;
   setActiveWord(wi,0,true);
+  focusInput();
 }
 function moveCell(step){
   const w=PZ.words[active.wi];
@@ -670,30 +671,62 @@ function checkWord(w){
   }
 }
 
+/* Physical-keyboard handler (desktop). When the hidden input is focused
+   (after a tap/click), its own handlers take over so we don't double-type. */
 window.addEventListener('keydown', e=>{
   if (document.getElementById('game').style.display==='none') return;
+  if (document.activeElement===hInput) return;
   if (!document.getElementById('win-ov').classList.contains('h')) return;
   if (!document.getElementById('teach-ov').classList.contains('h')){ if (e.key==="Enter") closeTeach(); return; }
+  handleKey(e);
+});
+function handleKey(e){
   const k=e.key;
   if (/^[a-zA-Z]$/.test(k)){ typeLetter(k.toUpperCase()); e.preventDefault(); }
   else if (k==="Backspace"){ backspace(); e.preventDefault(); }
   else if (k==="ArrowRight"||k==="ArrowDown"){ moveCell(1); e.preventDefault(); }
   else if (k==="ArrowLeft"||k==="ArrowUp"){ moveCell(-1); e.preventDefault(); }
   else if (k===" "||k==="Tab"){ navWord(1); e.preventDefault(); }
-});
+}
 
-/* ── on-screen keyboard ── */
-(function buildKbd(){
-  const rows=["QWERTYUIOP","ASDFGHJKL","ZXCVBNM"];
-  const kbd=document.getElementById('kbd');
-  rows.forEach((row,idx)=>{
-    const rd=document.createElement('div'); rd.className="kbd-row";
-    if (idx===2){ const del=document.createElement('button'); del.className="kbd-key wide"; del.textContent="⌫ Del"; del.onclick=()=>backspace(); rd.appendChild(del); }
-    row.split("").forEach(ch=>{ const b=document.createElement('button'); b.className="kbd-key"; b.textContent=ch; b.onclick=()=>typeLetter(ch); rd.appendChild(b); });
-    if (idx===2){ const nx=document.createElement('button'); nx.className="kbd-key wide"; nx.textContent="Next ›"; nx.onclick=()=>navWord(1); rd.appendChild(nx); }
-    kbd.appendChild(rd);
+/* ── Device keyboard via a hidden, focusable input (summons the native
+      keyboard on phones/tablets; also works with physical keyboards). ── */
+const hInput=document.getElementById('hidden-input');
+function canType(){
+  return document.getElementById('game').style.display!=='none'
+    && document.getElementById('win-ov').classList.contains('h')
+    && document.getElementById('teach-ov').classList.contains('h') && !done;
+}
+function focusInput(){ if (hInput){ hInput.value=''; try{ hInput.focus({preventScroll:true}); }catch(e){ hInput.focus(); } } }
+function blurInput(){ if (hInput) hInput.blur(); }
+let _kdLetter=0, _kdBack=0;
+if (hInput){
+  // Hardware keys while focused (cancelable keydown) — handle and flag.
+  hInput.addEventListener('keydown', e=>{
+    if (!canType()) return;
+    const k=e.key;
+    if (/^[a-zA-Z]$/.test(k)){ typeLetter(k.toUpperCase()); _kdLetter=Date.now(); e.preventDefault(); }
+    else if (k==="Backspace"){ backspace(); _kdBack=Date.now(); e.preventDefault(); }
+    else if (k==="ArrowRight"||k==="ArrowDown"){ moveCell(1); e.preventDefault(); }
+    else if (k==="ArrowLeft"||k==="ArrowUp"){ moveCell(-1); e.preventDefault(); }
+    else if (k===" "||k==="Tab"){ navWord(1); e.preventDefault(); }
   });
-})();
+  // Soft-keyboard letters (no cancelable keydown fires on most mobile IMEs).
+  hInput.addEventListener('input', ()=>{
+    const v=hInput.value; hInput.value='';
+    if (!canType() || !v) return;
+    if (Date.now()-_kdLetter < 60) return; // already handled by keydown
+    const ch=v[v.length-1]; if (/[a-zA-Z]/.test(ch)) typeLetter(ch.toUpperCase());
+  });
+  // Soft-keyboard backspace (deleteContentBackward) on Android etc.
+  hInput.addEventListener('beforeinput', e=>{
+    if (e.inputType!=='deleteContentBackward') return;
+    e.preventDefault();
+    if (!canType()) return;
+    if (Date.now()-_kdBack < 60) return; // already handled by keydown
+    backspace();
+  });
+}
 
 /* ══════════════ TOOLS ══════════════ */
 function useHint(){
@@ -703,7 +736,7 @@ function useHint(){
   if (cell.val===cell.sol){ toast("That letter is already correct."); return; }
   cell.val=cell.sol; cell.hinted=true; hints++;
   SND.play('hint');
-  nextEmptyInWord(); paint(); checkWord(w); checkWin();
+  nextEmptyInWord(); paint(); checkWord(w); checkWin(); focusInput();
 }
 function revealWord(){
   if (done) return;
@@ -719,6 +752,7 @@ function openTeach(w){
   document.getElementById('teach-term').textContent=w.answer;
   document.getElementById('teach-clue').textContent=w.clue;
   document.getElementById('teach-info').textContent=w.info||"Review this term in your CERT materials.";
+  blurInput();
   document.getElementById('teach-ov').classList.remove('h');
 }
 function closeTeach(){ document.getElementById('teach-ov').classList.add('h'); }
@@ -737,6 +771,7 @@ function checkAnswers(){
   toast(wrong===0 ? "✓ Everything filled in is correct!" : `${wrong} letter${wrong>1?'s':''} to fix (shown in red).`);
   clearTimeout(checkT);
   checkT=setTimeout(()=>{ document.querySelectorAll('.cell.fill.wrong').forEach(el=>el.classList.remove('wrong')); }, 2200);
+  focusInput();
 }
 function recordDaily(stars,time){
   const store=loadDaily(); const day=todayStr(); const prev=store[day];
@@ -808,6 +843,7 @@ function checkWin(){
 }
 function starsFor(helpers){ return helpers===0?3 : helpers<=2?2 : 1; }
 function showWin(){
+  blurInput();
   const helpers=hints+reveals+checks;
   const stars=starsFor(helpers);
   const t=elapsed();
