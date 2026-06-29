@@ -92,7 +92,10 @@ canvas#map{display:block;width:auto;height:auto;max-width:100%;max-height:100%;a
 .inv-item.on{border-color:var(--primary);}
 .sc-stat{font-size:0.7rem;color:var(--muted);line-height:1.65;}
 .sc-stat span{color:var(--text);}
-.log-panel{grid-column:1/-1;background:var(--bg);border-top:1px solid var(--border);padding:5px 12px;overflow-y:auto;grid-row:2;}
+.log-wrap{grid-column:1/-1;grid-row:2;display:flex;flex-direction:column;min-height:0;border-top:1px solid var(--border);}
+.log-panel{flex:1;background:var(--bg);padding:5px 12px;overflow-y:auto;}
+.log-hdr{display:none;}      /* desktop: action-log header hidden (bottom bar shows directly) */
+.caret{display:none;}        /* desktop: no collapse caret */
 .log-e{font-size:0.7rem;padding:1px 0;}
 .log-e.good{color:var(--primary);}.log-e.bad{color:var(--danger);}.log-e.info{color:var(--info);}.log-e.xp{color:var(--warn);}.log-e.neutral{color:var(--muted);}
 .toast{position:fixed;top:64px;left:50%;transform:translateX(-50%);z-index:90;background:var(--surface);border:1px solid var(--primary);
@@ -204,7 +207,8 @@ canvas#map{display:block;width:auto;height:auto;max-width:100%;max-height:100%;a
   .hdr-phase{margin-left:0;order:4;width:100%;text-align:left;}
   .layout{display:flex;flex-direction:column;height:auto;}
   /* stat block (name/rank + bars) moved above the map as a compact strip */
-  #stat-block{order:0;background:var(--surface);border-bottom:1px solid var(--border);padding:7px 12px;gap:5px;}
+  #stat-block{order:0;background:var(--surface);border-bottom:1px solid var(--border);padding:7px 12px;gap:5px;
+    position:sticky;top:0;z-index:20;box-shadow:0 2px 6px rgba(0,0,0,.35);}
   #stat-block .char-id{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;}
   #stat-block .char-name{font-size:0.92rem;}
   #stat-block .stats{display:flex;gap:12px;align-items:flex-end;}
@@ -212,12 +216,21 @@ canvas#map{display:block;width:auto;height:auto;max-width:100%;max-height:100%;a
   #stat-block .metric{flex:1;min-width:0;}
   #stat-block .metric .stat-row{font-size:0.66rem;margin-bottom:2px;}
   #stat-block .bar-wrap{margin-bottom:0;}
-  .scene-panel{order:1;padding:8px;}
+  .scene-panel{order:1;padding:4px;}
   .quest-panel{order:2;border-right:none;border-top:1px solid var(--border);}
   .char-panel{order:3;border-left:none;border-top:1px solid var(--border);}
-  .log-panel{order:4;max-height:130px;}
+  .log-wrap{order:4;border-top:1px solid var(--border);}
+  .log-panel{max-height:130px;}
   .map-frame{flex:none;width:100%;}
-  canvas#map{max-height:56vh;}
+  canvas#map{max-height:68vh;}
+  /* collapsible panels */
+  .toggle-hdr{cursor:pointer;user-select:none;display:flex;align-items:center;gap:6px;}
+  .log-hdr{display:flex;}
+  .caret{display:inline-block;transition:transform .15s;font-size:0.6rem;}
+  .collapsed .caret{transform:rotate(-90deg);}
+  .quest-panel.collapsed #quest-list{display:none;}
+  .quest-panel.collapsed{padding-bottom:6px;}
+  .log-wrap.collapsed .log-panel{display:none;}
   /* touch-friendly controls */
   .controls{gap:24px;max-width:100%;}
   .dpad{grid-template-columns:repeat(3,48px);grid-template-rows:repeat(3,48px);gap:5px;}
@@ -231,11 +244,11 @@ canvas#map{display:block;width:auto;height:auto;max-width:100%;max-height:100%;a
 @media (max-width:480px){
   .hdr-title h1{font-size:0.8rem;}
   .hdr-title p{font-size:0.64rem;}
-  canvas#map{max-height:48vh;}
+  canvas#map{max-height:64vh;}
   .dpad{grid-template-columns:repeat(3,44px);grid-template-rows:repeat(3,44px);}
   .act-key{padding:14px 22px;}
   .ctrl-hint{font-size:0;} /* hide misleading keyboard hint on phones */
-  .ctrl-hint::after{content:'Tap arrows to move · Interact button to act';font-size:0.62rem;}
+  .ctrl-hint::after{content:'Tap the map to walk there · arrows also move · Interact to act';font-size:0.62rem;}
 }
 </style>
 </head>
@@ -255,8 +268,8 @@ canvas#map{display:block;width:auto;height:auto;max-width:100%;max-height:100%;a
 </header>
 <div class="vol-pop hidden" id="vol-pop"><div class="vol-pop-title" id="vol-pop-title">Volume</div><div class="vol-levels" id="vol-levels"></div></div>
 <div class="layout">
-  <div class="quest-panel">
-    <div class="panel-hdr">📋 Quest Log</div>
+  <div class="quest-panel collapsed" id="quest-panel">
+    <div class="panel-hdr toggle-hdr" onclick="togglePanel('quest-panel')"><span class="caret">▾</span> 📋 Quest Log</div>
     <div id="quest-list"></div>
   </div>
   <div class="scene-panel">
@@ -297,8 +310,11 @@ canvas#map{display:block;width:auto;height:auto;max-width:100%;max-height:100%;a
     <div><div class="panel-hdr">🎒 Inventory</div><div id="inv-panel"></div></div>
     <div><div class="panel-hdr">👥 Scene Status</div><div class="sc-stat" id="sc-stat"></div></div>
   </div>
-  <div class="log-panel" id="log-panel">
-    <div class="log-e info">▶ Abe L. arrives at staging. Structure fire, 143 Hopehill Road. PPE and radio are OFF — gear up at the equipment cache, then report to the IC. Explore the whole scene: more patients and hazards are spread out.</div>
+  <div class="log-wrap collapsed" id="log-wrap">
+    <div class="panel-hdr log-hdr toggle-hdr" onclick="togglePanel('log-wrap')"><span class="caret">▾</span> 📜 Action Log</div>
+    <div class="log-panel" id="log-panel">
+      <div class="log-e info">▶ Abe L. arrives at staging. Structure fire, 143 Hopehill Road. PPE and radio are OFF — gear up at the equipment cache, then report to the IC. Explore the whole scene: more patients and hazards are spread out.</div>
+    </div>
   </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -606,6 +622,7 @@ function findPath(sx,sy,gx,gy){
   return path;
 }
 function move(dx,dy){
+  player.path=null; // manual input cancels any tap-to-move auto-walk
   if (S.over || anyOverlayOpen() || player.moving) return;
   const nx=player.x+dx, ny=player.y+dy;
   if (!isWalkable(nx,ny)) return;
@@ -1084,6 +1101,38 @@ window.addEventListener('keydown', e=>{
 
 /* ════════════ FLAT-VECTOR RENDERER ════════════ */
 const canvas=document.getElementById('map'); const ctx=canvas.getContext('2d');
+
+/* ════════════ TAP-TO-MOVE (touch devices) ════════════ */
+const isTouch = (window.matchMedia && matchMedia('(pointer:coarse)').matches) || ('ontouchstart' in window) || (navigator.maxTouchPoints||0)>0;
+function walkTo(gx,gy){
+  if (S.over || anyOverlayOpen()) return;
+  let tx=gx, ty=gy;
+  if (!isWalkable(gx,gy)){ // tapped a wall/object → head to the nearest reachable neighbor
+    let best=null,bd=1e9;
+    for (const [dx,dy] of [[0,-1],[0,1],[-1,0],[1,0]]){
+      const ax=gx+dx, ay=gy+dy;
+      if (isWalkable(ax,ay)){ const d=Math.abs(ax-player.x)+Math.abs(ay-player.y); if (d<bd){ bd=d; best=[ax,ay]; } }
+    }
+    if (!best) return; tx=best[0]; ty=best[1];
+  }
+  if (tx===player.x && ty===player.y) return;
+  const path=findPath(player.x,player.y,tx,ty);
+  // only accept a real connected path (first step adjacent); findPath's fallback is a far tile → ignore
+  if (path && path.length && (Math.abs(path[0].x-player.x)+Math.abs(path[0].y-player.y))===1) player.path=path;
+}
+if (isTouch){
+  canvas.addEventListener('click', e=>{
+    if (S.over || anyOverlayOpen()) return;
+    const rect=canvas.getBoundingClientRect();
+    const cx=(e.clientX-rect.left)*(canvas.width/rect.width);
+    const cy=(e.clientY-rect.top)*(canvas.height/rect.height);
+    // ignore taps on the mini-map overlay (top-right corner)
+    const mmW=COLS*MM_TILE, mmH=ROWS*MM_TILE, pad=4, margin=8, boxW=mmW+pad*2, boxH=mmH+pad*2;
+    const ox=canvas.width-boxW-margin, oy=margin;
+    if (cx>=ox && cx<=ox+boxW && cy>=oy && cy<=oy+boxH) return;
+    walkTo(Math.floor((cx+cam.x)/TILE), Math.floor((cy+cam.y)/TILE));
+  });
+}
 function rr(x,y,w,h,r){ r=Math.min(r,w/2,h/2); ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
 function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
 function stepTo(cur,target,sp){ const d=target-cur; return Math.abs(d)<=sp?d:Math.sign(d)*sp; }
@@ -1323,6 +1372,13 @@ function updateCamera(){
   cam.y = player.py+TILE/2-VIEW_H*TILE/2;
 }
 function tick(ts){
+  // advance a tap-to-move path once the previous step has landed
+  if (!player.moving && player.path && player.path.length && !S.over && !anyOverlayOpen()){
+    const wp=player.path[0];
+    if (isWalkable(wp.x,wp.y) && (Math.abs(wp.x-player.x)+Math.abs(wp.y-player.y))===1){
+      player.path.shift(); player.x=wp.x; player.y=wp.y; player.moving=true; SND.sfx('move'); checkHazards();
+    } else { player.path=null; }
+  }
   // smooth player
   const tx=player.x*TILE, ty=player.y*TILE;
   player.px+=stepTo(player.px,tx,MOVE_SPEED); player.py+=stepTo(player.py,ty,MOVE_SPEED);
@@ -1628,6 +1684,12 @@ function closeVolPop(){ const pop=document.getElementById('vol-pop'); pop.classL
 function uiToggleMusic(){ SND.resume(); openVolPop('music'); }
 function uiToggleSfx(){ SND.resume(); openVolPop('sfx'); }
 document.addEventListener('click',e=>{ const pop=document.getElementById('vol-pop'); if (!pop||pop.classList.contains('hidden')) return; if (pop.contains(e.target)||e.target.closest('.hdr-audio')) return; closeVolPop(); });
+
+/* Collapse/expand info panels (mobile-only affordance). */
+function togglePanel(id){
+  if (!matchMedia('(max-width:860px)').matches) return;
+  const el=document.getElementById(id); if (el) el.classList.toggle('collapsed');
+}
 
 /* On mobile, relocate the stat block (name/rank + bars) above the map; on
    desktop it lives in the right-hand character panel. One DOM node, no dupes. */
