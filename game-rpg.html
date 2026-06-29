@@ -1007,6 +1007,18 @@ function showWin(){
   const sides=S.quests.filter(q=>q.type==='side'&&q.complete).length;
   const hz=S.hazards.filter(h=>h.reported).length;
   const rating=(S.cr>=90&&correct===10&&hz===S.hazards.length)?'⭐⭐⭐ Outstanding':(S.cr>=75&&correct>=8)?'⭐⭐ Proficient':(S.cr>=60&&correct>=6)?'⭐ Satisfactory':'Mission Passed — Review Recommended';
+  // Persist best mission result for the suite-wide Training Record
+  (function(){
+    const starN=(S.cr>=90&&correct===10&&hz===S.hazards.length)?3:(S.cr>=75&&correct>=8)?2:(S.cr>=60&&correct>=6)?1:0;
+    const sec=Math.max(0,Math.round((Date.now()-S.t0)/1000));
+    let prog; try{ prog=JSON.parse(localStorage.getItem('cert_rpg_progress')); }catch(e){}
+    if (!prog) prog={};
+    prog.completed=true;
+    prog.stars=Math.max(prog.stars||0, starN);
+    prog.correct=Math.max(prog.correct||0, correct);
+    prog.bestSec = (prog.bestSec!=null) ? Math.min(prog.bestSec, sec) : sec;
+    try{ localStorage.setItem('cert_rpg_progress', JSON.stringify(prog)); }catch(e){}
+  })();
   document.getElementById('end-box').className='end-box';
   document.getElementById('end-icon').textContent='🏆';
   document.getElementById('end-title').textContent='MISSION ACCOMPLISHED';

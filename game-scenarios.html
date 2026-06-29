@@ -1660,6 +1660,17 @@ function showResults() {
   const pts = correct * 10;
   state.moduleScores[mod.id] = { correct, total };
 
+  // Persist best result per module for the suite-wide Training Record
+  (function(){
+    const stars = pct===100 ? 3 : pct>=75 ? 2 : pct>=50 ? 1 : 0;
+    let prog; try{ prog=JSON.parse(localStorage.getItem('cert_g1_progress')); }catch(e){}
+    if (!prog || !prog.mods) prog={ total:MODULES.length, mods:{} };
+    prog.total=MODULES.length;
+    const ex=prog.mods[mod.id];
+    if (!ex || stars>ex.stars || correct>ex.correct) prog.mods[mod.id]={ stars, correct, total };
+    try{ localStorage.setItem('cert_g1_progress', JSON.stringify(prog)); }catch(e){}
+  })();
+
   // Recalculate total score
   state.totalScore = Object.values(state.moduleScores).reduce((sum, s) => sum + s.correct * 10, 0);
   document.getElementById('total-score').textContent = state.totalScore;

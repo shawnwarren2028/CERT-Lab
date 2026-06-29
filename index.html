@@ -8,7 +8,7 @@
   :root {
     --bg:#0e1208; --surface:#1a2012; --surface2:#243018; --border:#3a5228;
     --primary:#5aaa3a; --primary-dark:#4a8f2e; --primary-light:#7ac95a;
-    --text:#eef2e8; --text-muted:#8aa87a; --radius:12px;
+    --text:#eef2e8; --text-muted:#8aa87a; --radius:12px; --danger:#ef4444;
   }
   *{box-sizing:border-box;margin:0;padding:0;}
   body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);
@@ -55,6 +55,40 @@
     border-top:1px solid var(--border);margin-top:38px;}
   footer span{color:var(--primary);}
 
+  .record-btn{margin-left:auto;display:inline-flex;align-items:center;gap:7px;background:var(--surface2);
+    border:1px solid var(--border);color:var(--primary-light);font-size:0.84rem;font-weight:600;
+    padding:9px 15px;border-radius:8px;cursor:pointer;transition:.15s;white-space:nowrap;}
+  .record-btn:hover{border-color:var(--primary);background:var(--border);}
+
+  .rec-ov{position:fixed;inset:0;background:rgba(5,8,4,.82);display:none;align-items:center;
+    justify-content:center;padding:20px;z-index:100;}
+  .rec-ov.show{display:flex;}
+  .rec-box{background:var(--surface);border:2px solid var(--primary);border-radius:var(--radius);
+    padding:24px;max-width:520px;width:100%;position:relative;max-height:88vh;overflow-y:auto;}
+  .rec-box h2{font-size:1.4rem;color:var(--primary);margin-bottom:4px;}
+  .rec-x{position:absolute;top:14px;right:16px;background:none;border:none;color:var(--text-muted);
+    font-size:1.6rem;line-height:1;cursor:pointer;}
+  .rec-x:hover{color:var(--text);}
+  .rec-overall{background:var(--surface2);border:1px solid var(--border);border-radius:10px;
+    padding:14px 16px;margin:14px 0 18px;}
+  .rec-overall .ro-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;}
+  .rec-overall .ro-label{font-size:0.78rem;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);font-weight:700;}
+  .rec-overall .ro-val{font-size:1.1rem;font-weight:800;color:#e8c33a;}
+  .rec-bar{height:8px;background:#0a0e07;border-radius:6px;overflow:hidden;}
+  .rec-bar span{display:block;height:100%;background:linear-gradient(90deg,var(--primary),var(--primary-light));border-radius:6px;}
+  .rec-row{display:flex;align-items:center;gap:13px;padding:12px 0;border-bottom:1px solid var(--border);}
+  .rec-row:last-child{border-bottom:none;}
+  .rec-ic{font-size:1.7rem;width:34px;text-align:center;flex-shrink:0;}
+  .rec-mid{flex:1;min-width:0;}
+  .rec-name{font-weight:700;color:var(--text);font-size:0.96rem;}
+  .rec-stat{font-size:0.78rem;color:var(--text-muted);margin:2px 0 6px;}
+  .rec-stars{font-size:0.9rem;font-weight:700;color:#e8c33a;white-space:nowrap;}
+  .rec-actions{margin-top:18px;text-align:center;}
+  .rec-reset{background:transparent;border:1px solid var(--border);color:var(--text-muted);
+    font-size:0.8rem;padding:8px 16px;border-radius:8px;cursor:pointer;transition:.15s;}
+  .rec-reset:hover{border-color:var(--danger);color:var(--danger);}
+  .rec-reset.confirm{border-color:var(--danger);color:var(--danger);font-weight:700;}
+
   @media (max-width:600px){
     header{padding:10px 16px;gap:12px;}
     header h1{font-size:1rem;}
@@ -84,6 +118,7 @@
     <h1>Wallingford CERT — Training Suite</h1>
     <p>Community Emergency Response Team</p>
   </div>
+  <button class="record-btn" onclick="openRecord()">📊 Training Record</button>
 </header>
 
 <main>
@@ -153,6 +188,73 @@
 <footer>
   <span>Wallingford CERT</span> Training Suite · For program members studying Basic Training Sections 1–8.
 </footer>
+
+<div class="rec-ov" id="rec-ov" onclick="if(event.target===this)closeRecord()">
+  <div class="rec-box">
+    <button class="rec-x" onclick="closeRecord()" aria-label="Close">×</button>
+    <h2>📊 Training Record</h2>
+    <div class="rec-overall" id="rec-overall"></div>
+    <div id="rec-list"></div>
+    <div class="rec-actions"><button class="rec-reset" id="rec-reset" onclick="resetProgress()">Reset all progress</button></div>
+  </div>
+</div>
+
+<script>
+function jget(k,def){ try{ return JSON.parse(localStorage.getItem(k)) ?? def; }catch(e){ return def; } }
+function sumVals(o){ return Object.values(o||{}).reduce((a,b)=>a+(+b||0),0); }
+function fmtT(s){ if(s==null) return '—'; return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
+
+function buildRecord(){
+  // Game 1 — Scenarios
+  const g1=jget('cert_g1_progress',null);
+  const g1total=(g1&&g1.total)||9;
+  const g1done=g1&&g1.mods?Object.keys(g1.mods).length:0;
+  const g1stars=g1&&g1.mods?Object.values(g1.mods).reduce((a,m)=>a+(m.stars||0),0):0;
+  const g1max=g1total*3;
+  // Game 2 — RPG
+  const rpg=jget('cert_rpg_progress',null);
+  const rpgStars=rpg?rpg.stars||0:0;
+  const rpgStat=rpg&&rpg.completed?`Mission complete · best time ${fmtT(rpg.bestSec)} · ${rpg.correct||0}/10 triaged`:'Not completed yet';
+  // Game 3 — Placards
+  const plac=jget('cert_placard_stars',{});
+  const placStars=sumVals(plac); const placDone=Object.keys(plac).length;
+  // Game 4 — Crossword
+  const xs=jget('cert_xword_stars',{}); const xStars=sumVals(xs); const xDone=Object.keys(xs).length;
+  const streak=(jget('cert_xword_streak',{streak:0}).streak)||0;
+  const dailyDone=Object.keys(jget('cert_xword_daily',{})).length;
+
+  const rows=[
+    {ic:'🎯',name:'Training Scenarios',stat:`${g1done}/${g1total} modules attempted`,stars:g1stars,max:g1max},
+    {ic:'🚒',name:'Fire Scene RPG',stat:rpgStat,stars:rpgStars,max:3},
+    {ic:'🧩',name:'Hazmat Placard Match',stat:`${placDone}/5 levels played`,stars:placStars,max:15},
+    {ic:'✏️',name:'CERT Crossword',stat:`${xDone}/5 levels · 🔥 ${streak}-day streak · ${dailyDone} daily solved`,stars:xStars,max:15},
+  ];
+  const totStars=rows.reduce((a,r)=>a+r.stars,0), totMax=rows.reduce((a,r)=>a+r.max,0);
+  const pct=totMax?Math.round(totStars/totMax*100):0;
+
+  document.getElementById('rec-overall').innerHTML=`
+    <div class="ro-top"><span class="ro-label">Overall mastery</span><span class="ro-val">★ ${totStars} / ${totMax}</span></div>
+    <div class="rec-bar"><span style="width:${pct}%"></span></div>`;
+  document.getElementById('rec-list').innerHTML=rows.map(r=>{
+    const p=r.max?Math.round(r.stars/r.max*100):0;
+    return `<div class="rec-row"><span class="rec-ic">${r.ic}</span>
+      <div class="rec-mid"><div class="rec-name">${r.name}</div><div class="rec-stat">${r.stat}</div>
+        <div class="rec-bar"><span style="width:${p}%"></span></div></div>
+      <div class="rec-stars">★ ${r.stars}/${r.max}</div></div>`;
+  }).join('');
+}
+function openRecord(){ buildRecord(); resetConfirm=false; const b=document.getElementById('rec-reset'); b.textContent='Reset all progress'; b.classList.remove('confirm'); document.getElementById('rec-ov').classList.add('show'); }
+function closeRecord(){ document.getElementById('rec-ov').classList.remove('show'); }
+let resetConfirm=false;
+function resetProgress(){
+  const b=document.getElementById('rec-reset');
+  if(!resetConfirm){ resetConfirm=true; b.textContent='Click again to confirm — this erases all scores'; b.classList.add('confirm'); return; }
+  ['cert_g1_progress','cert_rpg_progress','cert_placard_stars','cert_xword_stars','cert_xword_best','cert_xword_daily','cert_xword_streak'].forEach(k=>localStorage.removeItem(k));
+  resetConfirm=false; b.textContent='Reset all progress'; b.classList.remove('confirm');
+  buildRecord();
+}
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeRecord(); });
+</script>
 
 </body>
 </html>
