@@ -8,7 +8,7 @@
   :root {
     --bg:#0e1208; --surface:#1a2012; --surface2:#243018; --border:#3a5228;
     --primary:#5aaa3a; --primary-dark:#4a8f2e; --primary-light:#7ac95a;
-    --text:#eef2e8; --text-muted:#8aa87a; --radius:12px; --danger:#ef4444;
+    --text:#eef2e8; --text-muted:#8aa87a; --radius:12px; --danger:#ef4444; --gold:#e8c33a;
   }
   *{box-sizing:border-box;margin:0;padding:0;}
   body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);
@@ -83,6 +83,16 @@
   .rec-name{font-weight:700;color:var(--text);font-size:0.96rem;}
   .rec-stat{font-size:0.78rem;color:var(--text-muted);margin:2px 0 6px;}
   .rec-stars{font-size:0.9rem;font-weight:700;color:#e8c33a;white-space:nowrap;}
+  .rec-sub{font-size:0.78rem;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);
+    font-weight:700;margin:20px 0 12px;}
+  .badge-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px;}
+  .badge{display:flex;flex-direction:column;align-items:center;gap:5px;text-align:center;
+    border:1px solid var(--border);border-radius:10px;padding:11px 6px;cursor:default;}
+  .badge .b-ic{font-size:1.6rem;line-height:1;}
+  .badge .b-name{font-size:0.68rem;font-weight:700;line-height:1.2;}
+  .badge.on{border-color:var(--gold);background:rgba(232,195,58,.10);}
+  .badge.on .b-name{color:var(--gold);}
+  .badge.off{opacity:.4;filter:grayscale(1);}
   .rec-actions{margin-top:18px;text-align:center;}
   .rec-reset{background:transparent;border:1px solid var(--border);color:var(--text-muted);
     font-size:0.8rem;padding:8px 16px;border-radius:8px;cursor:pointer;transition:.15s;}
@@ -172,6 +182,16 @@
       <span class="cta">Solve &amp; learn</span>
     </a>
 
+    <a class="card" href="glossary.html">
+      <span class="tag">80 terms</span>
+      <span class="card-icon">📖</span>
+      <span class="card-kicker">Study</span>
+      <h3>CERT Glossary</h3>
+      <p>A searchable reference of every key CERT term, grouped by section with definitions
+         and quick study notes — and a link to the matching course material for each.</p>
+      <span class="cta">Open glossary</span>
+    </a>
+
     <a class="card" href="reference.html">
       <span class="tag">8 sections</span>
       <span class="card-icon">📄</span>
@@ -195,6 +215,7 @@
     <h2>📊 Training Record</h2>
     <div class="rec-overall" id="rec-overall"></div>
     <div id="rec-list"></div>
+    <div id="rec-badges"></div>
     <div class="rec-actions"><button class="rec-reset" id="rec-reset" onclick="resetProgress()">Reset all progress</button></div>
   </div>
 </div>
@@ -242,6 +263,25 @@ function buildRecord(){
         <div class="rec-bar"><span style="width:${p}%"></span></div></div>
       <div class="rec-stars">★ ${r.stars}/${r.max}</div></div>`;
   }).join('');
+
+  // Achievements / badges
+  const themesDone=Object.keys(jget('cert_xword_themes',{})).length;
+  const badges=[
+    {ic:'🎓',name:'First Steps',  earned:totStars>0,            desc:'Earn your first star in any game.'},
+    {ic:'🩺',name:'Field Medic',  earned:!!(rpg&&rpg.completed),desc:'Complete the Fire Scene RPG mission.'},
+    {ic:'🧩',name:'Placard Pro',  earned:placStars>=15,         desc:'Earn 3 stars on all 5 Placard levels.'},
+    {ic:'✏️',name:'Wordsmith',    earned:xStars>=15,            desc:'Earn 3 stars on all 5 Crossword levels.'},
+    {ic:'📚',name:'Scholar',      earned:g1done>=g1total,       desc:'Attempt all 9 Scenario modules.'},
+    {ic:'🔥',name:'On a Roll',    earned:streak>=7,             desc:'Reach a 7-day Daily Challenge streak.'},
+    {ic:'🗂️',name:'Section Sweep',earned:themesDone>=8,         desc:'Solve a themed crossword for all 8 sections.'},
+    {ic:'🏅',name:'Honor Roll',   earned:pct>=80,               desc:'Reach 80% overall mastery.'},
+  ];
+  const earnedN=badges.filter(b=>b.earned).length;
+  document.getElementById('rec-badges').innerHTML=
+    `<div class="rec-sub">Badges — ${earnedN}/${badges.length}</div><div class="badge-grid">`+
+    badges.map(b=>`<div class="badge ${b.earned?'on':'off'}" title="${b.desc}">
+       <span class="b-ic">${b.ic}</span><span class="b-name">${b.name}</span></div>`).join('')+
+    `</div>`;
 }
 function openRecord(){ buildRecord(); resetConfirm=false; const b=document.getElementById('rec-reset'); b.textContent='Reset all progress'; b.classList.remove('confirm'); document.getElementById('rec-ov').classList.add('show'); }
 function closeRecord(){ document.getElementById('rec-ov').classList.remove('show'); }
@@ -249,7 +289,7 @@ let resetConfirm=false;
 function resetProgress(){
   const b=document.getElementById('rec-reset');
   if(!resetConfirm){ resetConfirm=true; b.textContent='Click again to confirm — this erases all scores'; b.classList.add('confirm'); return; }
-  ['cert_g1_progress','cert_rpg_progress','cert_placard_stars','cert_xword_stars','cert_xword_best','cert_xword_daily','cert_xword_streak'].forEach(k=>localStorage.removeItem(k));
+  ['cert_g1_progress','cert_rpg_progress','cert_placard_stars','cert_xword_stars','cert_xword_best','cert_xword_daily','cert_xword_streak','cert_xword_themes'].forEach(k=>localStorage.removeItem(k));
   resetConfirm=false; b.textContent='Reset all progress'; b.classList.remove('confirm');
   buildRecord();
 }

@@ -41,6 +41,15 @@
   .ls-hero h2 span{color:var(--primary);}
   .ls-hero p{color:var(--text-muted);max-width:600px;margin:0 auto;line-height:1.55;font-size:0.94rem;}
   .level-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-top:24px;}
+  .ls-subhead{font-size:0.8rem;text-transform:uppercase;letter-spacing:.12em;color:var(--text-muted);
+    font-weight:700;margin:30px 0 12px;border-bottom:1px solid var(--border);padding-bottom:8px;}
+  .theme-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;}
+  .theme-chip{display:flex;align-items:center;gap:11px;background:var(--surface);border:1px solid var(--border);
+    border-radius:10px;padding:12px 14px;cursor:pointer;color:inherit;text-align:left;transition:.15s;}
+  .theme-chip:hover{border-color:var(--primary);transform:translateY(-2px);}
+  .theme-chip .tc-ic{font-size:1.5rem;flex-shrink:0;}
+  .theme-chip .tc-name{font-weight:700;font-size:0.9rem;color:var(--primary-light);flex:1;}
+  .theme-chip .tc-meta{font-size:0.72rem;color:var(--text-muted);white-space:nowrap;}
   .level-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
     padding:20px 18px;cursor:pointer;text-align:left;transition:.18s;position:relative;color:inherit;}
   .level-card:hover{transform:translateY(-4px);border-color:var(--primary);box-shadow:0 12px 26px rgba(0,0,0,.45);}
@@ -179,6 +188,8 @@
          generated fresh, so the board is different each time you play. Pick a difficulty to begin.</p>
     </div>
     <div class="level-grid" id="level-grid"></div>
+    <h3 class="ls-subhead">Or drill one section</h3>
+    <div class="theme-grid" id="theme-grid"></div>
   </section>
 
   <!-- GAME -->
@@ -252,100 +263,14 @@
 
 <footer><span>Wallingford CERT</span> Training Suite · Crossword Drill</footer>
 
+<script src="cert-terms.js"></script>
 <script>
 /* ══════════════ WORD / CLUE POOL ══════════════
+   Terms + section tags are defined in cert-terms.js (shared with glossary.html).
    d = difficulty (1 easy/common · 2 medium · 3 hard).
    clue = mixed style (definition / fill-in-blank / acronym).
    info = reinforced-learning note shown on Reveal Word. */
-const POOL = [
-  // ── d1 ──
-  {a:"SCENE",   d:1, clue:"Always ensure ___ safety before you act.", info:"Scene safety is CERT rule #1 — never become a second victim."},
-  {a:"PPE",     d:1, clue:"Gloves, goggles, helmet — Personal Protective Equipment (acronym).", info:"Don your PPE before entering any scene to guard against injury and contamination."},
-  {a:"CERT",    d:1, clue:"Community Emergency Response Team (acronym).", info:"CERT volunteers do the greatest good for the greatest number until professionals arrive."},
-  {a:"RADIO",   d:1, clue:"Primary tool for field communications.", info:"Use plain language on the radio — clear text, no codes."},
-  {a:"TRIAGE",  d:1, clue:"Sorting patients by severity of injury.", info:"CERT uses START triage to rapidly sort many patients."},
-  {a:"HAZARD",  d:1, clue:"A potential source of danger at a scene.", info:"Identify hazards during size-up: fire, gas, downed wires, unstable structures."},
-  {a:"FUEL",    d:1, clue:"The combustible side of the fire triangle.", info:"Remove any side of the fire triangle — fuel, heat, or oxygen — and the fire goes out."},
-  {a:"HEAT",    d:1, clue:"Side of the fire triangle removed by cooling with water.", info:"Water cools a fire, removing the heat side of the fire triangle."},
-  {a:"SHOCK",   d:1, clue:"Poor tissue perfusion; keep the patient warm and lying down.", info:"Treat for shock: control bleeding, lay flat, elevate legs, maintain body heat."},
-  {a:"AIRWAY",  d:1, clue:"Open it with a head-tilt, chin-lift — the A in ABC.", info:"Airway is the first life-threat checked; open it before assessing breathing."},
-  {a:"GLOVES",  d:1, clue:"Hand PPE that guards against bodily fluids.", info:"Always wear gloves during medical operations to prevent disease transmission."},
-  {a:"HELMET",  d:1, clue:"Head PPE worn on a search-and-rescue scene.", info:"A helmet protects against falling and overhead debris."},
-  {a:"PLAN",    d:1, clue:"Every household should make an emergency ___.", info:"A family emergency plan covers meeting spots, contacts, and evacuation routes."},
-  {a:"KIT",     d:1, clue:"Your go-___ of disaster supplies.", info:"Keep a 72-hour kit with water, food, light, and first aid."},
-  {a:"GAS",     d:1, clue:"Utility you shut off at the meter if you smell it.", info:"If you smell gas, shut it off at the meter — never use a flame or light switch."},
-  {a:"PULSE",   d:1, clue:"The P in the RPM triage check.", info:"Check the radial pulse during START; an absent radial pulse signals poor perfusion."},
-  {a:"WATER",   d:1, clue:"Store one gallon per person per day of this.", info:"Water is the top priority in any disaster supply kit."},
-  {a:"SIZEUP",  d:1, clue:"Ongoing assessment of a scene and its hazards.", info:"Size-up is continuous — reassess as conditions change."},
-  {a:"REHAB",   d:1, clue:"Rest, hydration, and recovery area for responders.", info:"Rotate through rehab to avoid exhaustion and heat injury."},
-  {a:"VOID",    d:1, clue:"A survivable space within collapsed debris.", info:"Search voids — under tables and stairwells — where survivors may shelter."},
-  {a:"SMOKE",   d:1, clue:"Install a detector to warn of fire early.", info:"Smoke detectors roughly halve fire-death risk — test them monthly."},
-  {a:"OXYGEN",  d:1, clue:"Fire-triangle gas that air supplies.", info:"Smothering removes oxygen, one side of the fire triangle."},
-  {a:"WOUND",   d:1, clue:"A break in the skin that may bleed.", info:"Dress and bandage a wound after the bleeding is controlled."},
-
-  // ── d2 ──
-  {a:"START",     d:2, clue:"Simple Triage And Rapid Treatment (acronym).", info:"START sorts patients in under a minute using RPM."},
-  {a:"RPM",       d:2, clue:"Respirations, Pulse, Mental status (triage acronym).", info:"RPM are the three START checks performed on each patient."},
-  {a:"PASS",      d:2, clue:"Pull, Aim, Squeeze, Sweep (extinguisher acronym).", info:"PASS is the technique for operating a fire extinguisher."},
-  {a:"IMMEDIATE", d:2, clue:"The red START triage tag.", info:"Immediate (red) patients have life-threats and are treated first."},
-  {a:"DELAYED",   d:2, clue:"The yellow START triage tag.", info:"Delayed (yellow) patients can wait a short time for treatment."},
-  {a:"MINOR",     d:2, clue:"The green tag for the walking wounded.", info:"Minor (green) patients can often help themselves and others."},
-  {a:"CRIBBING",  d:2, clue:"Wood framework that stabilizes a load before lifting.", info:"Box cribbing supports debris so rescuers aren't crushed — lift an inch, crib an inch."},
-  {a:"LEVER",     d:2, clue:"Simple machine used with a fulcrum to move debris.", info:"A lever multiplies your force to lift a heavy load off a victim."},
-  {a:"FULCRUM",   d:2, clue:"The pivot point for a lever.", info:"Place the fulcrum close to the load for the greatest lifting power."},
-  {a:"BLEEDING",  d:2, clue:"Control it first with direct pressure.", info:"Severe bleeding is a top life-threat; use direct pressure, then a tourniquet if needed."},
-  {a:"PRESSURE",  d:2, clue:"Direct ___ is the first step to stop bleeding.", info:"Direct pressure controls most bleeding within minutes."},
-  {a:"NIMS",      d:2, clue:"National Incident Management System (acronym).", info:"NIMS gives agencies a common structure so they can work together."},
-  {a:"COMMAND",   d:2, clue:"The first ICS function established at an incident.", info:"Command sets objectives; everyone reports up a single chain of command."},
-  {a:"DECON",     d:2, clue:"Short for decontamination.", info:"Decon removes hazardous contaminants from people and equipment."},
-  {a:"BRIEFING",  d:2, clue:"The IC gives you one before you deploy.", info:"A briefing covers your assignment, the hazards, and communications."},
-  {a:"BUDDY",     d:2, clue:"The ___ system keeps responders working in pairs.", info:"Never operate alone — the buddy system improves safety and accountability."},
-  {a:"STRESS",    d:2, clue:"Critical incident ___ can affect responders.", info:"Watch for stress reactions; use rehab and debriefing to manage them."},
-  {a:"INCIPIENT", d:2, clue:"The beginning fire stage CERT may safely fight.", info:"Only fight a small, incipient-stage fire with a clear exit at your back."},
-  {a:"STAGING",   d:2, clue:"Area where resources wait until assigned.", info:"Report to staging and await your assignment from the IC."},
-  {a:"SPAN",      d:2, clue:"___ of control: one supervisor to 3–7 responders.", info:"Span of control keeps supervision effective — about five reports each."},
-  {a:"RESCUE",    d:2, clue:"Search and ___ locates and removes survivors.", info:"CERT performs light search and rescue — only when it is safe to do so."},
-  {a:"DEBRIS",    d:2, clue:"Rubble that must be moved or stabilized to reach victims.", info:"Move debris carefully — leverage and cribbing prevent further collapse."},
-  {a:"DOFF",      d:2, clue:"To carefully remove your PPE.", info:"Doff PPE slowly to avoid self-contamination, then wash your hands."},
-  {a:"FLAMMABLE", d:2, clue:"Placard warning for an easily ignited liquid.", info:"Keep flammable materials away from heat and ignition sources."},
-
-  // ── d3 ──
-  {a:"IDLH",       d:3, clue:"Immediately Dangerous to Life and Health (acronym).", info:"Never enter an IDLH atmosphere — it is beyond CERT scope; wait for professionals."},
-  {a:"MITIGATION", d:3, clue:"Actions taken before a disaster to reduce its impact.", info:"Mitigation — like strapping water heaters — lessens future damage."},
-  {a:"TOURNIQUET", d:3, clue:"Applied high and tight for severe limb bleeding.", info:"Use a tourniquet when pressure can't stop life-threatening limb bleeding; note the time applied."},
-  {a:"CBRNE",      d:3, clue:"Chemical, Biological, Radiological, Nuclear, Explosive (acronym).", info:"CBRNE names terrorism hazard types; recognize, retreat, and report."},
-  {a:"SECONDARY",  d:3, clue:"A ___ device is set to target responders.", info:"Stay alert for secondary devices; avoid obvious staging spots at a blast scene."},
-  {a:"STANDOFF",   d:3, clue:"Keep a safe ___ distance from a suspicious item.", info:"Standoff distance plus cover protects you from an explosive device."},
-  {a:"LOGISTICS",  d:3, clue:"ICS section that supplies resources and equipment.", info:"Logistics gets responders the tools, food, and gear they need."},
-  {a:"PERFUSION",  d:3, clue:"Blood flow to the tissues, judged in START triage.", info:"Capillary refill and pulse indicate perfusion when sorting patients."},
-  {a:"AFTERSHOCK", d:3, clue:"A smaller quake that follows the main earthquake.", info:"Aftershocks can topple structures already weakened — stay cautious."},
-  {a:"EVACUATION", d:3, clue:"Orderly movement of people away from danger.", info:"Know your primary and secondary evacuation routes before you need them."},
-  {a:"UTILITIES",  d:3, clue:"Gas, electric, and water that may need shutting off.", info:"Controlling utilities reduces the risk of fire, shock, and flooding."},
-  {a:"PORTABLE",   d:3, clue:"A ___ extinguisher is the type CERT carries.", info:"A portable extinguisher only handles small fires — know its limits."},
-
-  // ── expansion pack ──
-  {a:"SAFETY",      d:1, clue:"The top priority on every CERT scene.", info:"Personal safety comes first — then your team, then the victims."},
-  {a:"DANGER",      d:1, clue:"What you scan for during scene size-up.", info:"Spot danger before you act so you don't become another victim."},
-  {a:"SPLINT",      d:1, clue:"Device used to immobilize a broken bone.", info:"Splint a suspected fracture in the position found, then recheck circulation."},
-  {a:"BANDAGE",     d:1, clue:"Cloth used to hold a dressing in place.", info:"A bandage secures a dressing; the dressing covers the wound itself."},
-  {a:"DRESSING",    d:1, clue:"Sterile pad placed directly on a wound.", info:"Put a dressing on the wound first, then wrap it with a bandage."},
-  {a:"ESCAPE",      d:1, clue:"Plan two ways out of every room — ___ routes.", info:"Practice home escape routes so everyone can get out quickly."},
-  {a:"SHELTER",     d:1, clue:"Take ___ under sturdy furniture during a quake.", info:"Drop, cover, and hold on — shelter from falling objects."},
-  {a:"TRIANGLE",    d:2, clue:"The fire ___ is fuel, heat, and oxygen.", info:"Remove any side of the fire triangle to put a fire out."},
-  {a:"FRACTURE",    d:2, clue:"A broken or cracked bone.", info:"Immobilize a fracture and watch the patient for shock."},
-  {a:"LEVERAGE",    d:2, clue:"What a lever and fulcrum give you to lift debris.", info:"Leverage lets a few rescuers safely move a heavy load."},
-  {a:"MARKING",     d:2, clue:"FEMA search ___ uses a slash, then an X.", info:"Search markings tell other teams a structure's status."},
-  {a:"DOCUMENT",    d:2, clue:"Record findings on the triage ___.", info:"Document the triage category and key findings so EMS can act fast."},
-  {a:"TRANSPORT",   d:2, clue:"Immediate patients are first for ___.", info:"Red (Immediate) patients are moved and transported first."},
-  {a:"RESOURCES",   d:2, clue:"People and gear managed by the Logistics section.", info:"Track resources so the right tools arrive where they're needed."},
-  {a:"ELECTRIC",    d:2, clue:"Utility shut off at the main breaker panel.", info:"Kill electricity at the main breaker if there's a shock or fire risk."},
-  {a:"HYPOTHERMIA", d:3, clue:"Dangerous drop in core body temperature.", info:"Treat hypothermia: remove wet clothing and rewarm the patient gradually."},
-  {a:"ANAPHYLAXIS", d:3, clue:"Severe, rapid, whole-body allergic reaction.", info:"Anaphylaxis is life-threatening and can close the airway — get EMS fast."},
-  {a:"CONTUSION",   d:3, clue:"A bruise — the C in DCAP-BTLS.", info:"A contusion can hint at deeper injury beneath the skin."},
-  {a:"LACERATION",  d:3, clue:"A jagged cut — the L in DCAP-BTLS.", info:"Control laceration bleeding with direct pressure."},
-  {a:"QUADRANT",    d:3, clue:"Each colored section of the NFPA 704 diamond.", info:"NFPA 704 quadrants rate health, fire, reactivity, and special hazards."},
-  {a:"CAPILLARY",   d:3, clue:"___ refill under 2 seconds shows good perfusion.", info:"Press a nail bed; capillary refill helps judge perfusion during START."},
-];
+const POOL = CERT_TERMS; // master list + section tags live in cert-terms.js
 const CLUE_BY = {}; POOL.forEach(w=>CLUE_BY[w.a]=w);
 
 /* ══════════════ LEVELS ══════════════ */
@@ -446,8 +371,14 @@ function tryLayout(words, target){
   return {G,placed,minR,maxR,minC,maxC};
 }
 
+function themeCandidates(sec){
+  let words=POOL.filter(w=>SECTION_OF[w.a]===sec).map(w=>w.a);
+  if (words.length<8){ words=words.concat(POOL.filter(w=>SECTION_OF[w.a]==='general' && !words.includes(w.a)).map(w=>w.a)); }
+  return words;
+}
 function buildPuzzle(level){
-  let cand = POOL.filter(w=>w.d>=level.minD && w.d<=level.maxD).map(w=>w.a);
+  let cand = level.section ? themeCandidates(level.section)
+                           : POOL.filter(w=>w.d>=level.minD && w.d<=level.maxD).map(w=>w.a);
   let best=null;
   for(let attempt=0; attempt<140; attempt++){
     const words = shuffle(cand);
@@ -515,6 +446,14 @@ function startDaily(){
   document.getElementById('level-select').style.display='none';
   document.getElementById('game').style.display='block';
 }
+function startTheme(secId){
+  const s=SECTION_BY[secId]; const cand=themeCandidates(secId);
+  LV={ id:'theme-'+secId, name:s.name, icon:s.icon, section:secId, target:Math.min(cand.length,12) };
+  isDaily=false;
+  newPuzzle();
+  document.getElementById('level-select').style.display='none';
+  document.getElementById('game').style.display='block';
+}
 function newPuzzle(){
   closeWin(); closeTeach();
   if (isDaily){ RNG=mulberry32(hashStr('cert-xword-'+todayStr())); PZ=buildPuzzle(LV); RNG=Math.random; }
@@ -532,7 +471,7 @@ function goLevels(){
   stopTimer(); closeWin(); closeTeach(); blurInput();
   document.getElementById('game').style.display='none';
   document.getElementById('level-select').style.display='block';
-  renderLevels();
+  renderLevels(); renderThemes();
 }
 
 /* ── timer ── */
@@ -878,6 +817,12 @@ function showWin(){
     const st=loadStreak();
     bestLine=`<tr><td>Daily streak</td><td><strong>🔥 ${st.streak} day${st.streak===1?'':'s'}</strong></td></tr>`;
     document.getElementById('win-sub').textContent=`📅 Daily Challenge — ${todayStr()}`;
+  } else if (LV.section){
+    const ts=jget('cert_xword_themes',{}); if (stars>(ts[LV.section]||0)){ ts[LV.section]=stars; jset('cert_xword_themes',ts); }
+    const best=loadBest(); const prev=best[LV.id]; const nb = prev==null || t<prev;
+    if (nb){ best[LV.id]=t; saveBest(best); }
+    bestLine=`<tr><td>Best time</td><td><strong>${fmt(best[LV.id])}${nb?' &nbsp;⚡ New best!':''}</strong></td></tr>`;
+    document.getElementById('win-sub').textContent=`${LV.icon} ${LV.name} — ${PZ.words.length} terms`;
   } else {
     const all=loadStars(); if (stars>(all[LV.id]||0)){ all[LV.id]=stars; saveStars(all); }
     const best=loadBest(); const prev=best[LV.id]; const nb = prev==null || t<prev;
@@ -924,6 +869,18 @@ function renderLevels(){
     grid.appendChild(card);
   });
 }
+function renderThemes(){
+  const grid=document.getElementById('theme-grid'); if (!grid) return; grid.innerHTML="";
+  const ts=jget('cert_xword_themes',{});
+  SECTION_DEFS.forEach(s=>{
+    const earned=ts[s.id]||0;
+    const chip=document.createElement('button'); chip.className="theme-chip"; chip.onclick=()=>startTheme(s.id);
+    const count=POOL.filter(w=>SECTION_OF[w.a]===s.id).length;
+    chip.innerHTML=`<span class="tc-ic">${s.icon}</span><span class="tc-name">${s.name}</span>`+
+      `<span class="tc-meta">${count} terms${earned?' · '+'★'.repeat(earned):''}</span>`;
+    grid.appendChild(chip);
+  });
+}
 
 /* ══════════════ TOAST ══════════════ */
 let toastT=null;
@@ -959,7 +916,7 @@ function toggleMute(){ const m=SND.toggle(); document.getElementById('mute-btn')
 
 /* ══════════════ INIT ══════════════ */
 document.getElementById('mute-btn').textContent=SND.isMuted()?'🔇':'🔊';
-renderLevels();
+renderLevels(); renderThemes();
 </script>
 </body>
 </html>

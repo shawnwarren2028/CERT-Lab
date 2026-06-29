@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wallingford CERT — Glossary</title>
+<style>
+  :root{
+    --bg:#0e1208; --surface:#1a2012; --surface2:#243018; --border:#3a5228;
+    --primary:#5aaa3a; --primary-dark:#4a8f2e; --primary-light:#7ac95a;
+    --text:#eef2e8; --text-muted:#8aa87a; --radius:12px; --gold:#e8c33a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);
+    min-height:100vh;display:flex;flex-direction:column;}
+  header{width:100%;background:#111a09;border-bottom:3px solid var(--primary);
+    padding:12px 28px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+  #cert-logo{height:50px;width:auto;}
+  .logo-badge{background:var(--primary);color:#000;font-weight:900;font-size:1.05rem;
+    letter-spacing:.1em;padding:6px 12px;border-radius:6px;}
+  header h1{font-size:1.15rem;font-weight:700;color:var(--primary);}
+  header p{font-size:0.78rem;color:var(--text-muted);}
+  .home-link{margin-left:auto;color:var(--primary-light);text-decoration:none;font-size:0.85rem;
+    font-weight:600;border:1px solid var(--border);padding:8px 15px;border-radius:8px;transition:.15s;white-space:nowrap;}
+  .home-link:hover{background:var(--surface2);border-color:var(--primary);}
+
+  main{flex:1;width:100%;max-width:920px;margin:0 auto;padding:28px 20px 36px;}
+  .g-hero h2{font-size:1.8rem;font-weight:800;margin-bottom:6px;}
+  .g-hero h2 span{color:var(--primary);}
+  .g-hero p{color:var(--text-muted);font-size:0.92rem;line-height:1.5;max-width:640px;}
+
+  .search-row{position:sticky;top:0;background:var(--bg);padding:16px 0 12px;z-index:5;}
+  .search-box{width:100%;display:flex;align-items:center;gap:10px;background:var(--surface);
+    border:1px solid var(--border);border-radius:10px;padding:11px 15px;}
+  .search-box:focus-within{border-color:var(--primary);}
+  .search-box input{flex:1;background:none;border:none;color:var(--text);font-size:1rem;outline:none;}
+  .search-box .si{color:var(--text-muted);font-size:1.1rem;}
+  .count-line{font-size:0.78rem;color:var(--text-muted);margin-top:8px;}
+
+  .g-section{margin-top:26px;}
+  .g-sec-head{display:flex;align-items:center;gap:11px;margin-bottom:12px;padding-bottom:8px;
+    border-bottom:1px solid var(--border);}
+  .g-sec-head .gh-ic{font-size:1.5rem;}
+  .g-sec-head .gh-name{font-size:1.1rem;font-weight:700;color:var(--primary);}
+  .g-sec-head .gh-count{font-size:0.74rem;color:var(--text-muted);}
+  .g-sec-head .gh-ref{margin-left:auto;font-size:0.76rem;color:var(--primary-light);text-decoration:none;
+    border:1px solid var(--border);padding:6px 11px;border-radius:7px;white-space:nowrap;transition:.15s;}
+  .g-sec-head .gh-ref:hover{background:var(--surface2);border-color:var(--primary);}
+
+  .term{background:var(--surface);border:1px solid var(--border);border-radius:10px;
+    padding:14px 16px;margin-bottom:10px;}
+  .term-top{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;}
+  .term-name{font-size:1.05rem;font-weight:800;color:var(--gold);letter-spacing:.03em;}
+  .term-diff{font-size:0.64rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+    padding:2px 8px;border-radius:20px;border:1px solid var(--border);color:var(--text-muted);}
+  .term-clue{font-size:0.9rem;color:var(--text);font-style:italic;margin:7px 0 6px;}
+  .term-info{font-size:0.86rem;color:var(--text-muted);line-height:1.5;}
+  mark{background:rgba(232,195,58,.35);color:var(--text);border-radius:3px;padding:0 1px;}
+  .no-results{text-align:center;color:var(--text-muted);padding:40px 0;font-size:0.95rem;}
+
+  footer{text-align:center;padding:18px;color:var(--text-muted);font-size:0.74rem;border-top:1px solid var(--border);}
+  footer span{color:var(--primary);}
+  @media (max-width:600px){
+    header{padding:10px 16px;}
+    .g-hero h2{font-size:1.45rem;}
+    .g-sec-head .gh-ref{padding:5px 8px;font-size:0.72rem;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <img id="cert-logo" src="cert-wallingford-logo.png" alt="Wallingford CERT"
+    onerror="this.style.display='none';document.getElementById('logo-fallback').style.display='flex'">
+  <div id="logo-fallback" style="display:none;align-items:center;"><div class="logo-badge">CERT</div></div>
+  <div>
+    <h1>CERT Glossary</h1>
+    <p>Key terms — Sections 1–8</p>
+  </div>
+  <a class="home-link" href="index.html">← Menu</a>
+</header>
+
+<main>
+  <div class="g-hero">
+    <h2>CERT <span>Glossary</span></h2>
+    <p>Every term from the Crossword Drill, grouped by training section with its definition and a
+       quick why-it-matters note. Search to jump straight to a term, then open the matching course
+       material to dig deeper.</p>
+  </div>
+
+  <div class="search-row">
+    <div class="search-box">
+      <span class="si">🔍</span>
+      <input id="search" type="search" placeholder="Search terms, definitions, or notes…" autocomplete="off">
+    </div>
+    <div class="count-line" id="count-line"></div>
+  </div>
+
+  <div id="glossary"></div>
+</main>
+
+<footer><span>Wallingford CERT</span> Training Suite · Glossary</footer>
+
+<script src="cert-terms.js"></script>
+<script>
+const DIFF_LABEL={1:'Core',2:'Intermediate',3:'Advanced'};
+const elGloss=document.getElementById('glossary');
+const elCount=document.getElementById('count-line');
+const elSearch=document.getElementById('search');
+const TOTAL=CERT_TERMS.length;
+
+function esc(s){ return s.replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function hl(s,q){ if(!q) return esc(s);
+  const i=s.toLowerCase().indexOf(q); if(i<0) return esc(s);
+  return esc(s.slice(0,i))+'<mark>'+esc(s.slice(i,i+q.length))+'</mark>'+esc(s.slice(i+q.length));
+}
+function render(q){
+  q=(q||'').trim().toLowerCase();
+  elGloss.innerHTML=''; let shown=0;
+  SECTION_DEFS.forEach(sec=>{
+    let terms=CERT_TERMS.filter(t=>SECTION_OF[t.a]===sec.id);
+    if(q) terms=terms.filter(t=> t.a.toLowerCase().includes(q) || t.clue.toLowerCase().includes(q) || t.info.toLowerCase().includes(q));
+    terms.sort((a,b)=>a.a.localeCompare(b.a));
+    if(!terms.length) return;
+    shown+=terms.length;
+    const refIsPage = sec.ref.endsWith('.html');
+    const wrap=document.createElement('div'); wrap.className='g-section';
+    wrap.innerHTML=`
+      <div class="g-sec-head">
+        <span class="gh-ic">${sec.icon}</span>
+        <span class="gh-name">${sec.name}</span>
+        <span class="gh-count">${terms.length} term${terms.length===1?'':'s'}</span>
+        <a class="gh-ref" href="${sec.ref}"${refIsPage?'':' target="_blank" rel="noopener"'}>${refIsPage?'Reference ↗':'Course material ↗'}</a>
+      </div>
+      ${terms.map(t=>`
+        <div class="term">
+          <div class="term-top"><span class="term-name">${hl(t.a,q)}</span>
+            <span class="term-diff">${DIFF_LABEL[t.d]||''}</span></div>
+          <div class="term-clue">${hl(t.clue,q)}</div>
+          <div class="term-info">${hl(t.info,q)}</div>
+        </div>`).join('')}`;
+    elGloss.appendChild(wrap);
+  });
+  if(shown===0) elGloss.innerHTML='<div class="no-results">No terms match “'+esc(q)+'”.</div>';
+  elCount.textContent = q ? `${shown} of ${TOTAL} terms match` : `${TOTAL} terms across ${SECTION_DEFS.length} sections`;
+}
+elSearch.addEventListener('input', ()=>render(elSearch.value));
+render('');
+</script>
+</body>
+</html>
