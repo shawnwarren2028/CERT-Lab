@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wallingford CERT — Crossword Drill</title>
+<style>
+  :root{
+    --bg:#0e1208; --surface:#1a2012; --surface2:#243018; --border:#3a5228;
+    --primary:#5aaa3a; --primary-dark:#4a8f2e; --primary-light:#7ac95a;
+    --text:#eef2e8; --text-muted:#8aa87a; --radius:12px;
+    --danger:#ef4444; --gold:#e8c33a;
+    --cell:34px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);
+    min-height:100vh;display:flex;flex-direction:column;}
+
+  header{width:100%;background:#111a09;border-bottom:3px solid var(--primary);
+    padding:10px 22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  .logo-wrap{display:flex;align-items:center;}
+  #cert-logo{height:46px;width:auto;}
+  .logo-badge{background:var(--primary);color:#000;font-weight:900;font-size:1.05rem;
+    letter-spacing:.1em;padding:6px 12px;border-radius:6px;}
+  header h1{font-size:1.1rem;font-weight:700;color:var(--primary);}
+  header p{font-size:0.76rem;color:var(--text-muted);}
+  .hdr-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
+  .icon-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);
+    font-size:1rem;width:40px;height:40px;border-radius:8px;cursor:pointer;transition:.15s;}
+  .icon-btn:hover{border-color:var(--primary);background:var(--border);}
+  .home-link{color:var(--primary-light);text-decoration:none;font-size:0.84rem;font-weight:600;
+    border:1px solid var(--border);padding:9px 14px;border-radius:8px;transition:.15s;white-space:nowrap;}
+  .home-link:hover{background:var(--surface2);border-color:var(--primary);}
+
+  main{flex:1;width:100%;max-width:1100px;margin:0 auto;padding:24px 18px 30px;}
+
+  /* ── Level select ── */
+  .ls-hero{text-align:center;margin-bottom:26px;}
+  .ls-hero h2{font-size:1.9rem;font-weight:800;margin-bottom:8px;}
+  .ls-hero h2 span{color:var(--primary);}
+  .ls-hero p{color:var(--text-muted);max-width:600px;margin:0 auto;line-height:1.55;font-size:0.94rem;}
+  .level-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-top:24px;}
+  .level-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:20px 18px;cursor:pointer;text-align:left;transition:.18s;position:relative;color:inherit;}
+  .level-card:hover{transform:translateY(-4px);border-color:var(--primary);box-shadow:0 12px 26px rgba(0,0,0,.45);}
+  .level-card .lc-icon{font-size:2rem;}
+  .level-card .lc-tier{font-size:0.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text-muted);font-weight:700;margin-top:10px;}
+  .level-card .lc-name{font-size:1.18rem;font-weight:700;color:var(--primary);margin:2px 0 6px;}
+  .level-card .lc-meta{font-size:0.78rem;color:var(--text-muted);}
+  .level-card .lc-stars{margin-top:12px;font-size:1rem;letter-spacing:2px;color:var(--gold);}
+  .level-card .lc-stars .empty{color:#3a3f30;}
+
+  /* ── Game ── */
+  #game{display:none;}
+  .game-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px;}
+  .back-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);
+    padding:9px 14px;border-radius:8px;cursor:pointer;font-size:0.84rem;transition:.15s;}
+  .back-btn:hover{border-color:var(--primary);}
+  .game-title{font-weight:700;color:var(--primary);font-size:1.05rem;}
+  .stat-pills{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;}
+  .pill{background:var(--surface);border:1px solid var(--border);border-radius:20px;
+    padding:6px 13px;font-size:0.8rem;}
+  .pill strong{color:var(--primary-light);}
+
+  .clue-banner{background:var(--surface);border:1px solid var(--border);border-left:4px solid var(--primary);
+    border-radius:8px;padding:11px 14px;display:flex;align-items:center;gap:12px;margin-bottom:14px;min-height:46px;}
+  .clue-banner .cb-num{font-weight:800;color:var(--primary);font-size:1rem;white-space:nowrap;}
+  .clue-banner .cb-text{flex:1;font-size:0.95rem;line-height:1.35;}
+  .clue-banner .cb-nav{background:var(--surface2);border:1px solid var(--border);color:var(--text);
+    width:34px;height:34px;border-radius:7px;cursor:pointer;font-size:1rem;flex-shrink:0;}
+  .clue-banner .cb-nav:hover{border-color:var(--primary);}
+
+  .play-area{display:grid;grid-template-columns:auto 1fr;gap:24px;align-items:start;}
+  @media (max-width:820px){ .play-area{grid-template-columns:1fr;} }
+
+  .board-wrap{overflow:auto;}
+  .board{display:grid;gap:2px;background:var(--border);padding:4px;border-radius:8px;width:max-content;margin:0 auto;}
+  .cell{width:var(--cell);height:var(--cell);background:#0a0e07;position:relative;}
+  .cell.block{background:transparent;}
+  .cell.fill{background:#f3efe2;color:#14210b;display:flex;align-items:center;justify-content:center;
+    font-weight:700;cursor:pointer;font-size:calc(var(--cell) * 0.55);user-select:none;border-radius:2px;}
+  .cell.fill.hl{background:#bfe3a6;}
+  .cell.fill.active{background:#7ac95a;color:#06210a;}
+  .cell.fill.hinted{color:#0a5a8a;}
+  .cell .cnum{position:absolute;top:1px;left:2px;font-size:calc(var(--cell) * 0.28);font-weight:700;color:#3a4a2a;line-height:1;}
+  .cell.fill.solved-flash{animation:flashok .6s ease;}
+  @keyframes flashok{0%{background:#e8c33a;}100%{background:#f3efe2;}}
+
+  .clues-panel{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  @media (max-width:820px){ .clues-panel{grid-template-columns:1fr 1fr;} }
+  @media (max-width:480px){ .clues-panel{grid-template-columns:1fr;} }
+  .clue-col h3{font-size:0.78rem;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);
+    margin-bottom:8px;border-bottom:1px solid var(--border);padding-bottom:6px;}
+  .clue-list{list-style:none;max-height:420px;overflow-y:auto;}
+  .clue-list li{display:flex;gap:8px;padding:6px 7px;font-size:0.84rem;line-height:1.3;border-radius:6px;cursor:pointer;}
+  .clue-list li:hover{background:var(--surface);}
+  .clue-list li.active{background:var(--surface2);}
+  .clue-list li.done{color:var(--text-muted);text-decoration:line-through;}
+  .clue-list li .ln{font-weight:700;color:var(--primary);min-width:20px;text-align:right;}
+
+  .tools{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;}
+  .tool-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);
+    padding:10px 16px;border-radius:9px;cursor:pointer;font-size:0.86rem;font-weight:600;transition:.15s;}
+  .tool-btn:hover{border-color:var(--primary);background:var(--border);}
+  .tool-btn.primary{background:var(--primary);color:#06210a;border-color:var(--primary);}
+  .tool-btn.primary:hover{background:var(--primary-light);}
+
+  /* ── On-screen keyboard (mobile) ── */
+  .kbd{display:none;margin-top:16px;gap:6px;flex-direction:column;}
+  .kbd-row{display:flex;gap:5px;justify-content:center;}
+  .kbd-key{flex:1;max-width:42px;height:46px;background:var(--surface2);border:1px solid var(--border);
+    color:var(--text);border-radius:7px;font-size:1rem;font-weight:600;cursor:pointer;}
+  .kbd-key.wide{max-width:90px;flex:1.6;font-size:0.8rem;}
+  .kbd-key:active{background:var(--primary);color:#06210a;}
+  @media (max-width:820px){ .kbd{display:flex;} }
+
+  /* ── Overlays ── */
+  .ov{position:fixed;inset:0;background:rgba(5,8,4,.82);display:flex;align-items:center;justify-content:center;
+    padding:20px;z-index:50;}
+  .ov.h{display:none;}
+  .ov-box{background:var(--surface);border:2px solid var(--primary);border-radius:var(--radius);
+    padding:26px 24px;max-width:440px;width:100%;text-align:center;}
+  .ov-box.teach{border-color:var(--gold);}
+  .ov-icon{font-size:2.2rem;margin-bottom:6px;}
+  .ov-term{font-size:1.5rem;font-weight:800;color:var(--gold);letter-spacing:.04em;margin-bottom:4px;}
+  .ov-clue{font-size:0.86rem;color:var(--text-muted);font-style:italic;margin-bottom:12px;}
+  .ov-info{font-size:0.92rem;line-height:1.55;text-align:left;background:var(--surface2);
+    border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:18px;}
+  .ov-title{font-size:1.6rem;font-weight:800;color:var(--primary);margin-bottom:4px;}
+  .ov-sub{font-size:0.86rem;color:var(--text-muted);margin-bottom:16px;}
+  .ov-stars{font-size:2.4rem;letter-spacing:6px;color:var(--gold);margin-bottom:12px;}
+  .ov-stars .empty{color:#3a3f30;}
+  .ov-table{width:100%;font-size:0.86rem;text-align:left;border-collapse:collapse;margin-bottom:18px;}
+  .ov-table td{padding:6px 8px;border-bottom:1px solid var(--border);}
+  .ov-table td:first-child{color:var(--text-muted);}
+  .ov-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+  .ov-btn{background:var(--primary);color:#06210a;border:none;padding:11px 20px;border-radius:9px;
+    cursor:pointer;font-size:0.9rem;font-weight:700;transition:.15s;}
+  .ov-btn:hover{background:var(--primary-light);}
+  .ov-btn.alt{background:var(--surface2);color:var(--primary-light);border:1px solid var(--border);}
+  .ov-btn.alt:hover{background:var(--border);}
+
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);
+    background:var(--surface2);border:1px solid var(--primary);color:var(--text);
+    padding:11px 20px;border-radius:24px;font-size:0.9rem;font-weight:600;opacity:0;
+    transition:.25s;z-index:60;pointer-events:none;max-width:90vw;text-align:center;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  footer{text-align:center;padding:16px;color:var(--text-muted);font-size:0.74rem;border-top:1px solid var(--border);}
+  footer span{color:var(--primary);}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-wrap">
+    <img id="cert-logo" src="cert-wallingford-logo.png" alt="Wallingford CERT"
+      onerror="this.style.display='none';document.getElementById('logo-fallback').style.display='flex'">
+    <div id="logo-fallback" style="display:none;align-items:center;gap:10px;"><div class="logo-badge">CERT</div></div>
+  </div>
+  <div>
+    <h1>Crossword Drill</h1>
+    <p>CERT terminology — Sections 1–8</p>
+  </div>
+  <div class="hdr-right">
+    <button class="icon-btn" id="mute-btn" title="Sound" onclick="toggleMute()">🔊</button>
+    <a class="home-link" href="index.html">← Menu</a>
+  </div>
+</header>
+
+<main>
+  <!-- LEVEL SELECT -->
+  <section id="level-select">
+    <div class="ls-hero">
+      <h2>CERT <span>Crossword</span> Drill</h2>
+      <p>Test your command of CERT terms across all eight training sections. Every puzzle is
+         generated fresh, so the board is different each time you play. Pick a difficulty to begin.</p>
+    </div>
+    <div class="level-grid" id="level-grid"></div>
+  </section>
+
+  <!-- GAME -->
+  <section id="game">
+    <div class="game-top">
+      <button class="back-btn" onclick="goLevels()">← Levels</button>
+      <span class="game-title" id="game-title"></span>
+      <div class="stat-pills">
+        <span class="pill">⏱ <strong id="stat-time">0:00</strong></span>
+        <span class="pill">Filled <strong id="stat-prog">0/0</strong></span>
+        <span class="pill">Helpers <strong id="stat-help">0</strong></span>
+      </div>
+    </div>
+
+    <div class="clue-banner">
+      <button class="cb-nav" onclick="navWord(-1)" title="Previous clue">‹</button>
+      <span class="cb-num" id="cb-num"></span>
+      <span class="cb-text" id="cb-text"></span>
+      <button class="cb-nav" onclick="navWord(1)" title="Next clue">›</button>
+    </div>
+
+    <div class="play-area">
+      <div class="board-wrap"><div class="board" id="board"></div></div>
+      <div>
+        <div class="clues-panel">
+          <div class="clue-col"><h3>Across</h3><ul class="clue-list" id="clues-across"></ul></div>
+          <div class="clue-col"><h3>Down</h3><ul class="clue-list" id="clues-down"></ul></div>
+        </div>
+        <div class="tools">
+          <button class="tool-btn" onclick="useHint()">💡 Hint (letter)</button>
+          <button class="tool-btn" onclick="revealWord()">🔓 Reveal Word</button>
+          <button class="tool-btn" onclick="newPuzzle()">🔁 New Puzzle</button>
+        </div>
+        <div class="kbd" id="kbd"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- Reinforced-learning popup (on reveal) -->
+<div class="ov h" id="teach-ov">
+  <div class="ov-box teach">
+    <div class="ov-icon">📖</div>
+    <div class="ov-term" id="teach-term"></div>
+    <div class="ov-clue" id="teach-clue"></div>
+    <div class="ov-info" id="teach-info"></div>
+    <div class="ov-btns"><button class="ov-btn" onclick="closeTeach()">Got it →</button></div>
+  </div>
+</div>
+
+<!-- Win popup -->
+<div class="ov h" id="win-ov">
+  <div class="ov-box">
+    <div class="ov-icon">🏆</div>
+    <div class="ov-title">Puzzle Solved!</div>
+    <div class="ov-sub" id="win-sub"></div>
+    <div class="ov-stars" id="win-stars"></div>
+    <table class="ov-table" id="win-table"></table>
+    <div class="ov-btns">
+      <button class="ov-btn" onclick="newPuzzle()">New Puzzle</button>
+      <button class="ov-btn alt" onclick="goLevels()">Levels</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<footer><span>Wallingford CERT</span> Training Suite · Crossword Drill</footer>
+
+<script>
+/* ══════════════ WORD / CLUE POOL ══════════════
+   d = difficulty (1 easy/common · 2 medium · 3 hard).
+   clue = mixed style (definition / fill-in-blank / acronym).
+   info = reinforced-learning note shown on Reveal Word. */
+const POOL = [
+  // ── d1 ──
+  {a:"SCENE",   d:1, clue:"Always ensure ___ safety before you act.", info:"Scene safety is CERT rule #1 — never become a second victim."},
+  {a:"PPE",     d:1, clue:"Gloves, goggles, helmet — Personal Protective Equipment (acronym).", info:"Don your PPE before entering any scene to guard against injury and contamination."},
+  {a:"CERT",    d:1, clue:"Community Emergency Response Team (acronym).", info:"CERT volunteers do the greatest good for the greatest number until professionals arrive."},
+  {a:"RADIO",   d:1, clue:"Primary tool for field communications.", info:"Use plain language on the radio — clear text, no codes."},
+  {a:"TRIAGE",  d:1, clue:"Sorting patients by severity of injury.", info:"CERT uses START triage to rapidly sort many patients."},
+  {a:"HAZARD",  d:1, clue:"A potential source of danger at a scene.", info:"Identify hazards during size-up: fire, gas, downed wires, unstable structures."},
+  {a:"FUEL",    d:1, clue:"The combustible side of the fire triangle.", info:"Remove any side of the fire triangle — fuel, heat, or oxygen — and the fire goes out."},
+  {a:"HEAT",    d:1, clue:"Side of the fire triangle removed by cooling with water.", info:"Water cools a fire, removing the heat side of the fire triangle."},
+  {a:"SHOCK",   d:1, clue:"Poor tissue perfusion; keep the patient warm and lying down.", info:"Treat for shock: control bleeding, lay flat, elevate legs, maintain body heat."},
+  {a:"AIRWAY",  d:1, clue:"Open it with a head-tilt, chin-lift — the A in ABC.", info:"Airway is the first life-threat checked; open it before assessing breathing."},
+  {a:"GLOVES",  d:1, clue:"Hand PPE that guards against bodily fluids.", info:"Always wear gloves during medical operations to prevent disease transmission."},
+  {a:"HELMET",  d:1, clue:"Head PPE worn on a search-and-rescue scene.", info:"A helmet protects against falling and overhead debris."},
+  {a:"PLAN",    d:1, clue:"Every household should make an emergency ___.", info:"A family emergency plan covers meeting spots, contacts, and evacuation routes."},
+  {a:"KIT",     d:1, clue:"Your go-___ of disaster supplies.", info:"Keep a 72-hour kit with water, food, light, and first aid."},
+  {a:"GAS",     d:1, clue:"Utility you shut off at the meter if you smell it.", info:"If you smell gas, shut it off at the meter — never use a flame or light switch."},
+  {a:"PULSE",   d:1, clue:"The P in the RPM triage check.", info:"Check the radial pulse during START; an absent radial pulse signals poor perfusion."},
+  {a:"WATER",   d:1, clue:"Store one gallon per person per day of this.", info:"Water is the top priority in any disaster supply kit."},
+  {a:"SIZEUP",  d:1, clue:"Ongoing assessment of a scene and its hazards.", info:"Size-up is continuous — reassess as conditions change."},
+  {a:"REHAB",   d:1, clue:"Rest, hydration, and recovery area for responders.", info:"Rotate through rehab to avoid exhaustion and heat injury."},
+  {a:"VOID",    d:1, clue:"A survivable space within collapsed debris.", info:"Search voids — under tables and stairwells — where survivors may shelter."},
+  {a:"SMOKE",   d:1, clue:"Install a detector to warn of fire early.", info:"Smoke detectors roughly halve fire-death risk — test them monthly."},
+  {a:"OXYGEN",  d:1, clue:"Fire-triangle gas that air supplies.", info:"Smothering removes oxygen, one side of the fire triangle."},
+  {a:"WOUND",   d:1, clue:"A break in the skin that may bleed.", info:"Dress and bandage a wound after the bleeding is controlled."},
+
+  // ── d2 ──
+  {a:"START",     d:2, clue:"Simple Triage And Rapid Treatment (acronym).", info:"START sorts patients in under a minute using RPM."},
+  {a:"RPM",       d:2, clue:"Respirations, Pulse, Mental status (triage acronym).", info:"RPM are the three START checks performed on each patient."},
+  {a:"PASS",      d:2, clue:"Pull, Aim, Squeeze, Sweep (extinguisher acronym).", info:"PASS is the technique for operating a fire extinguisher."},
+  {a:"IMMEDIATE", d:2, clue:"The red START triage tag.", info:"Immediate (red) patients have life-threats and are treated first."},
+  {a:"DELAYED",   d:2, clue:"The yellow START triage tag.", info:"Delayed (yellow) patients can wait a short time for treatment."},
+  {a:"MINOR",     d:2, clue:"The green tag for the walking wounded.", info:"Minor (green) patients can often help themselves and others."},
+  {a:"CRIBBING",  d:2, clue:"Wood framework that stabilizes a load before lifting.", info:"Box cribbing supports debris so rescuers aren't crushed — lift an inch, crib an inch."},
+  {a:"LEVER",     d:2, clue:"Simple machine used with a fulcrum to move debris.", info:"A lever multiplies your force to lift a heavy load off a victim."},
+  {a:"FULCRUM",   d:2, clue:"The pivot point for a lever.", info:"Place the fulcrum close to the load for the greatest lifting power."},
+  {a:"BLEEDING",  d:2, clue:"Control it first with direct pressure.", info:"Severe bleeding is a top life-threat; use direct pressure, then a tourniquet if needed."},
+  {a:"PRESSURE",  d:2, clue:"Direct ___ is the first step to stop bleeding.", info:"Direct pressure controls most bleeding within minutes."},
+  {a:"NIMS",      d:2, clue:"National Incident Management System (acronym).", info:"NIMS gives agencies a common structure so they can work together."},
+  {a:"COMMAND",   d:2, clue:"The first ICS function established at an incident.", info:"Command sets objectives; everyone reports up a single chain of command."},
+  {a:"DECON",     d:2, clue:"Short for decontamination.", info:"Decon removes hazardous contaminants from people and equipment."},
+  {a:"BRIEFING",  d:2, clue:"The IC gives you one before you deploy.", info:"A briefing covers your assignment, the hazards, and communications."},
+  {a:"BUDDY",     d:2, clue:"The ___ system keeps responders working in pairs.", info:"Never operate alone — the buddy system improves safety and accountability."},
+  {a:"STRESS",    d:2, clue:"Critical incident ___ can affect responders.", info:"Watch for stress reactions; use rehab and debriefing to manage them."},
+  {a:"INCIPIENT", d:2, clue:"The beginning fire stage CERT may safely fight.", info:"Only fight a small, incipient-stage fire with a clear exit at your back."},
+  {a:"STAGING",   d:2, clue:"Area where resources wait until assigned.", info:"Report to staging and await your assignment from the IC."},
+  {a:"SPAN",      d:2, clue:"___ of control: one supervisor to 3–7 responders.", info:"Span of control keeps supervision effective — about five reports each."},
+  {a:"RESCUE",    d:2, clue:"Search and ___ locates and removes survivors.", info:"CERT performs light search and rescue — only when it is safe to do so."},
+  {a:"DEBRIS",    d:2, clue:"Rubble that must be moved or stabilized to reach victims.", info:"Move debris carefully — leverage and cribbing prevent further collapse."},
+  {a:"DOFF",      d:2, clue:"To carefully remove your PPE.", info:"Doff PPE slowly to avoid self-contamination, then wash your hands."},
+  {a:"FLAMMABLE", d:2, clue:"Placard warning for an easily ignited liquid.", info:"Keep flammable materials away from heat and ignition sources."},
+
+  // ── d3 ──
+  {a:"IDLH",       d:3, clue:"Immediately Dangerous to Life and Health (acronym).", info:"Never enter an IDLH atmosphere — it is beyond CERT scope; wait for professionals."},
+  {a:"MITIGATION", d:3, clue:"Actions taken before a disaster to reduce its impact.", info:"Mitigation — like strapping water heaters — lessens future damage."},
+  {a:"TOURNIQUET", d:3, clue:"Applied high and tight for severe limb bleeding.", info:"Use a tourniquet when pressure can't stop life-threatening limb bleeding; note the time applied."},
+  {a:"CBRNE",      d:3, clue:"Chemical, Biological, Radiological, Nuclear, Explosive (acronym).", info:"CBRNE names terrorism hazard types; recognize, retreat, and report."},
+  {a:"SECONDARY",  d:3, clue:"A ___ device is set to target responders.", info:"Stay alert for secondary devices; avoid obvious staging spots at a blast scene."},
+  {a:"STANDOFF",   d:3, clue:"Keep a safe ___ distance from a suspicious item.", info:"Standoff distance plus cover protects you from an explosive device."},
+  {a:"LOGISTICS",  d:3, clue:"ICS section that supplies resources and equipment.", info:"Logistics gets responders the tools, food, and gear they need."},
+  {a:"PERFUSION",  d:3, clue:"Blood flow to the tissues, judged in START triage.", info:"Capillary refill and pulse indicate perfusion when sorting patients."},
+  {a:"AFTERSHOCK", d:3, clue:"A smaller quake that follows the main earthquake.", info:"Aftershocks can topple structures already weakened — stay cautious."},
+  {a:"EVACUATION", d:3, clue:"Orderly movement of people away from danger.", info:"Know your primary and secondary evacuation routes before you need them."},
+  {a:"UTILITIES",  d:3, clue:"Gas, electric, and water that may need shutting off.", info:"Controlling utilities reduces the risk of fire, shock, and flooding."},
+  {a:"PORTABLE",   d:3, clue:"A ___ extinguisher is the type CERT carries.", info:"A portable extinguisher only handles small fires — know its limits."},
+];
+const CLUE_BY = {}; POOL.forEach(w=>CLUE_BY[w.a]=w);
+
+/* ══════════════ LEVELS ══════════════ */
+const LEVELS = [
+  {id:1, name:"Recruit",    icon:"🎓", minD:1, maxD:1, target:7,  blurb:"Common terms, small grid"},
+  {id:2, name:"Member",     icon:"📘", minD:1, maxD:2, target:9,  blurb:"Adds acronyms & medical"},
+  {id:3, name:"Responder",  icon:"🚑", minD:1, maxD:2, target:12, blurb:"Bigger interlocking board"},
+  {id:4, name:"Team Lead",  icon:"🎖️", minD:1, maxD:3, target:14, blurb:"All sections, harder terms"},
+  {id:5, name:"Specialist", icon:"⭐", minD:2, maxD:3, target:16, blurb:"Expert vocabulary only"},
+];
+const STAR_KEY="cert_xword_stars";
+function loadStars(){ try{ return JSON.parse(localStorage.getItem(STAR_KEY))||{}; }catch(e){ return {}; } }
+function saveStars(o){ try{ localStorage.setItem(STAR_KEY, JSON.stringify(o)); }catch(e){} }
+
+/* ══════════════ PUZZLE GENERATION ══════════════ */
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+function tryLayout(words, target){
+  const G={}; const key=(r,c)=>r+","+c;
+  const placed=[];
+  // seed with the longest available word at origin (across)
+  const seed=words[0];
+  for(let i=0;i<seed.length;i++) G[key(0,i)]=seed[i];
+  placed.push({a:seed,r:0,c:0,dir:"A"});
+
+  function canPlace(word,sr,sc,dir){
+    const before = dir==="A" ? key(sr,sc-1) : key(sr-1,sc);
+    if (G[before]!=null) return false;
+    const after = dir==="A" ? key(sr,sc+word.length) : key(sr+word.length,sc);
+    if (G[after]!=null) return false;
+    let crosses=0;
+    for(let i=0;i<word.length;i++){
+      const r = dir==="A" ? sr : sr+i;
+      const c = dir==="A" ? sc+i : sc;
+      const cur = G[key(r,c)];
+      if (cur!=null){
+        if (cur!==word[i]) return false;
+        crosses++;
+      } else {
+        if (dir==="A"){ if (G[key(r-1,c)]!=null || G[key(r+1,c)]!=null) return false; }
+        else { if (G[key(r,c-1)]!=null || G[key(r,c+1)]!=null) return false; }
+      }
+    }
+    return crosses>0;
+  }
+  function write(word,sr,sc,dir){
+    for(let i=0;i<word.length;i++){
+      const r = dir==="A" ? sr : sr+i;
+      const c = dir==="A" ? sc+i : sc;
+      G[key(r,c)]=word[i];
+    }
+    placed.push({a:word,r:sr,c:sc,dir:dir});
+  }
+  function findSpot(word){
+    const entries=shuffle(Object.keys(G));
+    for(const k of entries){
+      const ch=G[k]; const [r,c]=k.split(",").map(Number);
+      for(let i=0;i<word.length;i++){
+        if (word[i]!==ch) continue;
+        const order = Math.random()<0.5 ? ["A","D"] : ["D","A"];
+        for(const dir of order){
+          const sr = dir==="A" ? r : r-i;
+          const sc = dir==="A" ? c-i : c;
+          if (canPlace(word,sr,sc,dir)) return {sr,sc,dir};
+        }
+      }
+    }
+    return null;
+  }
+
+  for(let pass=0;pass<3 && placed.length<target;pass++){
+    for(const w of words){
+      if (placed.length>=target) break;
+      if (placed.some(p=>p.a===w)) continue;
+      const spot=findSpot(w);
+      if (spot) write(w,spot.sr,spot.sc,spot.dir);
+    }
+  }
+  // bounds
+  let minR=1e9,maxR=-1e9,minC=1e9,maxC=-1e9;
+  for(const k of Object.keys(G)){ const [r,c]=k.split(",").map(Number);
+    minR=Math.min(minR,r);maxR=Math.max(maxR,r);minC=Math.min(minC,c);maxC=Math.max(maxC,c); }
+  return {G,placed,minR,maxR,minC,maxC};
+}
+
+function buildPuzzle(level){
+  let cand = POOL.filter(w=>w.d>=level.minD && w.d<=level.maxD).map(w=>w.a);
+  let best=null;
+  for(let attempt=0; attempt<140; attempt++){
+    const words = shuffle(cand);
+    // seed with a longer word for a better skeleton (with some randomness)
+    words.sort((a,b)=> (Math.random()<0.75 ? b.length-a.length : 0));
+    const lay = tryLayout(words, level.target);
+    const rows = lay.maxR-lay.minR+1, cols = lay.maxC-lay.minC+1;
+    // count intersection cells (denser puzzles read better)
+    let cross=0;
+    for(const k of Object.keys(lay.G)){ const [r,c]=k.split(",").map(Number);
+      const h = lay.G[(r)+","+(c-1)]!=null || lay.G[(r)+","+(c+1)]!=null;
+      const v = lay.G[(r-1)+","+c]!=null || lay.G[(r+1)+","+c]!=null;
+      if (h&&v) cross++;
+    }
+    const maxDim=Math.max(rows,cols);
+    // word count dominates; then reward crossings, penalize sprawl
+    const score = lay.placed.length*1000 + cross*25 - maxDim*12 - Math.abs(rows-cols)*5;
+    if (!best || score>best.score) best={...lay, rows, cols, score};
+  }
+  return finalize(best);
+}
+
+function finalize(lay){
+  const rows=lay.rows, cols=lay.cols;
+  const grid=[]; for(let r=0;r<rows;r++){ grid.push(new Array(cols).fill(null)); }
+  for(const k of Object.keys(lay.G)){
+    const [r,c]=k.split(",").map(Number);
+    grid[r-lay.minR][c-lay.minC]=lay.G[k];
+  }
+  // numbering + extract words from the grid (so they always match the layout)
+  const cells=[]; for(let r=0;r<rows;r++){ const row=[]; for(let c=0;c<cols;c++){
+    row.push({ block: grid[r][c]==null, sol: grid[r][c], val:"", num:null, hinted:false });
+  } cells.push(row); }
+  const words=[]; let num=0;
+  const has=(r,c)=> r>=0&&r<rows&&c>=0&&c<cols&&!cells[r][c].block;
+  for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
+    if (cells[r][c].block) continue;
+    const startA = !has(r,c-1) && has(r,c+1);
+    const startD = !has(r-1,c) && has(r+1,c);
+    if (startA||startD){ cells[r][c].num=++num; }
+    if (startA){ const cs=[]; let cc=c; let ans=""; while(has(r,cc)){ cs.push([r,cc]); ans+=cells[r][cc].sol; cc++; }
+      words.push(mkWord(cells[r][c].num,"A",ans,cs)); }
+    if (startD){ const cs=[]; let rr=r; let ans=""; while(has(rr,c)){ cs.push([rr,c]); ans+=cells[rr][c].sol; rr++; }
+      words.push(mkWord(cells[r][c].num,"D",ans,cs)); }
+  }
+  return {rows,cols,cells,words};
+}
+function mkWord(num,dir,ans,cells){
+  const meta=CLUE_BY[ans]||{clue:"CERT term",info:""};
+  return {num,dir,answer:ans,cells,clue:meta.clue,info:meta.info};
+}
+
+/* ══════════════ GAME STATE ══════════════ */
+let LV=null, PZ=null, active={wi:0,ci:0}, timer=null, t0=0, hints=0, reveals=0, done=false;
+
+function startLevel(id){
+  LV=LEVELS.find(l=>l.id===id);
+  newPuzzle();
+  document.getElementById('level-select').style.display='none';
+  document.getElementById('game').style.display='block';
+}
+function newPuzzle(){
+  closeWin(); closeTeach();
+  PZ=buildPuzzle(LV);
+  hints=0; reveals=0; done=false;
+  active={wi:0,ci:0};
+  document.getElementById('game-title').textContent = `${LV.icon} ${LV.name}`;
+  renderBoard(); renderClues(); fitBoard();
+  setActiveWord(0,0,true);
+  startTimer();
+  SND.play('click');
+  updateStats();
+}
+function goLevels(){
+  stopTimer(); closeWin(); closeTeach();
+  document.getElementById('game').style.display='none';
+  document.getElementById('level-select').style.display='block';
+  renderLevels();
+}
+
+/* ── timer ── */
+function startTimer(){ stopTimer(); t0=Date.now(); timer=setInterval(updateTime,1000); updateTime(); }
+function stopTimer(){ if (timer){ clearInterval(timer); timer=null; } }
+function elapsed(){ return Math.round((Date.now()-t0)/1000); }
+function fmt(s){ return Math.floor(s/60)+":"+String(s%60).padStart(2,"0"); }
+function updateTime(){ document.getElementById('stat-time').textContent=fmt(elapsed()); }
+
+/* ══════════════ RENDER ══════════════ */
+function renderBoard(){
+  const b=document.getElementById('board');
+  b.style.gridTemplateColumns=`repeat(${PZ.cols}, var(--cell))`;
+  b.innerHTML="";
+  for(let r=0;r<PZ.rows;r++) for(let c=0;c<PZ.cols;c++){
+    const cell=PZ.cells[r][c];
+    const div=document.createElement('div');
+    if (cell.block){ div.className="cell block"; }
+    else {
+      div.className="cell fill"; div.dataset.r=r; div.dataset.c=c;
+      if (cell.num) div.innerHTML=`<span class="cnum">${cell.num}</span>`;
+      const t=document.createElement('span'); t.className="ch"; t.textContent=cell.val; div.appendChild(t);
+      div.onclick=()=>cellClick(r,c);
+    }
+    b.appendChild(div);
+  }
+}
+function renderClues(){
+  const aEl=document.getElementById('clues-across'), dEl=document.getElementById('clues-down');
+  aEl.innerHTML=""; dEl.innerHTML="";
+  PZ.words.forEach((w,wi)=>{
+    const li=document.createElement('li');
+    li.innerHTML=`<span class="ln">${w.num}</span><span>${w.clue}</span>`;
+    li.onclick=()=>{ setActiveWord(wi,0,true); };
+    li.dataset.wi=wi;
+    (w.dir==="A"?aEl:dEl).appendChild(li);
+  });
+}
+function fitBoard(){
+  const wrap=document.querySelector('.board-wrap');
+  const avail=Math.max(220, wrap.clientWidth-12);
+  let size=Math.floor(avail/PZ.cols)-2;
+  size=Math.max(20, Math.min(38, size));
+  document.documentElement.style.setProperty('--cell', size+"px");
+}
+window.addEventListener('resize', ()=>{ if (PZ && document.getElementById('game').style.display!=='none') fitBoard(); });
+
+function cellEl(r,c){ return document.querySelector(`.cell.fill[data-r="${r}"][data-c="${c}"]`); }
+function paint(){
+  // clear
+  document.querySelectorAll('.cell.fill').forEach(el=>el.classList.remove('hl','active','hinted'));
+  PZ.cells.forEach((row,r)=>row.forEach((cell,c)=>{
+    if (cell.block) return;
+    const el=cellEl(r,c); el.querySelector('.ch').textContent=cell.val;
+    if (cell.hinted) el.classList.add('hinted');
+  }));
+  const w=PZ.words[active.wi];
+  w.cells.forEach(([r,c],i)=>{ const el=cellEl(r,c); el.classList.add('hl'); if (i===active.ci) el.classList.add('active'); });
+  // banner
+  document.getElementById('cb-num').textContent=`${w.num} ${w.dir==="A"?"Across":"Down"}`;
+  document.getElementById('cb-text').textContent=w.clue;
+  // clue list highlight + done
+  document.querySelectorAll('.clue-list li').forEach(li=>{
+    const wi=+li.dataset.wi; li.classList.toggle('active', wi===active.wi);
+    li.classList.toggle('done', wordComplete(PZ.words[wi]));
+  });
+  updateStats();
+}
+function updateStats(){
+  let filled=0,total=0;
+  PZ.cells.forEach(row=>row.forEach(c=>{ if(!c.block){ total++; if(c.val) filled++; } }));
+  document.getElementById('stat-prog').textContent=`${filled}/${total}`;
+  document.getElementById('stat-help').textContent=hints+reveals;
+}
+
+/* ══════════════ NAVIGATION & INPUT ══════════════ */
+function wordAt(r,c,dir){
+  return PZ.words.findIndex(w=>w.dir===dir && w.cells.some(([cr,cc])=>cr===r&&cc===c));
+}
+function cellClick(r,c){
+  const cur=PZ.words[active.wi];
+  const onCur = cur.cells.some(([cr,cc])=>cr===r&&cc===c);
+  let dir = cur.dir;
+  if (onCur){ dir = cur.dir==="A"?"D":"A"; } // toggle direction on re-click
+  let wi=wordAt(r,c,dir);
+  if (wi<0) wi=wordAt(r,c,dir==="A"?"D":"A");
+  if (wi<0) return;
+  const ci=PZ.words[wi].cells.findIndex(([cr,cc])=>cr===r&&cc===c);
+  setActiveWord(wi, ci<0?0:ci, false);
+}
+function setActiveWord(wi, ci, scroll){
+  active.wi=wi; active.ci=Math.max(0,ci);
+  paint();
+  if (scroll){ const li=document.querySelector(`.clue-list li[data-wi="${wi}"]`); if (li) li.scrollIntoView({block:"nearest"}); }
+}
+function navWord(step){
+  let wi=(active.wi+step+PZ.words.length)%PZ.words.length;
+  setActiveWord(wi,0,true);
+}
+function moveCell(step){
+  const w=PZ.words[active.wi];
+  let ci=active.ci+step;
+  if (ci<0) ci=0; if (ci>=w.cells.length) ci=w.cells.length-1;
+  active.ci=ci; paint();
+}
+function nextEmptyInWord(){
+  const w=PZ.words[active.wi];
+  for(let i=active.ci+1;i<w.cells.length;i++){ const [r,c]=w.cells[i]; if (!PZ.cells[r][c].val){ active.ci=i; return; } }
+  if (active.ci<w.cells.length-1) active.ci++;
+}
+function typeLetter(ch){
+  if (done) return;
+  const w=PZ.words[active.wi]; const [r,c]=w.cells[active.ci];
+  PZ.cells[r][c].val=ch; PZ.cells[r][c].hinted=false;
+  SND.play('type');
+  nextEmptyInWord();
+  paint();
+  checkWord(w);
+  checkWin();
+}
+function backspace(){
+  if (done) return;
+  const w=PZ.words[active.wi]; let [r,c]=w.cells[active.ci];
+  if (PZ.cells[r][c].val){ PZ.cells[r][c].val=""; }
+  else if (active.ci>0){ active.ci--; [r,c]=w.cells[active.ci]; PZ.cells[r][c].val=""; }
+  paint();
+}
+function wordComplete(w){ return w.cells.every(([r,c])=>PZ.cells[r][c].val===PZ.cells[r][c].sol); }
+function checkWord(w){
+  if (wordComplete(w)){
+    SND.play('word');
+    toast(`✓ ${w.answer}`);
+    w.cells.forEach(([r,c])=>{ const el=cellEl(r,c); el.classList.add('solved-flash'); setTimeout(()=>el.classList.remove('solved-flash'),600); });
+  }
+}
+
+window.addEventListener('keydown', e=>{
+  if (document.getElementById('game').style.display==='none') return;
+  if (!document.getElementById('win-ov').classList.contains('h')) return;
+  if (!document.getElementById('teach-ov').classList.contains('h')){ if (e.key==="Enter") closeTeach(); return; }
+  const k=e.key;
+  if (/^[a-zA-Z]$/.test(k)){ typeLetter(k.toUpperCase()); e.preventDefault(); }
+  else if (k==="Backspace"){ backspace(); e.preventDefault(); }
+  else if (k==="ArrowRight"||k==="ArrowDown"){ moveCell(1); e.preventDefault(); }
+  else if (k==="ArrowLeft"||k==="ArrowUp"){ moveCell(-1); e.preventDefault(); }
+  else if (k===" "||k==="Tab"){ navWord(1); e.preventDefault(); }
+});
+
+/* ── on-screen keyboard ── */
+(function buildKbd(){
+  const rows=["QWERTYUIOP","ASDFGHJKL","ZXCVBNM"];
+  const kbd=document.getElementById('kbd');
+  rows.forEach((row,idx)=>{
+    const rd=document.createElement('div'); rd.className="kbd-row";
+    if (idx===2){ const del=document.createElement('button'); del.className="kbd-key wide"; del.textContent="⌫ Del"; del.onclick=()=>backspace(); rd.appendChild(del); }
+    row.split("").forEach(ch=>{ const b=document.createElement('button'); b.className="kbd-key"; b.textContent=ch; b.onclick=()=>typeLetter(ch); rd.appendChild(b); });
+    if (idx===2){ const nx=document.createElement('button'); nx.className="kbd-key wide"; nx.textContent="Next ›"; nx.onclick=()=>navWord(1); rd.appendChild(nx); }
+    kbd.appendChild(rd);
+  });
+})();
+
+/* ══════════════ TOOLS ══════════════ */
+function useHint(){
+  if (done) return;
+  const w=PZ.words[active.wi]; const [r,c]=w.cells[active.ci];
+  const cell=PZ.cells[r][c];
+  if (cell.val===cell.sol){ toast("That letter is already correct."); return; }
+  cell.val=cell.sol; cell.hinted=true; hints++;
+  SND.play('hint');
+  nextEmptyInWord(); paint(); checkWord(w); checkWin();
+}
+function revealWord(){
+  if (done) return;
+  const w=PZ.words[active.wi];
+  w.cells.forEach(([r,c])=>{ const cell=PZ.cells[r][c]; if (cell.val!==cell.sol){ cell.val=cell.sol; cell.hinted=true; } });
+  reveals++;
+  SND.play('reveal');
+  paint();
+  openTeach(w);   // reinforced-learning popup
+  checkWin();
+}
+function openTeach(w){
+  document.getElementById('teach-term').textContent=w.answer;
+  document.getElementById('teach-clue').textContent=w.clue;
+  document.getElementById('teach-info').textContent=w.info||"Review this term in your CERT materials.";
+  document.getElementById('teach-ov').classList.remove('h');
+}
+function closeTeach(){ document.getElementById('teach-ov').classList.add('h'); }
+
+/* ══════════════ WIN ══════════════ */
+function checkWin(){
+  if (done) return;
+  const solved=PZ.cells.every(row=>row.every(c=>c.block || c.val===c.sol));
+  if (solved){ done=true; stopTimer(); showWin(); }
+}
+function starsFor(helpers){ return helpers===0?3 : helpers<=2?2 : 1; }
+function showWin(){
+  const helpers=hints+reveals;
+  const stars=starsFor(helpers);
+  const t=elapsed();
+  // persist best
+  const all=loadStars(); const prev=all[LV.id]||0; if (stars>prev){ all[LV.id]=stars; saveStars(all); }
+  document.getElementById('win-sub').textContent=`${LV.icon} ${LV.name} — ${PZ.words.length} terms`;
+  document.getElementById('win-stars').innerHTML=[1,2,3].map(i=>i<=stars?"★":'<span class="empty">★</span>').join("");
+  document.getElementById('win-table').innerHTML=`
+    <tr><td>Time</td><td><strong>${fmt(t)}</strong></td></tr>
+    <tr><td>Hints used</td><td><strong>${hints}</strong></td></tr>
+    <tr><td>Words revealed</td><td><strong>${reveals}</strong></td></tr>
+    <tr><td>Rating</td><td><strong>${["","1 star — keep drilling","2 stars — solid","3 stars — perfect, no help!"][stars]}</strong></td></tr>`;
+  document.getElementById('win-ov').classList.remove('h');
+  SND.play('win');
+}
+function closeWin(){ document.getElementById('win-ov').classList.add('h'); }
+
+/* ══════════════ LEVEL SELECT RENDER ══════════════ */
+function renderLevels(){
+  const grid=document.getElementById('level-grid'); grid.innerHTML="";
+  const stars=loadStars();
+  LEVELS.forEach(l=>{
+    const earned=stars[l.id]||0;
+    const card=document.createElement('button'); card.className="level-card"; card.onclick=()=>startLevel(l.id);
+    card.innerHTML=`
+      <div class="lc-icon">${l.icon}</div>
+      <div class="lc-tier">Level ${l.id}</div>
+      <div class="lc-name">${l.name}</div>
+      <div class="lc-meta">${l.target} words · ${l.blurb}</div>
+      <div class="lc-stars">${[1,2,3].map(i=>i<=earned?"★":'<span class="empty">★</span>').join("")}</div>`;
+    grid.appendChild(card);
+  });
+}
+
+/* ══════════════ TOAST ══════════════ */
+let toastT=null;
+function toast(msg){
+  const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show');
+  clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove('show'),1600);
+}
+
+/* ══════════════ AUDIO (self-contained) ══════════════ */
+const SND=(function(){
+  let actx=null, muted=localStorage.getItem('cert_xword_sfx')==='off';
+  function ctx(){ if(!actx){ const AC=window.AudioContext||window.webkitAudioContext; if(AC) actx=new AC(); } return actx; }
+  function tone(f,t,dur,type,vol){ const c=ctx(); if(!c) return; const o=c.createOscillator(),g=c.createGain();
+    o.type=type||'sine'; o.frequency.value=f; const s=c.currentTime+t;
+    g.gain.setValueAtTime(0,s); g.gain.linearRampToValueAtTime(vol||0.18,s+0.01); g.gain.exponentialRampToValueAtTime(0.0008,s+dur);
+    o.connect(g); g.connect(c.destination); o.start(s); o.stop(s+dur+0.02); }
+  function play(name){
+    if (muted) return; const c=ctx(); if(!c) return; if(c.state==='suspended') c.resume();
+    switch(name){
+      case 'type':   tone(660,0,0.05,'triangle',0.12); break;
+      case 'word':   tone(720,0,0.09,'sine',0.18); tone(960,0.08,0.12,'sine',0.18); break;
+      case 'hint':   tone(520,0,0.1,'sine',0.16); break;
+      case 'reveal': tone(400,0,0.12,'sawtooth',0.12); tone(300,0.1,0.16,'sine',0.12); break;
+      case 'click':  tone(440,0,0.06,'square',0.12); break;
+      case 'win':    [523,659,784,1047].forEach((f,i)=>tone(f,i*0.12,0.22,'triangle',0.2)); break;
+    }
+  }
+  function toggle(){ muted=!muted; localStorage.setItem('cert_xword_sfx', muted?'off':'on'); return muted; }
+  function isMuted(){ return muted; }
+  return {play,toggle,isMuted};
+})();
+function toggleMute(){ const m=SND.toggle(); document.getElementById('mute-btn').textContent=m?'🔇':'🔊'; if(!m) SND.play('click'); }
+
+/* ══════════════ INIT ══════════════ */
+document.getElementById('mute-btn').textContent=SND.isMuted()?'🔇':'🔊';
+renderLevels();
+</script>
+</body>
+</html>
