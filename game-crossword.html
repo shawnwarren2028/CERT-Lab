@@ -119,6 +119,17 @@
   .clue-list li.done{color:var(--text-muted);text-decoration:line-through;}
   .clue-list li .ln{font-weight:700;color:var(--primary);min-width:20px;text-align:right;}
 
+  /* thin, theme-matched scrollbars */
+  .clue-list, .board-wrap, .rec-box, .ov-box, body{ scrollbar-width:thin; scrollbar-color:var(--primary-dark) var(--surface); }
+  .clue-list::-webkit-scrollbar, .board-wrap::-webkit-scrollbar,
+  .rec-box::-webkit-scrollbar, .ov-box::-webkit-scrollbar{ width:7px; height:7px; }
+  .clue-list::-webkit-scrollbar-track, .board-wrap::-webkit-scrollbar-track,
+  .rec-box::-webkit-scrollbar-track, .ov-box::-webkit-scrollbar-track{ background:var(--surface); border-radius:6px; }
+  .clue-list::-webkit-scrollbar-thumb, .board-wrap::-webkit-scrollbar-thumb,
+  .rec-box::-webkit-scrollbar-thumb, .ov-box::-webkit-scrollbar-thumb{ background:var(--primary-dark); border-radius:6px; }
+  .clue-list::-webkit-scrollbar-thumb:hover, .board-wrap::-webkit-scrollbar-thumb:hover,
+  .rec-box::-webkit-scrollbar-thumb:hover, .ov-box::-webkit-scrollbar-thumb:hover{ background:var(--primary); }
+
   .tools{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;}
   .tool-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);
     padding:10px 16px;border-radius:9px;cursor:pointer;font-size:0.86rem;font-weight:600;transition:.15s;}
