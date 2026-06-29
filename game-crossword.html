@@ -50,6 +50,9 @@
   .level-card .lc-meta{font-size:0.78rem;color:var(--text-muted);}
   .level-card .lc-stars{margin-top:12px;font-size:1rem;letter-spacing:2px;color:var(--gold);}
   .level-card .lc-stars .empty{color:#3a3f30;}
+  .level-card.daily{border-color:var(--gold);background:linear-gradient(180deg,#221d0c,var(--surface));}
+  .level-card.daily .lc-tier{color:var(--gold);}
+  .level-card.daily .lc-name{color:var(--gold);}
 
   /* ── Game ── */
   #game{display:none;}
@@ -83,6 +86,7 @@
   .cell.fill.hl{background:#bfe3a6;}
   .cell.fill.active{background:#7ac95a;color:#06210a;}
   .cell.fill.hinted{color:#0a5a8a;}
+  .cell.fill.wrong{background:#e57373;color:#3a0a0a;}
   .cell .cnum{position:absolute;top:1px;left:2px;font-size:calc(var(--cell) * 0.28);font-weight:700;color:#3a4a2a;line-height:1;}
   .cell.fill.solved-flash{animation:flashok .6s ease;}
   @keyframes flashok{0%{background:#e8c33a;}100%{background:#f3efe2;}}
@@ -209,6 +213,7 @@
         <div class="tools">
           <button class="tool-btn" onclick="useHint()">💡 Hint (letter)</button>
           <button class="tool-btn" onclick="revealWord()">🔓 Reveal Word</button>
+          <button class="tool-btn" onclick="checkAnswers()">✔️ Check</button>
           <button class="tool-btn" onclick="newPuzzle()">🔁 New Puzzle</button>
         </div>
         <div class="kbd" id="kbd"></div>
@@ -317,6 +322,29 @@ const POOL = [
   {a:"EVACUATION", d:3, clue:"Orderly movement of people away from danger.", info:"Know your primary and secondary evacuation routes before you need them."},
   {a:"UTILITIES",  d:3, clue:"Gas, electric, and water that may need shutting off.", info:"Controlling utilities reduces the risk of fire, shock, and flooding."},
   {a:"PORTABLE",   d:3, clue:"A ___ extinguisher is the type CERT carries.", info:"A portable extinguisher only handles small fires — know its limits."},
+
+  // ── expansion pack ──
+  {a:"SAFETY",      d:1, clue:"The top priority on every CERT scene.", info:"Personal safety comes first — then your team, then the victims."},
+  {a:"DANGER",      d:1, clue:"What you scan for during scene size-up.", info:"Spot danger before you act so you don't become another victim."},
+  {a:"SPLINT",      d:1, clue:"Device used to immobilize a broken bone.", info:"Splint a suspected fracture in the position found, then recheck circulation."},
+  {a:"BANDAGE",     d:1, clue:"Cloth used to hold a dressing in place.", info:"A bandage secures a dressing; the dressing covers the wound itself."},
+  {a:"DRESSING",    d:1, clue:"Sterile pad placed directly on a wound.", info:"Put a dressing on the wound first, then wrap it with a bandage."},
+  {a:"ESCAPE",      d:1, clue:"Plan two ways out of every room — ___ routes.", info:"Practice home escape routes so everyone can get out quickly."},
+  {a:"SHELTER",     d:1, clue:"Take ___ under sturdy furniture during a quake.", info:"Drop, cover, and hold on — shelter from falling objects."},
+  {a:"TRIANGLE",    d:2, clue:"The fire ___ is fuel, heat, and oxygen.", info:"Remove any side of the fire triangle to put a fire out."},
+  {a:"FRACTURE",    d:2, clue:"A broken or cracked bone.", info:"Immobilize a fracture and watch the patient for shock."},
+  {a:"LEVERAGE",    d:2, clue:"What a lever and fulcrum give you to lift debris.", info:"Leverage lets a few rescuers safely move a heavy load."},
+  {a:"MARKING",     d:2, clue:"FEMA search ___ uses a slash, then an X.", info:"Search markings tell other teams a structure's status."},
+  {a:"DOCUMENT",    d:2, clue:"Record findings on the triage ___.", info:"Document the triage category and key findings so EMS can act fast."},
+  {a:"TRANSPORT",   d:2, clue:"Immediate patients are first for ___.", info:"Red (Immediate) patients are moved and transported first."},
+  {a:"RESOURCES",   d:2, clue:"People and gear managed by the Logistics section.", info:"Track resources so the right tools arrive where they're needed."},
+  {a:"ELECTRIC",    d:2, clue:"Utility shut off at the main breaker panel.", info:"Kill electricity at the main breaker if there's a shock or fire risk."},
+  {a:"HYPOTHERMIA", d:3, clue:"Dangerous drop in core body temperature.", info:"Treat hypothermia: remove wet clothing and rewarm the patient gradually."},
+  {a:"ANAPHYLAXIS", d:3, clue:"Severe, rapid, whole-body allergic reaction.", info:"Anaphylaxis is life-threatening and can close the airway — get EMS fast."},
+  {a:"CONTUSION",   d:3, clue:"A bruise — the C in DCAP-BTLS.", info:"A contusion can hint at deeper injury beneath the skin."},
+  {a:"LACERATION",  d:3, clue:"A jagged cut — the L in DCAP-BTLS.", info:"Control laceration bleeding with direct pressure."},
+  {a:"QUADRANT",    d:3, clue:"Each colored section of the NFPA 704 diamond.", info:"NFPA 704 quadrants rate health, fire, reactivity, and special hazards."},
+  {a:"CAPILLARY",   d:3, clue:"___ refill under 2 seconds shows good perfusion.", info:"Press a nail bed; capillary refill helps judge perfusion during START."},
 ];
 const CLUE_BY = {}; POOL.forEach(w=>CLUE_BY[w.a]=w);
 
@@ -328,12 +356,27 @@ const LEVELS = [
   {id:4, name:"Team Lead",  icon:"🎖️", minD:1, maxD:3, target:14, blurb:"All sections, harder terms"},
   {id:5, name:"Specialist", icon:"⭐", minD:2, maxD:3, target:16, blurb:"Expert vocabulary only"},
 ];
-const STAR_KEY="cert_xword_stars";
-function loadStars(){ try{ return JSON.parse(localStorage.getItem(STAR_KEY))||{}; }catch(e){ return {}; } }
-function saveStars(o){ try{ localStorage.setItem(STAR_KEY, JSON.stringify(o)); }catch(e){} }
+const DAILY={id:'daily', name:'Daily Challenge', icon:'📅', minD:1, maxD:3, target:12};
+const STAR_KEY="cert_xword_stars";    // { levelId: stars }
+const BEST_KEY="cert_xword_best";     // { levelId: seconds }
+const DAILY_KEY="cert_xword_daily";   // { 'YYYY-MM-DD': {stars,time} }
+const STREAK_KEY="cert_xword_streak"; // { streak, last }
+function jget(k,def){ try{ return JSON.parse(localStorage.getItem(k))||def; }catch(e){ return def; } }
+function jset(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+function loadStars(){ return jget(STAR_KEY,{}); } function saveStars(o){ jset(STAR_KEY,o); }
+function loadBest(){ return jget(BEST_KEY,{}); }   function saveBest(o){ jset(BEST_KEY,o); }
+function loadDaily(){ return jget(DAILY_KEY,{}); } function saveDailyStore(o){ jset(DAILY_KEY,o); }
+function loadStreak(){ return jget(STREAK_KEY,{streak:0,last:''}); } function saveStreak(o){ jset(STREAK_KEY,o); }
+function dstr(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function todayStr(){ return dstr(new Date()); }
+function yesterdayStr(){ const d=new Date(); d.setDate(d.getDate()-1); return dstr(d); }
 
 /* ══════════════ PUZZLE GENERATION ══════════════ */
-function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+// RNG is swappable: Math.random normally, a seeded PRNG for the Daily Challenge.
+let RNG = Math.random;
+function mulberry32(seed){ let a=seed>>>0; return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+function hashStr(s){ let h=2166136261>>>0; for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; }
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(RNG()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 
 function tryLayout(words, target){
   const G={}; const key=(r,c)=>r+","+c;
@@ -377,7 +420,7 @@ function tryLayout(words, target){
       const ch=G[k]; const [r,c]=k.split(",").map(Number);
       for(let i=0;i<word.length;i++){
         if (word[i]!==ch) continue;
-        const order = Math.random()<0.5 ? ["A","D"] : ["D","A"];
+        const order = RNG()<0.5 ? ["A","D"] : ["D","A"];
         for(const dir of order){
           const sr = dir==="A" ? r : r-i;
           const sc = dir==="A" ? c-i : c;
@@ -409,7 +452,7 @@ function buildPuzzle(level){
   for(let attempt=0; attempt<140; attempt++){
     const words = shuffle(cand);
     // seed with a longer word for a better skeleton (with some randomness)
-    words.sort((a,b)=> (Math.random()<0.75 ? b.length-a.length : 0));
+    words.sort((a,b)=> (RNG()<0.75 ? b.length-a.length : 0));
     const lay = tryLayout(words, level.target);
     const rows = lay.maxR-lay.minR+1, cols = lay.maxC-lay.minC+1;
     // count intersection cells (denser puzzles read better)
@@ -458,20 +501,27 @@ function mkWord(num,dir,ans,cells){
 }
 
 /* ══════════════ GAME STATE ══════════════ */
-let LV=null, PZ=null, active={wi:0,ci:0}, timer=null, t0=0, hints=0, reveals=0, done=false;
+let LV=null, PZ=null, active={wi:0,ci:0}, timer=null, t0=0, hints=0, reveals=0, checks=0, done=false, isDaily=false;
 
 function startLevel(id){
-  LV=LEVELS.find(l=>l.id===id);
+  LV=LEVELS.find(l=>l.id===id); isDaily=false;
+  newPuzzle();
+  document.getElementById('level-select').style.display='none';
+  document.getElementById('game').style.display='block';
+}
+function startDaily(){
+  LV=DAILY; isDaily=true;
   newPuzzle();
   document.getElementById('level-select').style.display='none';
   document.getElementById('game').style.display='block';
 }
 function newPuzzle(){
   closeWin(); closeTeach();
-  PZ=buildPuzzle(LV);
-  hints=0; reveals=0; done=false;
+  if (isDaily){ RNG=mulberry32(hashStr('cert-xword-'+todayStr())); PZ=buildPuzzle(LV); RNG=Math.random; }
+  else { PZ=buildPuzzle(LV); }
+  hints=0; reveals=0; checks=0; done=false;
   active={wi:0,ci:0};
-  document.getElementById('game-title').textContent = `${LV.icon} ${LV.name}`;
+  document.getElementById('game-title').textContent = isDaily ? `${LV.icon} ${LV.name} — ${todayStr()}` : `${LV.icon} ${LV.name}`;
   renderBoard(); renderClues(); fitBoard();
   setActiveWord(0,0,true);
   startTimer();
@@ -555,7 +605,7 @@ function updateStats(){
   let filled=0,total=0;
   PZ.cells.forEach(row=>row.forEach(c=>{ if(!c.block){ total++; if(c.val) filled++; } }));
   document.getElementById('stat-prog').textContent=`${filled}/${total}`;
-  document.getElementById('stat-help').textContent=hints+reveals;
+  document.getElementById('stat-help').textContent=hints+reveals+checks;
 }
 
 /* ══════════════ NAVIGATION & INPUT ══════════════ */
@@ -672,6 +722,29 @@ function openTeach(w){
 }
 function closeTeach(){ document.getElementById('teach-ov').classList.add('h'); }
 
+let checkT=null;
+function checkAnswers(){
+  if (done) return;
+  document.querySelectorAll('.cell.fill.wrong').forEach(el=>el.classList.remove('wrong'));
+  let filled=0, wrong=0;
+  PZ.cells.forEach((row,r)=>row.forEach((c,cc)=>{
+    if (c.block || !c.val) return; filled++;
+    if (c.val!==c.sol){ wrong++; cellEl(r,cc).classList.add('wrong'); }
+  }));
+  if (filled===0){ toast("Fill in some letters first."); return; }
+  checks++; updateStats(); SND.play('hint');
+  toast(wrong===0 ? "✓ Everything filled in is correct!" : `${wrong} letter${wrong>1?'s':''} to fix (shown in red).`);
+  clearTimeout(checkT);
+  checkT=setTimeout(()=>{ document.querySelectorAll('.cell.fill.wrong').forEach(el=>el.classList.remove('wrong')); }, 2200);
+}
+function recordDaily(stars,time){
+  const store=loadDaily(); const day=todayStr(); const prev=store[day];
+  store[day]={ stars:Math.max(stars, prev?prev.stars:0), time: prev?Math.min(time,prev.time):time };
+  saveDailyStore(store);
+  const st=loadStreak();
+  if (st.last!==day){ st.streak = (st.last===yesterdayStr()) ? (st.streak||0)+1 : 1; st.last=day; saveStreak(st); }
+}
+
 /* ══════════════ WIN ══════════════ */
 function checkWin(){
   if (done) return;
@@ -680,17 +753,29 @@ function checkWin(){
 }
 function starsFor(helpers){ return helpers===0?3 : helpers<=2?2 : 1; }
 function showWin(){
-  const helpers=hints+reveals;
+  const helpers=hints+reveals+checks;
   const stars=starsFor(helpers);
   const t=elapsed();
-  // persist best
-  const all=loadStars(); const prev=all[LV.id]||0; if (stars>prev){ all[LV.id]=stars; saveStars(all); }
-  document.getElementById('win-sub').textContent=`${LV.icon} ${LV.name} — ${PZ.words.length} terms`;
+  let bestLine='';
+  if (isDaily){
+    recordDaily(stars,t);
+    const st=loadStreak();
+    bestLine=`<tr><td>Daily streak</td><td><strong>🔥 ${st.streak} day${st.streak===1?'':'s'}</strong></td></tr>`;
+    document.getElementById('win-sub').textContent=`📅 Daily Challenge — ${todayStr()}`;
+  } else {
+    const all=loadStars(); if (stars>(all[LV.id]||0)){ all[LV.id]=stars; saveStars(all); }
+    const best=loadBest(); const prev=best[LV.id]; const nb = prev==null || t<prev;
+    if (nb){ best[LV.id]=t; saveBest(best); }
+    bestLine=`<tr><td>Best time</td><td><strong>${fmt(best[LV.id])}${nb?' &nbsp;⚡ New best!':''}</strong></td></tr>`;
+    document.getElementById('win-sub').textContent=`${LV.icon} ${LV.name} — ${PZ.words.length} terms`;
+  }
   document.getElementById('win-stars').innerHTML=[1,2,3].map(i=>i<=stars?"★":'<span class="empty">★</span>').join("");
   document.getElementById('win-table').innerHTML=`
     <tr><td>Time</td><td><strong>${fmt(t)}</strong></td></tr>
+    ${bestLine}
     <tr><td>Hints used</td><td><strong>${hints}</strong></td></tr>
     <tr><td>Words revealed</td><td><strong>${reveals}</strong></td></tr>
+    <tr><td>Checks used</td><td><strong>${checks}</strong></td></tr>
     <tr><td>Rating</td><td><strong>${["","1 star — keep drilling","2 stars — solid","3 stars — perfect, no help!"][stars]}</strong></td></tr>`;
   document.getElementById('win-ov').classList.remove('h');
   SND.play('win');
@@ -700,15 +785,25 @@ function closeWin(){ document.getElementById('win-ov').classList.add('h'); }
 /* ══════════════ LEVEL SELECT RENDER ══════════════ */
 function renderLevels(){
   const grid=document.getElementById('level-grid'); grid.innerHTML="";
-  const stars=loadStars();
+  const stars=loadStars(), best=loadBest();
+  // Daily Challenge card (first)
+  const dstore=loadDaily(), st=loadStreak(), today=todayStr(), dt=dstore[today];
+  const dcard=document.createElement('button'); dcard.className="level-card daily"; dcard.onclick=()=>startDaily();
+  dcard.innerHTML=`
+    <div class="lc-icon">📅</div>
+    <div class="lc-tier">Daily Challenge</div>
+    <div class="lc-name">${today}</div>
+    <div class="lc-meta">${dt?('✓ Solved · '+fmt(dt.time)) : 'Same board for everyone today'}${st.streak?` · 🔥 ${st.streak}-day streak`:''}</div>
+    <div class="lc-stars">${[1,2,3].map(i=>i<=(dt?dt.stars:0)?"★":'<span class="empty">★</span>').join("")}</div>`;
+  grid.appendChild(dcard);
   LEVELS.forEach(l=>{
-    const earned=stars[l.id]||0;
+    const earned=stars[l.id]||0, bt=best[l.id];
     const card=document.createElement('button'); card.className="level-card"; card.onclick=()=>startLevel(l.id);
     card.innerHTML=`
       <div class="lc-icon">${l.icon}</div>
       <div class="lc-tier">Level ${l.id}</div>
       <div class="lc-name">${l.name}</div>
-      <div class="lc-meta">${l.target} words · ${l.blurb}</div>
+      <div class="lc-meta">${l.target} words · ${l.blurb}${bt!=null?` · ⏱ best ${fmt(bt)}`:''}</div>
       <div class="lc-stars">${[1,2,3].map(i=>i<=earned?"★":'<span class="empty">★</span>').join("")}</div>`;
     grid.appendChild(card);
   });
