@@ -23,7 +23,8 @@
     min-height:100vh;display:flex;flex-direction:column;}
 
   header{width:100%;background:#111a09;border-bottom:3px solid var(--primary);
-    padding:12px 28px;display:flex;align-items:center;gap:16px;}
+    padding:12px 28px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+  .hdr-actions{margin-left:auto;display:flex;align-items:center;gap:10px;}
   .logo-wrap{display:flex;align-items:center;}
   #cert-logo{height:54px;width:auto;}
   .logo-badge{background:var(--primary);color:#000;font-weight:900;font-size:1.1rem;
@@ -63,7 +64,7 @@
     border-top:1px solid var(--border);margin-top:38px;}
   footer span{color:var(--primary);}
 
-  .record-btn{margin-left:auto;display:inline-flex;align-items:center;gap:7px;background:var(--surface2);
+  .record-btn{display:inline-flex;align-items:center;gap:7px;background:var(--surface2);
     border:1px solid var(--border);color:var(--primary-light);font-size:0.84rem;font-weight:600;
     padding:9px 15px;border-radius:8px;cursor:pointer;transition:.15s;white-space:nowrap;}
   .record-btn:hover{border-color:var(--primary);background:var(--border);}
@@ -113,6 +114,7 @@
     header{padding:10px 16px;gap:12px;}
     header h1{font-size:1rem;}
     header p{font-size:0.72rem;}
+    .hdr-actions{margin-left:0;width:100%;justify-content:center;}
     main{padding:26px 16px 18px;}
     .hero{margin-bottom:26px;}
     .hero h2{font-size:1.7rem;}
@@ -138,8 +140,10 @@
     <h1>Wallingford CERT — Training Suite</h1>
     <p>Community Emergency Response Team</p>
   </div>
-  <button class="record-btn" onclick="openRecord()">📊 Training Record</button>
-  <button class="theme-btn" onclick="toggleTheme()" aria-label="Toggle light or dark mode">☀️</button>
+  <div class="hdr-actions">
+    <button class="record-btn" onclick="openRecord()">📊 Training Record</button>
+    <button class="theme-btn" onclick="toggleTheme()" aria-label="Toggle light or dark mode">☀️</button>
+  </div>
 </header>
 
 <main>
