@@ -284,7 +284,7 @@ canvas#map{display:block;width:auto;height:auto;max-width:100%;max-height:100%;a
       </div>
       <div style="text-align:center">
         <button class="act-key" onclick="tryInteract()">Interact</button>
-        <div class="ctrl-hint">WASD / Arrows to move · E to interact</div>
+        <div class="ctrl-hint">WASD / Arrows or click the map to move · E to interact</div>
       </div>
     </div>
   </div>
@@ -1120,19 +1120,19 @@ function walkTo(gx,gy){
   // only accept a real connected path (first step adjacent); findPath's fallback is a far tile → ignore
   if (path && path.length && (Math.abs(path[0].x-player.x)+Math.abs(path[0].y-player.y))===1) player.path=path;
 }
-if (isTouch){
-  canvas.addEventListener('click', e=>{
-    if (S.over || anyOverlayOpen()) return;
-    const rect=canvas.getBoundingClientRect();
-    const cx=(e.clientX-rect.left)*(canvas.width/rect.width);
-    const cy=(e.clientY-rect.top)*(canvas.height/rect.height);
-    // ignore taps on the mini-map overlay (top-right corner)
-    const mmW=COLS*MM_TILE, mmH=ROWS*MM_TILE, pad=4, margin=8, boxW=mmW+pad*2, boxH=mmH+pad*2;
-    const ox=canvas.width-boxW-margin, oy=margin;
-    if (cx>=ox && cx<=ox+boxW && cy>=oy && cy<=oy+boxH) return;
-    walkTo(Math.floor((cx+cam.x)/TILE), Math.floor((cy+cam.y)/TILE));
-  });
-}
+// Click/tap the map to walk there (mouse on desktop + touch on mobile)
+canvas.addEventListener('click', e=>{
+  if (S.over || anyOverlayOpen()) return;
+  const rect=canvas.getBoundingClientRect();
+  const cx=(e.clientX-rect.left)*(canvas.width/rect.width);
+  const cy=(e.clientY-rect.top)*(canvas.height/rect.height);
+  // ignore taps on the mini-map overlay (top-right corner)
+  const mmW=COLS*MM_TILE, mmH=ROWS*MM_TILE, pad=4, margin=8, boxW=mmW+pad*2, boxH=mmH+pad*2;
+  const ox=canvas.width-boxW-margin, oy=margin;
+  if (cx>=ox && cx<=ox+boxW && cy>=oy && cy<=oy+boxH) return;
+  walkTo(Math.floor((cx+cam.x)/TILE), Math.floor((cy+cam.y)/TILE));
+});
+canvas.style.cursor='pointer';
 function rr(x,y,w,h,r){ r=Math.min(r,w/2,h/2); ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
 function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
 function stepTo(cur,target,sp){ const d=target-cur; return Math.abs(d)<=sp?d:Math.sign(d)*sp; }
