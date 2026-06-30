@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="theme.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Wallingford CERT — Course Reference Materials</title>
@@ -10,6 +11,12 @@
     --primary:#5aaa3a; --primary-dark:#4a8f2e; --primary-light:#7ac95a;
     --text:#eef2e8; --text-muted:#8aa87a; --radius:12px;
   }
+  [data-theme="light"]{
+    --bg:#eef3e7; --surface:#ffffff; --surface2:#e7eedd; --border:#c2d2af;
+    --primary:#41902e; --primary-dark:#317022; --primary-light:#5aaa3a;
+    --text:#16210d; --text-muted:#5c6e4a; --muted:#5c6e4a;
+  }
+  [data-theme="light"] header{background:#e3ecd6;}
   *{box-sizing:border-box;margin:0;padding:0;}
   body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);
     min-height:100vh;display:flex;flex-direction:column;}
@@ -76,6 +83,7 @@
     <p>CERT Basic Training — Sections 1–8</p>
   </div>
   <a class="home-link" href="index.html">← Menu</a>
+  <button class="theme-btn" onclick="toggleTheme()" aria-label="Toggle light or dark mode" style="margin-left:10px">☀️</button>
 </header>
 
 <main>

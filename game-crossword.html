@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="theme.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Wallingford CERT — Crossword Drill</title>
@@ -12,6 +13,12 @@
     --danger:#ef4444; --gold:#e8c33a;
     --cell:34px;
   }
+  [data-theme="light"]{
+    --bg:#eef3e7; --surface:#ffffff; --surface2:#e7eedd; --border:#c2d2af;
+    --primary:#41902e; --primary-dark:#317022; --primary-light:#5aaa3a;
+    --text:#16210d; --text-muted:#5c6e4a; --muted:#5c6e4a;
+  }
+  [data-theme="light"] header{background:#e3ecd6;}
   *{box-sizing:border-box;margin:0;padding:0;}
   html,body{height:100%;}
   body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);
@@ -192,6 +199,7 @@
     <p>CERT terminology — Sections 1–8</p>
   </div>
   <div class="hdr-right">
+    <button class="theme-btn" onclick="toggleTheme()" aria-label="Toggle light or dark mode">☀️</button>
     <button class="icon-btn" id="mute-btn" title="Sound" onclick="toggleMute()">🔊</button>
     <a class="home-link" href="index.html">← Menu</a>
   </div>

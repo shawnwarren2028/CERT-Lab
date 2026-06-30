@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="theme.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Wallingford CERT — Hazmat Placard Match</title>
@@ -10,6 +11,12 @@
   --primary:#5aaa3a;--primary-dark:#4a8f2e;--primary-light:#7ac95a;
   --text:#eef2e8;--muted:#8aa87a;--radius:12px;--danger:#cc4444;--gold:#ffce3a;
 }
+[data-theme="light"]{
+  --bg:#eef3e7;--surface:#ffffff;--surface2:#e7eedd;--border:#c2d2af;
+  --primary:#41902e;--primary-dark:#317022;--primary-light:#5aaa3a;
+  --text:#16210d;--muted:#5c6e4a;--text-muted:#5c6e4a;
+}
+[data-theme="light"] header{background:#e3ecd6;}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);
   min-height:100vh;display:flex;flex-direction:column;}
@@ -147,6 +154,7 @@ footer span{color:var(--primary);}
     <p>DOT hazard classes &amp; the NFPA 704 fire diamond</p>
   </div>
   <a class="home-link" href="index.html">← Menu</a>
+  <button class="theme-btn" onclick="toggleTheme()" aria-label="Toggle light or dark mode" style="margin-left:10px">☀️</button>
 </header>
 
 <main>
