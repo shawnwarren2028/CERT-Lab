@@ -332,6 +332,7 @@ canvas#map{display:block;width:auto;height:auto;max-width:100%;max-height:100%;a
 <div class="ov ass-ov h" id="ass-ov"><div class="ass-box"><div class="ass-title" id="ass-title"></div><div class="ass-findings" id="ass-findings"></div><div id="ass-action-wrap"></div><div class="ass-prompt">Apply START triage tag:</div><div class="tag-row" id="tag-row"></div></div></div>
 <div class="ov tri-ov h" id="tri-ov"><div class="tri-box"><div class="tri-title" id="tri-title"></div><div class="tri-tags" id="tri-tags"></div><div class="tri-reason" id="tri-reason"></div><button class="tri-btn" onclick="closeTri()">Got it →</button></div></div>
 <div class="ov lu-ov h" id="lu-ov"><div class="lu-box"><div class="lu-title">⬆ LEVEL UP!</div><div class="lu-sub">Abe L. — <span id="lu-lvl"></span></div><div class="lu-unlock" id="lu-unlock"></div><button class="lu-btn" onclick="closeLU()">Continue →</button></div></div>
+<div class="ov lu-ov h" id="resume-ov"><div class="lu-box"><div class="lu-title">🚒 Resume Mission?</div><div class="lu-sub" id="resume-sub">You have a mission in progress.</div><div class="end-btns" style="margin-top:14px"><button class="lu-btn" onclick="doResume()">Resume</button><button class="lu-btn lu-btn-alt" onclick="doStartOver()">Start Over</button></div></div></div>
 <div class="ov end-ov h" id="end-ov"><div class="end-box" id="end-box"><div class="end-icon" id="end-icon">🚒</div><div class="end-title" id="end-title">Mission Complete</div><div style="font-size:0.8rem;color:var(--muted);margin-bottom:14px;" id="end-sub">Fire Scene Response — 143 Hopehill Road</div><table class="end-table" id="end-tbl"></table><div class="rating" id="end-rating"></div><div class="end-detail" id="end-detail"></div><div class="end-btns"><button class="lu-btn" onclick="location.reload()">Play Again</button><a class="lu-btn lu-btn-alt" href="index.html">← Return to Menu</a></div></div></div>
 
 <script>
@@ -1041,9 +1042,9 @@ function renderLog(){
 function render(){ renderStats(); renderQuests(); renderLog(); }
 
 /* ════════════ WIN / LOSE ════════════ */
-function anyOverlayOpen(){ return ['menu-ov','dlg-ov','ass-ov','lu-ov','end-ov','tri-ov'].some(id=>!document.getElementById(id).classList.contains('h')) || !document.getElementById('step-flash').classList.contains('hidden'); }
+function anyOverlayOpen(){ return ['menu-ov','dlg-ov','ass-ov','lu-ov','end-ov','tri-ov','resume-ov'].some(id=>{const el=document.getElementById(id); return el && !el.classList.contains('h');}) || !document.getElementById('step-flash').classList.contains('hidden'); }
 function showWin(){
-  if (S.over) return; S.over=true; SND.sfx('win');
+  if (S.over) return; S.over=true; clearSave(); SND.sfx('win');
   const correct=S.patients.filter(p=>p.tagged===p.correctTag).length;
   const sides=S.quests.filter(q=>q.type==='side'&&q.complete).length;
   const hz=S.hazards.filter(h=>h.reported).length;
@@ -1078,7 +1079,7 @@ function showWin(){
   document.getElementById('end-ov').classList.remove('h');
 }
 function showLose(reason){
-  if (S.over) return; S.over=true; SND.sfx('lose');
+  if (S.over) return; S.over=true; clearSave(); SND.sfx('lose');
   document.getElementById('end-box').className='end-box lose';
   if (reason==='hp'){ document.getElementById('end-icon').textContent='🚑'; document.getElementById('end-title').textContent='INJURED — OUT OF ACTION'; document.getElementById('end-sub').textContent='You took too much harm from scene hazards. Always report and avoid them.'; }
   else { document.getElementById('end-icon').textContent='🚫'; document.getElementById('end-title').textContent='RELIEVED OF DUTY'; document.getElementById('end-sub').textContent='Your credibility hit zero. The IC has pulled you from the scene.'; }
@@ -1377,7 +1378,9 @@ function updateCamera(){
   cam.x = player.px+TILE/2-VIEW_W*TILE/2;
   cam.y = player.py+TILE/2-VIEW_H*TILE/2;
 }
+let _saveFrame=0;
 function tick(ts){
+  if (!S.over && (++_saveFrame % 120)===0) saveGame(); // autosave ~every 2s
   // advance a tap-to-move path once the previous step has landed
   if (!player.moving && player.path && player.path.length && !S.over && !anyOverlayOpen()){
     const wp=player.path[0];
@@ -1711,11 +1714,48 @@ function togglePanel(id){
   mq.addEventListener('change', place); place();
 })();
 
+/* ════════════ SAVE / RESUME ════════════ */
+const SAVE_KEY='cert_rpg_save';
+function saveGame(){
+  if (S.over) return;
+  try{
+    const data={ v:1, elapsed:Math.max(0,Math.round((Date.now()-S.t0)/1000)),
+      S:S, player:{x:player.x,y:player.y} };
+    localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+  }catch(e){}
+}
+function clearSave(){ try{ localStorage.removeItem(SAVE_KEY); }catch(e){} }
+function loadSave(){ try{ return JSON.parse(localStorage.getItem(SAVE_KEY)); }catch(e){ return null; } }
+let _pendingSave=null;
+function showResumePrompt(data){
+  _pendingSave=data;
+  const sub=document.getElementById('resume-sub');
+  const done=(data.S.quests||[]).filter(q=>q.type==='main'&&q.complete).length;
+  sub.innerHTML=`In progress — Level ${data.S.lvl}, ${patientsTaggedFrom(data.S)}/10 tagged, ${done}/5 main quests · ${fmt2(data.elapsed)} elapsed`;
+  document.getElementById('resume-ov').classList.remove('h');
+}
+function patientsTaggedFrom(s){ return (s.patients||[]).filter(p=>p.tagged).length; }
+function fmt2(sec){ return Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0'); }
+function doResume(){
+  const d=_pendingSave; if (!d){ doStartOver(); return; }
+  Object.assign(S, d.S);
+  S.over=false;
+  S.t0=Date.now()-(d.elapsed||0)*1000;
+  player.x=d.player.x; player.y=d.player.y;
+  player.px=player.x*TILE; player.py=player.y*TILE; player.moving=false; player.path=null;
+  document.getElementById('resume-ov').classList.add('h');
+  updateCamera(); checkUnlocks(); updatePhase(); render();
+}
+function doStartOver(){ clearSave(); _pendingSave=null; document.getElementById('resume-ov').classList.add('h'); }
+window.addEventListener('pagehide', saveGame);
+document.addEventListener('visibilitychange', ()=>{ if (document.hidden) saveGame(); });
+
 /* ════════════ INIT ════════════ */
 ['keydown','pointerdown','touchstart'].forEach(ev=>document.addEventListener(ev,()=>SND.resume(),{passive:true}));
 updateAudioBtns();
 render();
 requestAnimationFrame(tick);
+(function(){ const d=loadSave(); if (d && d.S && !d.S.over) showResumePrompt(d); })();
 </script>
 </body>
 </html>
