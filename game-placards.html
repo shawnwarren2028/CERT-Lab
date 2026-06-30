@@ -182,7 +182,7 @@ footer span{color:var(--primary);}
   <!-- CONNECT ROUND -->
   <section class="connect-wrap" id="connect-wrap">
     <h2 class="connect-title">🔗 Final Round — Connect the Pairs</h2>
-    <p class="connect-sub">Tap a placard, then tap its meaning. Match all of them to finish the level.</p>
+    <p class="connect-sub">Tap a symbol or a meaning, then its partner in the other column. Match them all to finish.</p>
     <div class="connect-cols">
       <div class="connect-col" id="connect-syms"></div>
       <div class="connect-col" id="connect-defs"></div>
@@ -479,21 +479,30 @@ function startConnect(){
   const symCol=document.getElementById('connect-syms'), defCol=document.getElementById('connect-defs');
   symCol.innerHTML=''; defCol.innerHTML='';
   shuffle(pidToId.slice()).forEach(id=>{ const d=document.createElement('div'); d.className='cn-item cn-sym'; d.dataset.id=id;
-    d.innerHTML=`<div class="cn-svg">${placardInner(id)}</div>`; d.onclick=()=>selSym(d,id); symCol.appendChild(d); });
+    d.innerHTML=`<div class="cn-svg">${placardInner(id)}</div>`; d.onclick=()=>cnPick(d,id,'sym'); symCol.appendChild(d); });
   shuffle(pidToId.slice()).forEach(id=>{ const d=document.createElement('div'); d.className='cn-item cn-def'; d.dataset.id=id;
-    d.innerHTML=`<span>${PLACARDS[id].meaning}</span>`; d.onclick=()=>selDef(d,id); defCol.appendChild(d); });
+    d.innerHTML=`<span>${PLACARDS[id].meaning}</span>`; d.onclick=()=>cnPick(d,id,'def'); defCol.appendChild(d); });
 }
-function selSym(el,id){ if(connectMatched.has(id)||el.classList.contains('done')) return;
-  document.querySelectorAll('.cn-sym.sel').forEach(x=>x.classList.remove('sel')); el.classList.add('sel'); connectSel=id; SFX('flip'); }
-function selDef(el,id){
-  if(connectMatched.has(id)||el.classList.contains('done')||connectSel==null) return;
-  if(id===connectSel){
+function cnClearSel(){ document.querySelectorAll('.cn-item.sel').forEach(x=>x.classList.remove('sel')); connectSel=null; }
+function cnFlash(el){ el.classList.add('flash'); setTimeout(()=>el.classList.remove('flash'),560); }
+// Symmetric selection: tap a symbol OR a meaning first, then its partner in the other column.
+function cnPick(el,id,kind){
+  if(connectMatched.has(id)||el.classList.contains('done')) return;
+  if(!connectSel){ el.classList.add('sel'); connectSel={id,kind,el}; SFX('flip'); return; }
+  if(connectSel.el===el){ cnClearSel(); return; }                 // tap the same item again → deselect
+  if(connectSel.kind===kind){ cnClearSel(); el.classList.add('sel'); connectSel={id,kind,el}; SFX('flip'); return; } // re-pick within a column
+  // opposite columns → resolve a match
+  if(connectSel.id===id){
     connectMatched.add(id); SFX('match');
-    document.querySelector('.cn-sym[data-id="'+id+'"]').classList.add('done'); el.classList.add('done');
-    document.querySelectorAll('.cn-sym.sel').forEach(x=>x.classList.remove('sel')); connectSel=null;
+    connectSel.el.classList.add('done'); el.classList.add('done');
+    cnClearSel();
     if(connectMatched.size===pidToId.length) setTimeout(finishLevel,550);
   } else {
-    connectMistakes++; SFX('miss'); el.classList.add('flash'); setTimeout(()=>el.classList.remove('flash'),520);
+    connectMistakes++; SFX('miss');
+    cnFlash(connectSel.el); cnFlash(el);
+    const symId = connectSel.kind==='sym' ? connectSel.id : id;   // teach the meaning of the symbol involved
+    cnClearSel();
+    showFact('❌ Not a match — that symbol means "'+PLACARDS[symId].meaning+'"');
   }
 }
 
