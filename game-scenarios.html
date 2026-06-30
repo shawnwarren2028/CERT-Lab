@@ -74,6 +74,11 @@
     transition: background .15s, border-color .15s;
   }
   .home-link:hover { background: var(--surface2); border-color: var(--primary); }
+  .hdr-actions { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .hdr-actions .home-link { margin-left: 0; }
+  @media (max-width:600px){ header{ flex-wrap: wrap; } .hdr-actions{ margin-left: 0; width: 100%; justify-content: center; } }
+  .home-total { margin: 8px auto 0; font-size: 0.92rem; color: var(--text-muted); font-weight: 600; }
+  .home-total strong { color: #e8c33a; font-size: 1.05rem; }
   .scorebar {
     margin-left: 20px;
     text-align: right;
@@ -381,10 +386,11 @@
     <h1>Wallingford CERT — Training Scenarios</h1>
     <p>Community Emergency Response Team — Skills Practice</p>
   </div>
-  <a class="home-link" href="index.html">← Menu</a>
-  <button class="theme-btn" onclick="toggleTheme()" aria-label="Toggle light or dark mode" style="margin-left:10px">☀️</button>
-  <div class="scorebar">Total Score<br><span id="total-score">0</span> pts</div>
-  <button class="snd-btn" id="snd-btn" onclick="toggleMute()" title="Sound" aria-label="Toggle sound">🔊</button>
+  <div class="hdr-actions">
+    <a class="home-link" href="index.html">← Menu</a>
+    <button class="theme-btn" onclick="toggleTheme()" aria-label="Toggle light or dark mode">☀️</button>
+    <button class="snd-btn" id="snd-btn" onclick="toggleMute()" title="Sound" aria-label="Toggle sound">🔊</button>
+  </div>
 </header>
 
 <main>
@@ -395,6 +401,7 @@
       <h2>Choose a Training Module</h2>
       <p>Work through realistic emergency scenarios to sharpen your CERT skills. Each module tests decision-making with immediate feedback.</p>
       <div class="home-score" id="home-score"></div>
+      <div class="home-total" id="home-total"></div>
     </div>
     <div class="module-grid" id="module-grid"></div>
   </div>
@@ -1537,6 +1544,10 @@ function renderHome() {
     const pct = Math.round(earned/max*100);
     const el = document.getElementById('home-score');
     if (el) el.innerHTML = `★ ${earned} / ${max} <span class="pc">· ${pct}% mastery</span>`;
+    const maxScore = MODULES.reduce((a,m)=>a+m.steps.length,0)*10;
+    const earnedScore = prog && prog.mods ? Object.values(prog.mods).reduce((a,m)=>a+(m.correct||0)*10,0) : 0;
+    const tot = document.getElementById('home-total');
+    if (tot) tot.innerHTML = `Total Score: <strong>${earnedScore} / ${maxScore}</strong> pts`;
   })();
   const grid = document.getElementById('module-grid');
   grid.innerHTML = '';
@@ -1692,9 +1703,8 @@ function showResults() {
     try{ localStorage.setItem('cert_g1_progress', JSON.stringify(prog)); }catch(e){}
   })();
 
-  // Recalculate total score
+  // Recalculate total score (shown under the Mastery badge on the home screen)
   state.totalScore = Object.values(state.moduleScores).reduce((sum, s) => sum + s.correct * 10, 0);
-  document.getElementById('total-score').textContent = state.totalScore;
 
   // Emoji + title
   let icon, title, msg;

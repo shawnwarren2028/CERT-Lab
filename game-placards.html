@@ -30,6 +30,9 @@ header{width:100%;background:#111a09;border-bottom:3px solid var(--primary);
 .home-link{margin-left:auto;color:var(--primary-light);text-decoration:none;font-size:0.82rem;font-weight:600;
   border:1px solid var(--border);padding:7px 14px;border-radius:8px;white-space:nowrap;}
 .home-link:hover{background:var(--surface2);border-color:var(--primary);}
+.hdr-actions{margin-left:auto;display:flex;align-items:center;gap:10px;}
+.hdr-actions .home-link{margin-left:0;}
+@media (max-width:600px){ header{flex-wrap:wrap;} .hdr-actions{margin-left:0;width:100%;justify-content:center;} }
 main{flex:1;width:100%;max-width:760px;margin:0 auto;padding:24px 16px 32px;}
 
 /* ── HUD ── */
@@ -156,8 +159,10 @@ footer span{color:var(--primary);}
     <h1>Hazmat Placard Match</h1>
     <p>DOT hazard classes &amp; the NFPA 704 fire diamond</p>
   </div>
-  <a class="home-link" href="index.html">← Menu</a>
-  <button class="theme-btn" onclick="toggleTheme()" aria-label="Toggle light or dark mode" style="margin-left:10px">☀️</button>
+  <div class="hdr-actions">
+    <a class="home-link" href="index.html">← Menu</a>
+    <button class="theme-btn" onclick="toggleTheme()" aria-label="Toggle light or dark mode">☀️</button>
+  </div>
 </header>
 
 <main>

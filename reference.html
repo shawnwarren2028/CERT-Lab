@@ -33,6 +33,9 @@
     font-size:0.85rem;font-weight:600;border:1px solid var(--border);
     padding:8px 15px;border-radius:8px;transition:background .15s,border-color .15s;white-space:nowrap;}
   .home-link:hover{background:var(--surface2);border-color:var(--primary);}
+  .hdr-actions{margin-left:auto;display:flex;align-items:center;gap:10px;}
+  .hdr-actions .home-link{margin-left:0;}
+  @media (max-width:600px){ header{flex-wrap:wrap;} .hdr-actions{margin-left:0;width:100%;justify-content:center;} }
 
   main{flex:1;width:100%;max-width:920px;margin:0 auto;padding:34px 24px;}
   .page-hero{margin-bottom:26px;}
@@ -82,8 +85,10 @@
     <h1>Course Reference Materials</h1>
     <p>CERT Basic Training — Sections 1–8</p>
   </div>
-  <a class="home-link" href="index.html">← Menu</a>
-  <button class="theme-btn" onclick="toggleTheme()" aria-label="Toggle light or dark mode" style="margin-left:10px">☀️</button>
+  <div class="hdr-actions">
+    <a class="home-link" href="index.html">← Menu</a>
+    <button class="theme-btn" onclick="toggleTheme()" aria-label="Toggle light or dark mode">☀️</button>
+  </div>
 </header>
 
 <main>

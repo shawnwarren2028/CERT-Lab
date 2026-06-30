@@ -33,6 +33,7 @@
   header h1{font-size:1.1rem;font-weight:700;color:var(--primary);}
   header p{font-size:0.76rem;color:var(--text-muted);}
   .hdr-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
+  @media (max-width:600px){ header{flex-wrap:wrap;} .hdr-right{margin-left:0;width:100%;justify-content:center;} }
   .icon-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);
     font-size:1rem;width:40px;height:40px;border-radius:8px;cursor:pointer;transition:.15s;}
   .icon-btn:hover{border-color:var(--primary);background:var(--border);}
