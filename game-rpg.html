@@ -1048,10 +1048,12 @@ function showWin(){
   const correct=S.patients.filter(p=>p.tagged===p.correctTag).length;
   const sides=S.quests.filter(q=>q.type==='side'&&q.complete).length;
   const hz=S.hazards.filter(h=>h.reported).length;
-  const rating=(S.cr>=90&&correct===10&&hz===S.hazards.length)?'⭐⭐⭐ Outstanding':(S.cr>=75&&correct>=8)?'⭐⭐ Proficient':(S.cr>=60&&correct>=6)?'⭐ Satisfactory':'Mission Passed — Review Recommended';
+  // Unified star rubric: 3 = mastery, 2 = proficient, 1 = completed.
+  const starN=(S.cr>=90&&correct===10&&hz===S.hazards.length)?3:(S.cr>=75&&correct>=8)?2:1;
+  const ratingLabel=starN===3?'Outstanding':starN===2?'Proficient':'Satisfactory';
+  const rating='★'.repeat(starN)+'☆'.repeat(3-starN)+'  '+starN+'/3 — '+ratingLabel;
   // Persist best mission result for the suite-wide Training Record
   (function(){
-    const starN=(S.cr>=90&&correct===10&&hz===S.hazards.length)?3:(S.cr>=75&&correct>=8)?2:(S.cr>=60&&correct>=6)?1:0;
     const sec=Math.max(0,Math.round((Date.now()-S.t0)/1000));
     let prog; try{ prog=JSON.parse(localStorage.getItem('cert_rpg_progress')); }catch(e){}
     if (!prog) prog={};

@@ -47,6 +47,9 @@
   .ls-hero h2{font-size:1.9rem;font-weight:800;margin-bottom:8px;}
   .ls-hero h2 span{color:var(--primary);}
   .ls-hero p{color:var(--text-muted);max-width:600px;margin:0 auto;line-height:1.55;font-size:0.94rem;}
+  .ls-score{margin-top:12px;display:inline-block;background:var(--surface);border:1px solid var(--border);
+    border-radius:20px;padding:6px 16px;font-size:0.86rem;font-weight:700;color:var(--gold);}
+  .ls-score .pc{color:var(--text-muted);font-weight:600;font-size:0.8rem;}
   .level-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-top:24px;}
   .ls-subhead{font-size:0.8rem;text-transform:uppercase;letter-spacing:.12em;color:var(--text-muted);
     font-weight:700;margin:30px 0 12px;border-bottom:1px solid var(--border);padding-bottom:8px;}
@@ -212,6 +215,7 @@
       <h2>CERT <span>Crossword</span> Drill</h2>
       <p>Test your command of CERT terms across all eight training sections. Every puzzle is
          generated fresh, so the board is different each time you play. Pick a difficulty to begin.</p>
+      <div class="ls-score" id="ls-score"></div>
     </div>
     <div id="daily-slot"></div>
     <h3 class="ls-subhead">Choose a difficulty</h3>
@@ -882,6 +886,8 @@ function closeWin(){ document.getElementById('win-ov').classList.add('h'); }
 function renderLevels(){
   const grid=document.getElementById('level-grid'); grid.innerHTML="";
   const stars=loadStars(), best=loadBest();
+  (function(){ const earned=LEVELS.reduce((a,l)=>a+(stars[l.id]||0),0), max=LEVELS.length*3, pct=Math.round(earned/max*100);
+    const el=document.getElementById('ls-score'); if(el) el.innerHTML=`★ ${earned} / ${max} <span class="pc">· ${pct}% mastery</span>`; })();
   // Daily Challenge — full-width first row
   const slot=document.getElementById('daily-slot'); slot.innerHTML="";
   const dstore=loadDaily(), st=loadStreak(), today=todayStr(), dt=dstore[today];

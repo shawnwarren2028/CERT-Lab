@@ -82,6 +82,8 @@
   .rec-overall .ro-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;}
   .rec-overall .ro-label{font-size:0.78rem;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);font-weight:700;}
   .rec-overall .ro-val{font-size:1.1rem;font-weight:800;color:#e8c33a;}
+  .rec-overall .ro-note{font-size:0.72rem;color:var(--text-muted);margin-top:6px;}
+  .rec-pct{font-size:0.66rem;color:var(--text-muted);font-weight:600;}
   .rec-bar{height:8px;background:#0a0e07;border-radius:6px;overflow:hidden;}
   .rec-bar span{display:block;height:100%;background:linear-gradient(90deg,var(--primary),var(--primary-light));border-radius:6px;}
   .rec-row{display:flex;align-items:center;gap:13px;padding:12px 0;border-bottom:1px solid var(--border);}
@@ -260,17 +262,20 @@ function buildRecord(){
     {ic:'✏️',name:'CERT Crossword',stat:`${xDone}/5 levels · 🔥 ${streak}-day streak · ${dailyDone} daily solved`,stars:xStars,max:15},
   ];
   const totStars=rows.reduce((a,r)=>a+r.stars,0), totMax=rows.reduce((a,r)=>a+r.max,0);
-  const pct=totMax?Math.round(totStars/totMax*100):0;
+  // Equal weight: average each game's completion %, so games count the same
+  // regardless of how many levels/modules they have.
+  const eqPct=Math.round(rows.reduce((a,r)=>a+(r.max?r.stars/r.max:0),0)/rows.length*100);
 
   document.getElementById('rec-overall').innerHTML=`
-    <div class="ro-top"><span class="ro-label">Overall mastery</span><span class="ro-val">★ ${totStars} / ${totMax}</span></div>
-    <div class="rec-bar"><span style="width:${pct}%"></span></div>`;
+    <div class="ro-top"><span class="ro-label">Overall mastery · equal weight</span><span class="ro-val">${eqPct}%</span></div>
+    <div class="rec-bar"><span style="width:${eqPct}%"></span></div>
+    <div class="ro-note">★ ${totStars} of ${totMax} stars earned · each game counts equally</div>`;
   document.getElementById('rec-list').innerHTML=rows.map(r=>{
     const p=r.max?Math.round(r.stars/r.max*100):0;
     return `<div class="rec-row"><span class="rec-ic">${r.ic}</span>
       <div class="rec-mid"><div class="rec-name">${r.name}</div><div class="rec-stat">${r.stat}</div>
         <div class="rec-bar"><span style="width:${p}%"></span></div></div>
-      <div class="rec-stars">★ ${r.stars}/${r.max}</div></div>`;
+      <div class="rec-stars">★ ${r.stars}/${r.max}<div class="rec-pct">${p}%</div></div></div>`;
   }).join('');
 
   // Achievements / badges
@@ -283,7 +288,7 @@ function buildRecord(){
     {ic:'📚',name:'Scholar',      earned:g1done>=g1total,       desc:'Attempt all 9 Scenario modules.'},
     {ic:'🔥',name:'On a Roll',    earned:streak>=7,             desc:'Reach a 7-day Daily Challenge streak.'},
     {ic:'🗂️',name:'Section Sweep',earned:themesDone>=8,         desc:'Solve a themed crossword for all 8 sections.'},
-    {ic:'🏅',name:'Honor Roll',   earned:pct>=80,               desc:'Reach 80% overall mastery.'},
+    {ic:'🏅',name:'Honor Roll',   earned:eqPct>=80,             desc:'Reach 80% overall mastery.'},
   ];
   const earnedN=badges.filter(b=>b.earned).length;
   document.getElementById('rec-badges').innerHTML=

@@ -101,6 +101,10 @@
   }
   .home-hero h2 { font-size: 2rem; color: var(--primary); margin-bottom: 8px; }
   .home-hero p { color: var(--text-muted); max-width: 520px; }
+  .home-score { margin: 14px auto 0; display: inline-block; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 20px; padding: 6px 16px;
+    font-size: 0.88rem; font-weight: 700; color: #e8c33a; }
+  .home-score .pc { color: var(--text-muted); font-weight: 600; font-size: 0.82rem; }
 
   .module-grid {
     display: grid;
@@ -390,6 +394,7 @@
     <div class="home-hero">
       <h2>Choose a Training Module</h2>
       <p>Work through realistic emergency scenarios to sharpen your CERT skills. Each module tests decision-making with immediate feedback.</p>
+      <div class="home-score" id="home-score"></div>
     </div>
     <div class="module-grid" id="module-grid"></div>
   </div>
@@ -1525,6 +1530,14 @@ function closeRefModal(e) {
 }
 
 function renderHome() {
+  (function(){
+    let prog; try{ prog=JSON.parse(localStorage.getItem('cert_g1_progress')); }catch(e){}
+    const max = MODULES.length*3;
+    const earned = prog && prog.mods ? Object.values(prog.mods).reduce((a,m)=>a+(m.stars||0),0) : 0;
+    const pct = Math.round(earned/max*100);
+    const el = document.getElementById('home-score');
+    if (el) el.innerHTML = `★ ${earned} / ${max} <span class="pc">· ${pct}% mastery</span>`;
+  })();
   const grid = document.getElementById('module-grid');
   grid.innerHTML = '';
   MODULES.forEach(mod => {

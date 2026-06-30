@@ -47,6 +47,9 @@ main{flex:1;width:100%;max-width:760px;margin:0 auto;padding:24px 16px 32px;}
 .lvl-hero{text-align:center;margin-bottom:22px;}
 .lvl-hero h2{font-size:1.7rem;color:var(--primary);margin-bottom:8px;}
 .lvl-hero p{color:var(--muted);max-width:580px;margin:0 auto;line-height:1.55;font-size:0.92rem;}
+.lvl-score{margin-top:12px;display:inline-block;background:var(--surface);border:1px solid var(--border);
+  border-radius:20px;padding:6px 16px;font-size:0.86rem;font-weight:700;color:var(--gold);}
+.lvl-score .pc{color:var(--muted);font-weight:600;font-size:0.8rem;}
 .lvl-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px;margin-top:22px;}
 .lvl-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 16px;
   cursor:pointer;transition:transform .15s,border-color .15s;text-align:center;position:relative;}
@@ -165,6 +168,7 @@ footer span{color:var(--primary);}
       <p>Find two matching placards, then <strong>prove you know it</strong> by picking the right meaning.
          Get it right and the placard joins your <strong>Completed</strong> row — get the meaning wrong and the board
          reshuffles. Clear the board, then connect every symbol to its meaning. Pick any level to start.</p>
+      <div class="lvl-score" id="lvl-score"></div>
     </div>
     <div class="lvl-grid" id="lvl-grid"></div>
   </section>
@@ -361,6 +365,8 @@ function elEl(uid){ return document.querySelector('#board .card[data-uid="'+uid+
 /* ── LEVEL SELECT ── */
 function renderSelect(){
   const g=document.getElementById('lvl-grid'); g.innerHTML='';
+  (function(){ let earned=0; LEVELS.forEach((lv,i)=>earned+=(bestStars[i]||0)); const max=LEVELS.length*3, pct=Math.round(earned/max*100);
+    const el=document.getElementById('lvl-score'); if(el) el.innerHTML=`★ ${earned} / ${max} <span class="pc">· ${pct}% mastery</span>`; })();
   LEVELS.forEach((lv,i)=>{
     const pairs=lv.ids.length;
     const div=document.createElement('div'); div.className='lvl-card'; div.onclick=()=>startLevel(i);
