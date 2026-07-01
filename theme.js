@@ -5,6 +5,18 @@
 (function(){
   try{ if(localStorage.getItem('cert_theme')==='light') document.documentElement.setAttribute('data-theme','light'); }catch(e){}
 })();
+/* Shared favicon: a square CERT shield (green shield + white cross on a dark
+   rounded tile), embedded as an SVG data-URI so it stays crisp at tab size. */
+(function(){
+  var svg = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'>"+
+    "<rect width='64' height='64' rx='14' fill='#0e1208'/>"+
+    "<path d='M12 12H52V32Q52 50 32 60Q12 50 12 32Z' fill='#5aaa3a'/>"+
+    "<rect x='29' y='22' width='6' height='22' rx='1.5' fill='#fff'/>"+
+    "<rect x='21' y='31' width='22' height='6' rx='1.5' fill='#fff'/></svg>";
+  var l=document.createElement('link'); l.rel='icon'; l.type='image/svg+xml';
+  l.href='data:image/svg+xml,'+encodeURIComponent(svg);
+  (document.head||document.documentElement).appendChild(l);
+})();
 function toggleTheme(){
   var light = document.documentElement.getAttribute('data-theme')==='light';
   if(light) document.documentElement.removeAttribute('data-theme');
