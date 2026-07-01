@@ -34,6 +34,7 @@
     padding:8px 15px;border-radius:8px;transition:background .15s,border-color .15s;white-space:nowrap;}
   .home-link:hover{background:var(--surface2);border-color:var(--primary);}
   .hdr-actions{margin-left:auto;display:flex;align-items:center;gap:10px;}
+  .hdr-text{flex:1 1 0;min-width:0;}
   .hdr-actions .home-link{margin-left:0;}
   @media (max-width:600px){ header{flex-wrap:wrap;} .hdr-actions{margin-left:0;width:100%;justify-content:center;} }
 
@@ -81,9 +82,9 @@
       <div class="logo-badge">CERT</div>
     </div>
   </div>
-  <div>
-    <h1>Course Reference Materials</h1>
-    <p>CERT Basic Training — Sections 1–8</p>
+  <div class="hdr-text">
+    <h1>Wallingford CERT — Course Reference</h1>
+    <p>Community Emergency Response Team</p>
   </div>
   <div class="hdr-actions">
     <a class="home-link" href="index.html">← Menu</a>

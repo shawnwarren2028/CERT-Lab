@@ -75,6 +75,7 @@
   }
   .home-link:hover { background: var(--surface2); border-color: var(--primary); }
   .hdr-actions { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .hdr-text { flex: 1 1 0; min-width: 0; }
   .hdr-actions .home-link { margin-left: 0; }
   @media (max-width:600px){ header{ flex-wrap: wrap; } .hdr-actions{ margin-left: 0; width: 100%; justify-content: center; } }
   .home-total { margin: 8px auto 0; font-size: 0.92rem; color: var(--text-muted); font-weight: 600; }
@@ -385,9 +386,9 @@
       <div class="logo-badge">CERT</div>
     </div>
   </div>
-  <div>
+  <div class="hdr-text">
     <h1>Wallingford CERT — Training Scenarios</h1>
-    <p>Community Emergency Response Team — Skills Practice</p>
+    <p>Community Emergency Response Team</p>
   </div>
   <div class="hdr-actions">
     <a class="home-link" href="index.html">← Menu</a>

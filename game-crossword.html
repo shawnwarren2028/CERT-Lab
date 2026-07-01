@@ -33,6 +33,7 @@
   header h1{font-size:1.1rem;font-weight:700;color:var(--primary);}
   header p{font-size:0.76rem;color:var(--text-muted);}
   .hdr-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
+  .hdr-text{flex:1 1 0;min-width:0;}
   @media (max-width:600px){ header{flex-wrap:wrap;} .hdr-right{margin-left:0;width:100%;justify-content:center;} }
   .icon-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);
     font-size:1rem;width:40px;height:40px;border-radius:8px;cursor:pointer;transition:.15s;}
@@ -198,9 +199,9 @@
       onerror="this.style.display='none';document.getElementById('logo-fallback').style.display='flex'">
     <div id="logo-fallback" style="display:none;align-items:center;gap:10px;"><div class="logo-badge">CERT</div></div>
   </div>
-  <div>
-    <h1>Crossword Drill</h1>
-    <p>CERT terminology — Sections 1–8</p>
+  <div class="hdr-text">
+    <h1>Wallingford CERT — Crossword</h1>
+    <p>Community Emergency Response Team</p>
   </div>
   <div class="hdr-right">
     <button class="theme-btn" onclick="toggleTheme()" aria-label="Toggle light or dark mode">☀️</button>
