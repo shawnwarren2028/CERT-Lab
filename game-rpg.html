@@ -4,7 +4,7 @@
 <script src="theme.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Wallingford CERT RPG: Fire Scene — Abe L.</title>
+<title>Wallingford CERT — Fire Scene RPG</title>
 <style>
 :root {
   --bg:#0e1208;--surface:#1a2012;--surface2:#243018;--border:#3a5228;
@@ -21,7 +21,8 @@ body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
   height:100vh;display:flex;flex-direction:column;overflow:hidden;}
 header{background:var(--surface);border-bottom:2px solid var(--primary);
   padding:7px 14px;display:flex;align-items:center;gap:12px;flex-shrink:0;}
-.logo-img{height:38px;}
+.logo-img{height:48px;}
+@media (max-width:600px){ .logo-img{height:40px;} }
 .hdr-title{flex:1 1 0;min-width:0;}
 .hdr-title h1{font-size:0.95rem;color:var(--primary);}
 .hdr-title p{font-size:0.7rem;color:var(--muted);}
@@ -46,6 +47,7 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);
 .vol-lvl.sel{background:var(--primary);color:var(--bg);border-color:var(--primary);font-weight:700;}
 .vol-lvl.off.sel{background:var(--danger);border-color:var(--danger);color:#fff;}
 .hdr-phase{margin-left:18px;font-size:0.75rem;color:var(--muted);text-align:right;}
+.scene-addr{display:inline-block;border:1px solid var(--border);border-radius:12px;padding:1px 8px;margin-right:8px;color:var(--muted);font-size:0.72rem;white-space:nowrap;}
 .phase-val{color:var(--primary);font-weight:700;}
 .layout{display:grid;grid-template-columns:200px 1fr 224px;grid-template-rows:1fr 74px;flex:1;overflow:hidden;}
 .quest-panel{background:var(--surface);border-right:1px solid var(--border);padding:10px;overflow-y:auto;grid-row:1;}
@@ -271,7 +273,7 @@ canvas#map{display:block;width:auto;height:auto;max-width:100%;max-height:100%;a
     <button class="aud-btn" id="btn-sfx" onclick="uiToggleSfx()" title="Sound effects" aria-label="Toggle sound effects">🔊</button>
   </div>
   <a class="hdr-menu" href="index.html">← Menu</a>
-  <div class="hdr-phase">Scene Phase: <span class="phase-val" id="phase-lbl">Arrival</span></div>
+  <div class="hdr-phase"><span class="scene-addr">📍 143 Hopehill Road</span>Scene Phase: <span class="phase-val" id="phase-lbl">Arrival</span></div>
 </header>
 <div class="vol-pop hidden" id="vol-pop"><div class="vol-pop-title" id="vol-pop-title">Volume</div><div class="vol-levels" id="vol-levels"></div></div>
 <div class="layout">
