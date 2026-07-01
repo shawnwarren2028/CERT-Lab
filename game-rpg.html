@@ -18,7 +18,9 @@
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;
-  height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+  height:100vh;display:flex;flex-direction:column;overflow:hidden;
+  -webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;}
+canvas#map{touch-action:manipulation;}
 header{background:var(--surface);border-bottom:2px solid var(--primary);
   padding:7px 14px;display:flex;align-items:center;gap:12px;flex-shrink:0;}
 .logo-img{height:48px;}
@@ -47,7 +49,9 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);
 .vol-lvl:hover{border-color:var(--primary);color:var(--primary);}
 .vol-lvl.sel{background:var(--primary);color:var(--bg);border-color:var(--primary);font-weight:700;}
 .vol-lvl.off.sel{background:var(--danger);border-color:var(--danger);color:#fff;}
-.scene-meta{font-size:0.72rem;color:var(--muted);line-height:1.35;}
+.scene-meta{font-size:0.72rem;color:var(--muted);line-height:1.4;}
+.scene-meta .sm-sep{display:none;}        /* desktop: Scene Phase on its own line under the address */
+.scene-meta .sm-phase{display:block;}
 .phase-val{color:var(--primary);font-weight:700;}
 .layout{display:grid;grid-template-columns:200px 1fr 224px;grid-template-rows:1fr 74px;flex:1;overflow:hidden;}
 .quest-panel{background:var(--surface);border-right:1px solid var(--border);padding:10px;overflow-y:auto;grid-row:1;}
@@ -223,6 +227,8 @@ canvas#map{display:block;width:auto;height:auto;max-width:100%;max-height:100%;a
   #stat-block .metric{flex:1;min-width:0;}
   #stat-block .metric .stat-row{font-size:0.66rem;margin-bottom:2px;}
   #stat-block .bar-wrap{margin-bottom:0;}
+  #stat-block .scene-meta .sm-sep{display:inline;}   /* mobile: keep address + phase on one line */
+  #stat-block .scene-meta .sm-phase{display:inline;}
   .scene-panel{order:1;padding:4px;}
   .quest-panel{order:2;border-right:none;border-top:1px solid var(--border);}
   .char-panel{order:3;border-left:none;border-top:1px solid var(--border);}
@@ -298,7 +304,7 @@ canvas#map{display:block;width:auto;height:auto;max-width:100%;max-height:100%;a
   <div class="char-panel">
     <div class="stat-block" id="stat-block">
       <div class="char-id"><div class="char-name">Abe L.</div><div class="char-rank" id="char-rank">Level 1 — CERT Volunteer</div></div>
-      <div class="scene-meta">📍 143 Hopehill Road · Scene Phase: <span class="phase-val" id="phase-lbl">Arrival</span></div>
+      <div class="scene-meta"><span class="sm-addr">📍 143 Hopehill Road</span><span class="sm-sep"> · </span><span class="sm-phase">Scene Phase: <span class="phase-val" id="phase-lbl">Arrival</span></span></div>
       <div class="stats">
         <div class="stat-row lvl-row"><span class="stat-lbl">Level</span><span class="stat-val" id="s-lvl">1</span></div>
         <div class="metric">
