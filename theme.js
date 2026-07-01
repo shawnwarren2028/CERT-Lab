@@ -5,17 +5,23 @@
 (function(){
   try{ if(localStorage.getItem('cert_theme')==='light') document.documentElement.setAttribute('data-theme','light'); }catch(e){}
 })();
-/* Shared favicon: a square CERT shield (green shield + white cross on a dark
-   rounded tile), embedded as an SVG data-URI so it stays crisp at tab size. */
+/* Shared icons: a favicon derived from the logo (green rounded tile + the
+   black city-skyline silhouette), plus the iOS apple-touch-icon and the
+   web-app manifest for Add-to-Home-Screen. */
 (function(){
   var svg = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'>"+
-    "<rect width='64' height='64' rx='14' fill='#0e1208'/>"+
-    "<path d='M12 12H52V32Q52 50 32 60Q12 50 12 32Z' fill='#5aaa3a'/>"+
-    "<rect x='29' y='22' width='6' height='22' rx='1.5' fill='#fff'/>"+
-    "<rect x='21' y='31' width='22' height='6' rx='1.5' fill='#fff'/></svg>";
+    "<rect width='64' height='64' rx='14' fill='#5aaa3a'/>"+
+    "<g fill='#10160b'>"+
+    "<path d='M14 62V47L20 41L26 47V62Z'/>"+
+    "<rect x='28' y='44' width='7' height='18'/>"+
+    "<rect x='37' y='32' width='8' height='30'/>"+
+    "<rect x='46' y='48' width='4' height='14'/>"+
+    "</g></svg>";
+  var head=document.head||document.documentElement;
   var l=document.createElement('link'); l.rel='icon'; l.type='image/svg+xml';
-  l.href='data:image/svg+xml,'+encodeURIComponent(svg);
-  (document.head||document.documentElement).appendChild(l);
+  l.href='data:image/svg+xml,'+encodeURIComponent(svg); head.appendChild(l);
+  var at=document.createElement('link'); at.rel='apple-touch-icon'; at.href='apple-touch-icon.png'; head.appendChild(at);
+  var mf=document.createElement('link'); mf.rel='manifest'; mf.href='manifest.json'; head.appendChild(mf);
 })();
 function toggleTheme(){
   var light = document.documentElement.getAttribute('data-theme')==='light';

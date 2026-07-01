@@ -71,6 +71,13 @@
 
   footer{text-align:center;padding:18px;color:var(--text-muted);font-size:0.74rem;border-top:1px solid var(--border);}
   footer span{color:var(--primary);}
+  #to-top{position:fixed;bottom:20px;right:20px;width:46px;height:46px;border-radius:50%;
+    background:var(--primary);color:#06210a;border:none;font-size:1.4rem;line-height:1;cursor:pointer;
+    box-shadow:0 3px 12px rgba(0,0,0,.4);opacity:0;pointer-events:none;transform:translateY(8px);
+    transition:opacity .2s,transform .2s;z-index:60;}
+  #to-top.show{opacity:1;pointer-events:auto;transform:translateY(0);}
+  #to-top:hover{background:var(--primary-light);}
+  @media (max-width:600px){ #to-top{bottom:16px;right:16px;} }
   @media (max-width:600px){
     header{padding:10px 16px;}
     .g-hero h2{font-size:1.45rem;}
@@ -114,6 +121,8 @@
 </main>
 
 <footer><span>Wallingford CERT</span> — Training Suite · Glossary · For educational use — follow your local CERT program guidelines.</footer>
+
+<button id="to-top" aria-label="Back to top" title="Back to top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
 
 <script src="cert-terms.js"></script>
 <script>
@@ -160,6 +169,14 @@ function render(q){
 }
 elSearch.addEventListener('input', ()=>render(elSearch.value));
 render('');
+
+// Back-to-top button — appears after scrolling down.
+(function(){
+  const btn=document.getElementById('to-top');
+  const onScroll=()=>btn.classList.toggle('show', window.scrollY>320);
+  window.addEventListener('scroll', onScroll, {passive:true});
+  onScroll();
+})();
 </script>
 </body>
 </html>
