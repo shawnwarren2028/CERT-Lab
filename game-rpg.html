@@ -30,7 +30,8 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);
   font-weight:700;border:1px solid var(--border);padding:6px 12px;border-radius:6px;
   font-family:'Courier New',monospace;white-space:nowrap;}
 .hdr-menu:hover{background:var(--surface2);border-color:var(--primary);}
-.hdr-audio{margin-left:auto;display:flex;gap:6px;}
+.hdr-actions{margin-left:auto;display:flex;align-items:center;gap:6px;}
+.hdr-actions .hdr-menu{margin-left:0;}
 .aud-btn{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);
   font-size:0.9rem;width:32px;height:30px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;padding:0;}
 .aud-btn:hover{border-color:var(--primary);}
@@ -46,8 +47,7 @@ header{background:var(--surface);border-bottom:2px solid var(--primary);
 .vol-lvl:hover{border-color:var(--primary);color:var(--primary);}
 .vol-lvl.sel{background:var(--primary);color:var(--bg);border-color:var(--primary);font-weight:700;}
 .vol-lvl.off.sel{background:var(--danger);border-color:var(--danger);color:#fff;}
-.hdr-phase{margin-left:18px;font-size:0.75rem;color:var(--muted);text-align:right;}
-.scene-addr{display:inline-block;border:1px solid var(--border);border-radius:12px;padding:1px 8px;margin-right:8px;color:var(--muted);font-size:0.72rem;white-space:nowrap;}
+.scene-meta{font-size:0.72rem;color:var(--muted);line-height:1.35;}
 .phase-val{color:var(--primary);font-weight:700;}
 .layout{display:grid;grid-template-columns:200px 1fr 224px;grid-template-rows:1fr 74px;flex:1;overflow:hidden;}
 .quest-panel{background:var(--surface);border-right:1px solid var(--border);padding:10px;overflow-y:auto;grid-row:1;}
@@ -211,8 +211,7 @@ canvas#map{display:block;width:auto;height:auto;max-width:100%;max-height:100%;a
   body{height:auto;min-height:100vh;overflow-y:auto;}
   header{flex-wrap:wrap;gap:6px 12px;padding:8px 12px;}
   .hdr-title h1{font-size:0.9rem;}
-  .hdr-menu{order:3;}
-  .hdr-phase{margin-left:0;order:4;width:100%;text-align:left;}
+  .hdr-actions{margin-left:0;width:100%;justify-content:center;}
   .layout{display:flex;flex-direction:column;height:auto;}
   /* stat block (name/rank + bars) moved above the map as a compact strip */
   #stat-block{order:0;background:var(--surface);border-bottom:1px solid var(--border);padding:7px 12px;gap:5px;
@@ -267,13 +266,12 @@ canvas#map{display:block;width:auto;height:auto;max-width:100%;max-height:100%;a
     <h1>Wallingford CERT — Fire Scene RPG</h1>
     <p>Community Emergency Response Team</p>
   </div>
-  <div class="hdr-audio">
+  <div class="hdr-actions">
     <button class="theme-btn" onclick="toggleTheme()" aria-label="Toggle light or dark mode" style="width:36px;height:36px">☀️</button>
     <button class="aud-btn" id="btn-music" onclick="uiToggleMusic()" title="Music" aria-label="Toggle music">🎵</button>
     <button class="aud-btn" id="btn-sfx" onclick="uiToggleSfx()" title="Sound effects" aria-label="Toggle sound effects">🔊</button>
+    <a class="hdr-menu" href="index.html">← Menu</a>
   </div>
-  <a class="hdr-menu" href="index.html">← Menu</a>
-  <div class="hdr-phase"><span class="scene-addr">📍 143 Hopehill Road</span>Scene Phase: <span class="phase-val" id="phase-lbl">Arrival</span></div>
 </header>
 <div class="vol-pop hidden" id="vol-pop"><div class="vol-pop-title" id="vol-pop-title">Volume</div><div class="vol-levels" id="vol-levels"></div></div>
 <div class="layout">
@@ -300,6 +298,7 @@ canvas#map{display:block;width:auto;height:auto;max-width:100%;max-height:100%;a
   <div class="char-panel">
     <div class="stat-block" id="stat-block">
       <div class="char-id"><div class="char-name">Abe L.</div><div class="char-rank" id="char-rank">Level 1 — CERT Volunteer</div></div>
+      <div class="scene-meta">📍 143 Hopehill Road · Scene Phase: <span class="phase-val" id="phase-lbl">Arrival</span></div>
       <div class="stats">
         <div class="stat-row lvl-row"><span class="stat-lbl">Level</span><span class="stat-val" id="s-lvl">1</span></div>
         <div class="metric">
@@ -1697,7 +1696,7 @@ function openVolPop(channel){
 function closeVolPop(){ const pop=document.getElementById('vol-pop'); pop.classList.add('hidden'); pop._channel=null; }
 function uiToggleMusic(){ SND.resume(); openVolPop('music'); }
 function uiToggleSfx(){ SND.resume(); openVolPop('sfx'); }
-document.addEventListener('click',e=>{ const pop=document.getElementById('vol-pop'); if (!pop||pop.classList.contains('hidden')) return; if (pop.contains(e.target)||e.target.closest('.hdr-audio')) return; closeVolPop(); });
+document.addEventListener('click',e=>{ const pop=document.getElementById('vol-pop'); if (!pop||pop.classList.contains('hidden')) return; if (pop.contains(e.target)||e.target.closest('.hdr-actions')) return; closeVolPop(); });
 
 /* Collapse/expand info panels (mobile-only affordance). */
 function togglePanel(id){
