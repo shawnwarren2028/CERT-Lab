@@ -160,6 +160,10 @@
 
   .module-title { font-size: 1.2rem; font-weight: 700; color: var(--primary); }
   .step-counter { margin-left: auto; font-size: 0.82rem; color: var(--text-muted); }
+  .streak-chip { margin-left: auto; font-size: 0.78rem; font-weight: 700; color: #e8c33a;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+    padding: 3px 11px; white-space: nowrap; }
+  .streak-chip.hidden { display: none; }
 
   .progress-bar-wrap {
     background: var(--surface); border-radius: 99px; height: 6px; overflow: hidden;
@@ -434,6 +438,7 @@
     <div class="scenario-header">
       <button class="back-btn" onclick="goHome()">← Modules</button>
       <div class="module-title" id="module-label"></div>
+      <div class="streak-chip hidden" id="streak-chip"></div>
       <div class="step-counter" id="step-counter"></div>
     </div>
     <div class="progress-bar-wrap">
@@ -1497,7 +1502,8 @@ let state = {
   currentModule: null,
   currentStep: 0,
   stepScores: [],     // bool per step
-  stepPicks: []       // chosen choice index per step
+  stepPicks: [],      // chosen choice index per step
+  streak: 0           // consecutive correct answers
 };
 
 // ─────────────────────────────────────────────
@@ -1622,6 +1628,7 @@ function startModule(modId) {
   state.currentStep = 0;
   state.stepScores = [];
   state.stepPicks = [];
+  state.streak = 0;
   show('scenario');
   document.getElementById('module-label').textContent = state.currentModule.icon + '  ' + state.currentModule.title;
   renderStep();
@@ -1656,6 +1663,7 @@ function renderStep() {
   });
 
   document.getElementById('fb-ov').classList.add('h');
+  updateStreak();
 }
 
 function selectChoice(idx) {
@@ -1684,8 +1692,16 @@ function selectChoice(idx) {
   // Track score + which choice was picked
   state.stepScores.push(isCorrect);
   state.stepPicks.push(idx);
+  state.streak = isCorrect ? state.streak + 1 : 0;
+  updateStreak();
 
   openFeedback(step, isCorrect);
+}
+
+function updateStreak() {
+  const el = document.getElementById('streak-chip');
+  if (state.streak >= 2) { el.textContent = '🔥 ' + state.streak + ' in a row'; el.classList.remove('hidden'); }
+  else { el.classList.add('hidden'); }
 }
 
 function openFeedback(step, isCorrect) {
@@ -1693,7 +1709,9 @@ function openFeedback(step, isCorrect) {
   const box = document.getElementById('fb-box');
   box.className = 'fb-box' + (isCorrect ? '' : ' wrong');
   document.getElementById('fb-icon').textContent = isCorrect ? '✅' : '❌';
-  document.getElementById('fb-title').textContent = isCorrect ? 'Correct!' : 'Not quite';
+  document.getElementById('fb-title').textContent = isCorrect
+    ? (state.streak >= 2 ? 'Correct! 🔥 ' + state.streak + ' in a row' : 'Correct!')
+    : 'Not quite';
   const raw = isCorrect ? step.feedback.correct : step.feedback.incorrect;
   document.getElementById('fb-text').textContent = (raw || '').replace(/^[✅❌]\s*/, '');
   const fc = document.getElementById('fb-correct');

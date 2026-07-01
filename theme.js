@@ -41,7 +41,16 @@ function updateThemeBtn(){
   var css = '.theme-btn{background:var(--surface2,#243018);border:1px solid var(--border,#3a5228);'+
     'color:var(--primary-light,#7ac95a);width:40px;height:40px;border-radius:8px;cursor:pointer;'+
     'font-size:1.05rem;line-height:1;flex-shrink:0;padding:0;transition:filter .15s;}'+
-    '.theme-btn:hover{filter:brightness(1.12);}';
+    '.theme-btn:hover{filter:brightness(1.12);}'+
+    /* Consistent modal look + gentle fade/scale entrance across every game.
+       Targets the shown overlay (.ov without .h, or .rec-ov.show) and its box
+       child, so it applies regardless of each game's box class name. */
+    '.ov:not(.h),.rec-ov.show{background:rgba(6,9,5,.82);}'+
+    '@keyframes certOvFade{from{opacity:0}to{opacity:1}}'+
+    '@keyframes certOvPop{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}'+
+    '.ov:not(.h),.rec-ov.show{animation:certOvFade .18s ease;}'+
+    '.ov:not(.h)>*,.rec-ov.show>*{animation:certOvPop .22s cubic-bezier(.2,.7,.3,1);box-shadow:0 14px 44px rgba(0,0,0,.5);}'+
+    '@media (prefers-reduced-motion:reduce){.ov:not(.h),.rec-ov.show,.ov:not(.h)>*,.rec-ov.show>*{animation:none;}}';
   var s=document.createElement('style'); s.textContent=css;
   (document.head||document.documentElement).appendChild(s);
 })();
