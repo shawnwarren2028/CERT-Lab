@@ -235,6 +235,25 @@
   }
   .next-btn:hover { background: var(--primary-dark); }
 
+  /* Answer feedback pop-up overlay */
+  .ov { position: fixed; inset: 0; background: rgba(5,8,4,.8); display: flex;
+    align-items: center; justify-content: center; padding: 20px; z-index: 100; }
+  .ov.h { display: none; }
+  .fb-box { background: var(--surface); border: 2px solid var(--success); border-radius: var(--radius);
+    padding: 26px 24px; max-width: 460px; width: 100%; text-align: center;
+    box-shadow: 0 12px 40px rgba(0,0,0,.5); }
+  .fb-box.wrong { border-color: var(--danger); }
+  .fb-icon { font-size: 2.4rem; margin-bottom: 4px; }
+  .fb-title { font-size: 1.4rem; font-weight: 800; color: var(--success); margin-bottom: 10px; }
+  .fb-box.wrong .fb-title { color: var(--danger); }
+  .fb-text { font-size: 0.92rem; line-height: 1.55; color: var(--text); text-align: left; margin-bottom: 12px; }
+  .fb-correct { font-size: 0.9rem; line-height: 1.5; text-align: left; background: var(--surface2);
+    border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin-bottom: 16px; }
+  .fb-correct .lbl { color: var(--success); font-weight: 700; }
+  .fb-btn { background: var(--primary); color: #06210a; border: none; padding: 12px 28px;
+    border-radius: 9px; cursor: pointer; font-size: 0.95rem; font-weight: 700; transition: background .15s; }
+  .fb-btn:hover { background: var(--primary-dark); }
+
   /* ── RESULTS SCREEN ── */
   #results {
     display: none; flex-direction: column; align-items: center;
@@ -425,8 +444,17 @@
       <div class="scene-situation" id="scene-situation"></div>
       <div class="scene-text" id="scene-text"></div>
       <div class="choices" id="choices"></div>
-      <div class="feedback-box" id="feedback-box"></div>
-      <button class="next-btn" id="next-btn" onclick="nextStep()">Continue →</button>
+    </div>
+  </div>
+
+  <!-- Answer feedback pop-up -->
+  <div class="ov h" id="fb-ov">
+    <div class="fb-box" id="fb-box">
+      <div class="fb-icon" id="fb-icon"></div>
+      <div class="fb-title" id="fb-title"></div>
+      <div class="fb-text" id="fb-text"></div>
+      <div class="fb-correct" id="fb-correct"></div>
+      <button class="fb-btn" id="fb-continue" onclick="continueStep()">Continue →</button>
     </div>
   </div>
 
@@ -1627,13 +1655,7 @@ function renderStep() {
     choicesEl.appendChild(btn);
   });
 
-  const fb = document.getElementById('feedback-box');
-  fb.style.display = 'none';
-  fb.className = 'feedback-box';
-
-  const nextBtn = document.getElementById('next-btn');
-  nextBtn.style.display = 'none';
-  nextBtn.textContent = state.currentStep < total - 1 ? 'Continue →' : 'See Results';
+  document.getElementById('fb-ov').classList.add('h');
 }
 
 function selectChoice(idx) {
@@ -1659,18 +1681,39 @@ function selectChoice(idx) {
 
   SND.sfx(isCorrect ? 'correct' : 'wrong');
 
-  // Feedback
-  const fb = document.getElementById('feedback-box');
-  fb.style.display = 'block';
-  fb.className = 'feedback-box ' + (isCorrect ? 'correct' : 'incorrect');
-  fb.textContent = isCorrect ? step.feedback.correct : step.feedback.incorrect;
-
   // Track score + which choice was picked
   state.stepScores.push(isCorrect);
   state.stepPicks.push(idx);
 
-  // Show next
-  document.getElementById('next-btn').style.display = 'block';
+  openFeedback(step, isCorrect);
+}
+
+function openFeedback(step, isCorrect) {
+  const total = state.currentModule.steps.length;
+  const box = document.getElementById('fb-box');
+  box.className = 'fb-box' + (isCorrect ? '' : ' wrong');
+  document.getElementById('fb-icon').textContent = isCorrect ? '✅' : '❌';
+  document.getElementById('fb-title').textContent = isCorrect ? 'Correct!' : 'Not quite';
+  const raw = isCorrect ? step.feedback.correct : step.feedback.incorrect;
+  document.getElementById('fb-text').textContent = (raw || '').replace(/^[✅❌]\s*/, '');
+  const fc = document.getElementById('fb-correct');
+  if (isCorrect) {
+    fc.style.display = 'none';
+  } else {
+    const correctText = (step.choices.find(c => c.correct) || {}).text || '';
+    fc.style.display = 'block';
+    fc.innerHTML = '<span class="lbl">Correct answer:</span> ' +
+      correctText.replace(/[<>&]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]));
+  }
+  const btn = document.getElementById('fb-continue');
+  btn.textContent = state.currentStep < total - 1 ? 'Continue →' : 'See Results';
+  document.getElementById('fb-ov').classList.remove('h');
+  btn.focus();
+}
+
+function continueStep() {
+  document.getElementById('fb-ov').classList.add('h');
+  nextStep();
 }
 
 // ─────────────────────────────────────────────
@@ -1793,6 +1836,13 @@ function showResults() {
 // ─────────────────────────────────────────────
 updateMuteBtn();
 goHome();
+
+// Enter advances the feedback pop-up
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !document.getElementById('fb-ov').classList.contains('h')) {
+    e.preventDefault(); continueStep();
+  }
+});
 </script>
 </body>
 </html>
