@@ -97,7 +97,8 @@
   <button class="tb-btn" id="next-btn" title="Next section">Next ›</button>
   <div class="tb-spacer"></div>
   <a class="tb-btn primary" id="open-tab" target="_blank" rel="noopener">↗ Open in new tab</a>
-  <a class="tb-btn" id="download-btn" download>⭳ Download .pptx</a>
+  <a class="tb-btn" id="download-pdf" download>⭳ PDF</a>
+  <a class="tb-btn" id="download-btn" download>⭳ PPTX</a>
 </div>
 
 <div class="stage">
@@ -144,6 +145,7 @@ async function init(){
 
   const pptx = sec.base + '.pptx';
   const pdf  = sec.base + '.pdf';
+  $('download-pdf').href = pdf;
   $('download-btn').href = pptx;
   $('fb-download').href = pptx;
 

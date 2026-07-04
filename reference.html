@@ -54,10 +54,12 @@
   .rc-mid{flex:1;min-width:0;}
   .file-name{font-size:0.98rem;font-weight:700;color:var(--primary);}
   .file-type{font-size:0.74rem;color:var(--text-muted);margin-top:2px;}
-  .rc-download{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;
-    border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--primary-light);
-    text-decoration:none;font-size:1.1rem;line-height:1;flex-shrink:0;transition:background .15s,border-color .15s;}
-  .rc-download:hover{border-color:var(--primary);background:var(--border);}
+  .rc-dl{display:flex;gap:6px;flex-shrink:0;}
+  .rc-btn{display:inline-flex;align-items:center;gap:4px;background:var(--surface2);border:1px solid var(--border);
+    color:var(--primary-light);text-decoration:none;font-size:0.72rem;font-weight:700;padding:5px 9px;
+    border-radius:7px;white-space:nowrap;transition:background .15s,border-color .15s;}
+  .rc-btn:hover{border-color:var(--primary);background:var(--border);}
+  @media (max-width:600px){ .open-arrow{display:none;} }
   .open-arrow{margin-left:auto;opacity:.5;font-size:0.85rem;}
 
   footer{text-align:center;padding:20px;color:var(--text-muted);font-size:0.76rem;
@@ -101,7 +103,7 @@
   <div class="page-hero">
     <h2>📄 Course <span>Reference</span> Materials</h2>
     <p>The official CERT Basic Training presentation decks. Click a section to view it right here
-       on the site — you can download the original PowerPoint from the viewer.</p>
+       on the site, or grab it as a PDF or PowerPoint with the download buttons.</p>
   </div>
   <div class="resource-grid" id="resource-grid"></div>
 </main>
@@ -124,7 +126,13 @@ REF_SECTIONS.forEach(r => {
       <div class="file-name">${r.name}</div>
       <div class="file-type">Section ${r.n} · View presentation</div>
     </div>
+    <div class="rc-dl">
+      <a class="rc-btn" href="${r.base}.pdf" download title="Download ${r.name} (PDF)">⭳ PDF</a>
+      <a class="rc-btn" href="${r.base}.pptx" download title="Download ${r.name} (PowerPoint)">⭳ PPTX</a>
+    </div>
     <span class="open-arrow" aria-hidden="true">→</span>`;
+  // download links shouldn't also trigger the card's view action
+  card.querySelectorAll('.rc-dl a').forEach(a => a.addEventListener('click', e => e.stopPropagation()));
   grid.appendChild(card);
 });
 </script>
