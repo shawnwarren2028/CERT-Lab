@@ -100,8 +100,8 @@
 <main>
   <div class="page-hero">
     <h2>📄 Course <span>Reference</span> Materials</h2>
-    <p>The official CERT Basic Training presentation decks. Click any section to open the
-       PowerPoint file in a new tab.</p>
+    <p>The official CERT Basic Training presentation decks. Click a section to view it here on
+       the site, or use the ⭳ button to download the original PowerPoint.</p>
   </div>
   <div class="resource-grid" id="resource-grid"></div>
 </main>
@@ -110,32 +110,23 @@
   <span>Wallingford CERT</span> — Training Suite · Course Reference · For educational use — follow your local CERT program guidelines.
 </footer>
 
+<script src="reference-sections.js"></script>
 <script>
-const RESOURCES = [
-  { name:"Disaster Preparedness",          file:"section_01_unit_1_ppt_508.pptx", icon:"🏠", desc:"PPTX · Section 1" },
-  { name:"Fire Safety & Utility Controls", file:"section_02_unit_2_ppt_508.pptx", icon:"🔥", desc:"PPTX · Section 2" },
-  { name:"Disaster Medical Ops — Part 1",  file:"section_03_unit_3_ppt_508.pptx", icon:"🏥", desc:"PPTX · Section 3" },
-  { name:"Disaster Medical Ops — Part 2",  file:"section_04_unit_4_ppt_508.pptx", icon:"🩺", desc:"PPTX · Section 4" },
-  { name:"Light Search & Rescue",          file:"section_05_unit_5_ppt_508.pptx", icon:"🔍", desc:"PPTX · Section 5" },
-  { name:"CERT Organization",              file:"section_06_unit_6_ppt_508.pptx", icon:"🗂️", desc:"PPTX · Section 6" },
-  { name:"Disaster Psychology",            file:"section_07_unit_7_ppt_508.pptx", icon:"🧠", desc:"PPTX · Section 7" },
-  { name:"Terrorism & CERT",               file:"section_08_unit_8_ppt_508.pptx", icon:"💥", desc:"PPTX · Section 8" },
-];
 const grid = document.getElementById('resource-grid');
-RESOURCES.forEach(r => {
+REF_SECTIONS.forEach(r => {
   const card = document.createElement('div');
   card.className = 'resource-card';
-  card.title = 'Open ' + r.name;
-  card.onclick = () => window.open(r.file, '_blank');
+  card.title = 'View ' + r.name;
+  card.onclick = () => location.href = 'viewer.html?doc=' + r.base;
   card.innerHTML = `
     <span class="file-icon">${r.icon}</span>
     <div class="rc-mid">
       <div class="file-name">${r.name}</div>
-      <div class="file-type">${r.desc}</div>
+      <div class="file-type">PPTX · Section ${r.n}</div>
     </div>
-    <a class="rc-download" href="${r.file}" download title="Download ${r.name}" aria-label="Download ${r.name}">⭳</a>
-    <span class="open-arrow">↗</span>`;
-  // download link shouldn't also trigger the card's open action
+    <a class="rc-download" href="${r.base}.pptx" download title="Download ${r.name}" aria-label="Download ${r.name}">⭳</a>
+    <span class="open-arrow">→</span>`;
+  // download link shouldn't also trigger the card's view action
   card.querySelector('.rc-download').addEventListener('click', e => e.stopPropagation());
   grid.appendChild(card);
 });
