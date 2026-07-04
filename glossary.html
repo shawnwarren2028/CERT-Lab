@@ -147,13 +147,16 @@ function render(q){
     if(!terms.length) return;
     shown+=terms.length;
     const refIsPage = sec.ref.endsWith('.html');
+    // Course-material links open the in-site viewer to VIEW the deck (not download).
+    const refHref = refIsPage ? sec.ref : ('viewer.html?doc=' + sec.ref.replace(/\.pptx$/, ''));
+    const refLabel = refIsPage ? 'Reference ↗' : 'View presentation ↗';
     const wrap=document.createElement('div'); wrap.className='g-section';
     wrap.innerHTML=`
       <div class="g-sec-head">
         <span class="gh-ic">${sec.icon}</span>
         <span class="gh-name">${sec.name}</span>
         <span class="gh-count">${terms.length} term${terms.length===1?'':'s'}</span>
-        <a class="gh-ref" href="${sec.ref}"${refIsPage?'':' target="_blank" rel="noopener"'}>${refIsPage?'Reference ↗':'Course material ↗'}</a>
+        <a class="gh-ref" href="${refHref}" target="_blank" rel="noopener">${refLabel}</a>
       </div>
       ${terms.map(t=>`
         <div class="term">
