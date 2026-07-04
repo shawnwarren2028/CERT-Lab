@@ -100,8 +100,8 @@
 <main>
   <div class="page-hero">
     <h2>📄 Course <span>Reference</span> Materials</h2>
-    <p>The official CERT Basic Training presentation decks. Click a section to view it here on
-       the site, or use the ⭳ button to download the original PowerPoint.</p>
+    <p>The official CERT Basic Training presentation decks. Click a section to view it right here
+       on the site — you can download the original PowerPoint from the viewer.</p>
   </div>
   <div class="resource-grid" id="resource-grid"></div>
 </main>
@@ -122,12 +122,9 @@ REF_SECTIONS.forEach(r => {
     <span class="file-icon">${r.icon}</span>
     <div class="rc-mid">
       <div class="file-name">${r.name}</div>
-      <div class="file-type">PPTX · Section ${r.n}</div>
+      <div class="file-type">Section ${r.n} · View presentation</div>
     </div>
-    <a class="rc-download" href="${r.base}.pptx" download title="Download ${r.name}" aria-label="Download ${r.name}">⭳</a>
-    <span class="open-arrow">→</span>`;
-  // download link shouldn't also trigger the card's view action
-  card.querySelector('.rc-download').addEventListener('click', e => e.stopPropagation());
+    <span class="open-arrow" aria-hidden="true">→</span>`;
   grid.appendChild(card);
 });
 </script>
