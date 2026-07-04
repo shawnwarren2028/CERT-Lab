@@ -116,3 +116,22 @@ const SECTION_DEFS = [
 ];
 const SECTION_OF={}; SECTION_DEFS.forEach(s=>s.words.forEach(w=>SECTION_OF[w]=s.id));
 const SECTION_BY={}; SECTION_DEFS.forEach(s=>SECTION_BY[s.id]=s);
+
+/* Best-effort term → slide (PDF page) for the glossary deep-links: the first
+   slide in that term's section deck whose text mentions the term verbatim.
+   Terms not found verbatim in the slide text default to slide 1 of the deck.
+   (Auto-generated from the .pptx slide text; general/Scene-Basics terms have
+   no single deck and link to reference.html instead.) */
+const TERM_SLIDE = {
+  PLAN:7, KIT:1, WATER:16, MITIGATION:15, AFTERSHOCK:1, EVACUATION:9, SHELTER:20, ESCAPE:21,
+  FUEL:4, HEAT:6, OXYGEN:6, PASS:1, GAS:11, SMOKE:24, INCIPIENT:1, PORTABLE:17, FLAMMABLE:7,
+  TRIANGLE:6, ELECTRIC:1, UTILITIES:4, DECON:1, IDLH:1, QUADRANT:27,
+  TRIAGE:2, SHOCK:2, AIRWAY:2, GLOVES:21, PULSE:1, WOUND:1, START:3, RPM:1, IMMEDIATE:19,
+  DELAYED:19, MINOR:20, BLEEDING:2, PRESSURE:13, TOURNIQUET:1, PERFUSION:1, SPLINT:1, BANDAGE:1,
+  DRESSING:1, FRACTURE:1, DOCUMENT:17, TRANSPORT:1, HYPOTHERMIA:1, ANAPHYLAXIS:1, CONTUSION:1,
+  LACERATION:1, CAPILLARY:11, DOFF:1,
+  CRIBBING:36, LEVER:1, FULCRUM:1, VOID:23, RESCUE:1, DEBRIS:6, LEVERAGE:1, MARKING:1, HELMET:1,
+  NIMS:10, COMMAND:7, LOGISTICS:1, SPAN:5, RESOURCES:6,
+  REHAB:1, STRESS:2, BUDDY:1,
+  CBRNE:3, SECONDARY:1, STANDOFF:1
+};

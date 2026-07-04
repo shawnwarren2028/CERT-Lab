@@ -61,7 +61,10 @@
   .term{background:var(--surface);border:1px solid var(--border);border-radius:10px;
     padding:14px 16px;margin-bottom:10px;}
   .term-top{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;}
-  .term-name{font-size:1.05rem;font-weight:800;color:var(--gold);letter-spacing:.03em;}
+  a.term-name{font-size:1.05rem;font-weight:800;color:var(--gold);letter-spacing:.03em;
+    text-decoration:none;cursor:pointer;transition:color .12s;}
+  a.term-name::after{content:'↗';font-size:0.7em;margin-left:5px;opacity:.55;}
+  a.term-name:hover{color:var(--primary-light);text-decoration:underline;}
   .term-diff{font-size:0.64rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
     padding:2px 8px;border-radius:20px;border:1px solid var(--border);color:var(--text-muted);}
   .term-clue{font-size:0.9rem;color:var(--text);font-style:italic;margin:7px 0 6px;}
@@ -105,8 +108,8 @@
   <div class="g-hero">
     <h2>CERT <span>Glossary</span></h2>
     <p>Every term from the Crossword Drill, grouped by training section with its definition and a
-       quick why-it-matters note. Search to jump straight to a term, then open the matching course
-       material to dig deeper.</p>
+       quick why-it-matters note. Search to find a term fast, then click it to open the slide in
+       the course presentation where it's covered.</p>
   </div>
 
   <div class="search-row">
@@ -146,25 +149,27 @@ function render(q){
     terms.sort((a,b)=>a.a.localeCompare(b.a));
     if(!terms.length) return;
     shown+=terms.length;
-    const refIsPage = sec.ref.endsWith('.html');
-    // Course-material links open the in-site viewer to VIEW the deck (not download).
-    const refHref = refIsPage ? sec.ref : ('viewer.html?doc=' + sec.ref.replace(/\.pptx$/, ''));
-    const refLabel = refIsPage ? 'Reference ↗' : 'View presentation ↗';
+    const deck = sec.ref.endsWith('.pptx') ? sec.ref.replace(/\.pptx$/, '') : null;
     const wrap=document.createElement('div'); wrap.className='g-section';
     wrap.innerHTML=`
       <div class="g-sec-head">
         <span class="gh-ic">${sec.icon}</span>
         <span class="gh-name">${sec.name}</span>
         <span class="gh-count">${terms.length} term${terms.length===1?'':'s'}</span>
-        <a class="gh-ref" href="${refHref}" target="_blank" rel="noopener">${refLabel}</a>
       </div>
-      ${terms.map(t=>`
-        <div class="term">
-          <div class="term-top"><span class="term-name">${hl(t.a,q)}</span>
+      ${terms.map(t=>{
+        // Each term links to the slide in its deck where it's covered (best effort).
+        const href = deck
+          ? ('viewer.html?doc=' + deck + '&slide=' + ((typeof TERM_SLIDE!=='undefined' && TERM_SLIDE[t.a]) || 1))
+          : 'reference.html';
+        return `<div class="term">
+          <div class="term-top"><a class="term-name" href="${href}" target="_blank" rel="noopener"
+            title="Open the slide covering ${esc(t.a)}">${hl(t.a,q)}</a>
             <span class="term-diff">${DIFF_LABEL[t.d]||''}</span></div>
           <div class="term-clue">${hl(t.clue,q)}</div>
           <div class="term-info">${hl(t.info,q)}</div>
-        </div>`).join('')}`;
+        </div>`;
+      }).join('')}`;
     elGloss.appendChild(wrap);
   });
   if(shown===0) elGloss.innerHTML='<div class="no-results">No terms match “'+esc(q)+'”.</div>';

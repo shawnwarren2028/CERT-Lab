@@ -158,9 +158,12 @@ async function init(){
   let usePdf = false;
   try { const r = await fetch(pdf, { method: 'HEAD' }); usePdf = r.ok; } catch (e) { usePdf = false; }
 
+  const slide = parseInt(params.get('slide'), 10);
+  const page = (slide > 0) ? slide : 1;
   if (usePdf){
-    $('frame').src = pdf + '#toolbar=1&navpanes=0&view=FitH';
-    $('open-tab').href = pdf; $('fb-open').href = pdf;
+    const frag = '#page=' + page + '&toolbar=1&navpanes=0&view=FitH';
+    $('frame').src = pdf + frag;
+    $('open-tab').href = pdf + frag; $('fb-open').href = pdf + frag;
   } else {
     $('frame').src = officeEmbed(pptx);
     $('open-tab').href = officeEmbed(pptx); $('fb-open').href = officeEmbed(pptx);
