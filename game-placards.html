@@ -97,7 +97,8 @@ main{flex:1;width:100%;max-width:760px;margin:0 auto;padding:24px 16px 32px;}
 .quiz-q{font-size:1rem;font-weight:700;color:var(--text);margin-bottom:14px;}
 .quiz-choices{display:flex;flex-direction:column;gap:8px;}
 .quiz-choice{background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:11px 14px;border-radius:8px;
-  cursor:pointer;font-family:inherit;font-size:0.88rem;text-align:left;transition:border-color .15s;}
+  cursor:pointer;font-family:inherit;font-size:0.88rem;text-align:left;transition:border-color .15s;
+  display:flex;align-items:flex-start;}
 .quiz-choice:hover:not(.done){border-color:var(--primary);}
 .quiz-choice.right{background:#14321a;border-color:var(--primary);color:var(--primary-light);}
 .quiz-choice.wrong{background:#3a1414;border-color:var(--danger);color:#ffb0b0;}
@@ -459,7 +460,10 @@ function openQuiz(pid,uids){
   const correct=PLACARDS[id].meaning;
   const choices=shuffle([correct,...others]);
   const box=document.getElementById('quiz-choices'); box.innerHTML='';
-  choices.forEach(m=>{ const b=document.createElement('button'); b.className='quiz-choice'; b.textContent=m;
+  choices.forEach((m,i)=>{ const b=document.createElement('button'); b.className='quiz-choice'; b.dataset.meaning=m;
+    const num=document.createElement('span'); num.className='kbd-num'; num.textContent=(i+1);
+    const t=document.createElement('span'); t.textContent=m;
+    b.appendChild(num); b.appendChild(t);
     b.onclick=()=>answerQuiz(b,m===correct,id,pid,uids,correct); box.appendChild(b); });
   document.getElementById('quiz-ov').classList.add('on');
 }
@@ -477,7 +481,7 @@ function answerQuiz(btn,correct,id,pid,uids,correctMeaning){
     },750);
   } else {
     btn.classList.add('wrong'); SFX('miss'); meaningMistakes++;
-    [...box.children].forEach(b=>{ if(b.textContent===correctMeaning) b.classList.add('right'); });
+    [...box.children].forEach(b=>{ if(b.dataset.meaning===correctMeaning) b.classList.add('right'); });
     showFact('<b>Not quite.</b> '+PLACARDS[id].fact);
     setTimeout(()=>{ document.getElementById('quiz-ov').classList.remove('on');
       layout=shuffle(cards.filter(c=>!mastered.has(c.pid)).map(c=>c.uid));
@@ -565,6 +569,17 @@ function SFX(name){
 
 /* ════════════ INIT ════════════ */
 renderSelect();
+
+// Keyboard: number keys pick an answer in the meaning quiz
+document.addEventListener('keydown', e => {
+  if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+  if (!document.getElementById('quiz-ov').classList.contains('on')) return;
+  const n = parseInt(e.key, 10);
+  if (n >= 1 && n <= 9) {
+    const btns = [...document.querySelectorAll('#quiz-choices > button')].filter(b => !b.classList.contains('done'));
+    if (btns[n - 1]) { e.preventDefault(); btns[n - 1].click(); }
+  }
+});
 </script>
 </body>
 </html>

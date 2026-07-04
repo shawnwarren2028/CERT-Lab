@@ -50,7 +50,12 @@ function updateThemeBtn(){
     '@keyframes certOvPop{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}'+
     '.ov:not(.h),.rec-ov.show{animation:certOvFade .18s ease;}'+
     '.ov:not(.h)>*,.rec-ov.show>*{animation:certOvPop .22s cubic-bezier(.2,.7,.3,1);box-shadow:0 14px 44px rgba(0,0,0,.5);}'+
-    '@media (prefers-reduced-motion:reduce){.ov:not(.h),.rec-ov.show,.ov:not(.h)>*,.rec-ov.show>*{animation:none;}}';
+    '@media (prefers-reduced-motion:reduce){.ov:not(.h),.rec-ov.show,.ov:not(.h)>*,.rec-ov.show>*{animation:none;}}'+
+    /* shared number badge for keyboard-selectable answers */
+    '.kbd-num{display:inline-flex;align-items:center;justify-content:center;min-width:1.4em;height:1.4em;'+
+    'padding:0 .3em;margin-right:.6em;border-radius:5px;background:var(--surface2,#243018);'+
+    'border:1px solid var(--border,#3a5228);color:var(--primary-light,#7ac95a);font-weight:700;'+
+    'font-size:.82em;line-height:1;flex-shrink:0;}';
   var s=document.createElement('style'); s.textContent=css;
   (document.head||document.documentElement).appendChild(s);
 })();

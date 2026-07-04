@@ -933,6 +933,11 @@ const DLGS = {
   'neighbor-tip2':{ npc:'neighbor', text:`"Thank you, thank you. Please find him."`,
     choices:[{ text:'Hang tight behind the tape.', close:true }] },
 };
+// Prefix each enabled choice button in a container with a 1..N keyboard badge.
+function numberChoices(sel){
+  const btns=[...document.querySelectorAll(sel)].filter(b=>!b.disabled);
+  btns.forEach((b,i)=>{ if(!b.querySelector('.kbd-num')){ const s=document.createElement('span'); s.className='kbd-num'; s.textContent=(i+1); b.insertBefore(s, b.firstChild); } });
+}
 function openDlg(id){
   const dlg=DLGS[id]; if (!dlg) return;
   const npc=NPCS[dlg.npc];
@@ -943,6 +948,7 @@ function openDlg(id){
   const box=document.getElementById('dlg-choices'); box.innerHTML='';
   shuffle(dlg.choices.slice()).forEach(ch=>{ const b=document.createElement('button'); b.className='dlg-choice'; b.textContent=ch.text;
     b.onclick=()=>{ const crB=S.cr; SND.beginChoice(); if (ch.action) ch.action(); SND.endChoice(); SND.sfx(S.cr<crB?'dong':'ding'); if (ch.close) closeDlg(); else if (ch.next) openDlg(ch.next); render(); }; box.appendChild(b); });
+  numberChoices('#dlg-choices > button');
   document.getElementById('dlg-ov').classList.remove('h');
 }
 function closeDlg(){ document.getElementById('dlg-ov').classList.add('h'); render(); }
@@ -960,6 +966,7 @@ function openMenu(title, desc, choices, step){
   const box=document.getElementById('menu-choices'); box.innerHTML='';
   shuffle(choices.slice()).forEach(c=>{ const b=document.createElement('button'); b.className='menu-choice'; b.textContent=c.label; b.onclick=()=>{ const crB=S.cr; SND.beginChoice(); c.run(); SND.endChoice(); SND.sfx(S.cr<crB?'dong':'ding'); render(); }; box.appendChild(b); });
   const leave=document.createElement('button'); leave.className='menu-leave'; leave.textContent='Step away'; leave.onclick=closeMenu; box.appendChild(leave);
+  numberChoices('#menu-choices > button');
   document.getElementById('menu-ov').classList.remove('h');
   SND.sfx('open');
 }
@@ -1000,6 +1007,7 @@ function openAssess(pid){
   tags.forEach(tag=>{ const b=document.createElement('button'); b.className=`tag-btn ${tag}`; b.textContent=names[tag];
     const needsAirway=p.needsAirway && !p.airwayDone; const deadLocked=tag==='Dead' && p.id==='montez' && !p.airwayDone;
     b.disabled=needsAirway || deadLocked; b.onclick=()=>applyTag(pid,tag); tagRow.appendChild(b); });
+  numberChoices('#ass-ov button');
   document.getElementById('ass-ov').classList.remove('h');
 }
 function applyTag(pid, tag){
@@ -1114,6 +1122,18 @@ window.addEventListener('keydown', e=>{
   else if (['arrowleft','a'].includes(k)){ move(-1,0); e.preventDefault(); }
   else if (['arrowright','d'].includes(k)){ move(1,0); e.preventDefault(); }
   else if (['e','enter',' '].includes(k)){ tryInteract(); e.preventDefault(); }
+});
+// Number keys 1-9 pick the numbered choice in an open menu / dialogue / triage overlay.
+// (Space stays bound to Interact and is never repurposed.)
+window.addEventListener('keydown', e=>{
+  const n=parseInt(e.key,10); if (!(n>=1 && n<=9)) return;
+  let sel=null;
+  if (!document.getElementById('menu-ov').classList.contains('h')) sel='#menu-choices > button';
+  else if (!document.getElementById('dlg-ov').classList.contains('h')) sel='#dlg-choices > button';
+  else if (!document.getElementById('ass-ov').classList.contains('h')) sel='#ass-ov button';
+  if (!sel) return;
+  const btns=[...document.querySelectorAll(sel)].filter(b=>!b.disabled);
+  if (btns[n-1]){ e.preventDefault(); btns[n-1].click(); }
 });
 
 /* ════════════ FLAT-VECTOR RENDERER ════════════ */

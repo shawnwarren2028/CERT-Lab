@@ -206,7 +206,10 @@
     font-size: 0.92rem;
     line-height: 1.5;
     transition: border-color 0.2s, background 0.2s;
+    display: flex;
+    align-items: flex-start;
   }
+  .choice-btn .kbd-num { margin-top: 1px; }
   .choice-btn:hover:not(:disabled) { border-color: var(--primary); background: #2a3a4e; }
   .choice-btn.correct { border-color: var(--success); background: #14321a; color: var(--success); }
   .choice-btn.incorrect { border-color: var(--danger); background: #2d1414; color: var(--danger); }
@@ -1657,7 +1660,9 @@ function renderStep() {
   step.choices.forEach((ch, i) => {
     const btn = document.createElement('button');
     btn.className = 'choice-btn';
-    btn.textContent = ch.text;
+    const num = document.createElement('span'); num.className = 'kbd-num'; num.textContent = (i + 1);
+    const txt = document.createElement('span'); txt.textContent = ch.text;
+    btn.appendChild(num); btn.appendChild(txt);
     btn.onclick = () => selectChoice(i);
     choicesEl.appendChild(btn);
   });
@@ -1730,7 +1735,9 @@ function openFeedback(step, isCorrect) {
 }
 
 function continueStep() {
-  document.getElementById('fb-ov').classList.add('h');
+  const ov = document.getElementById('fb-ov');
+  if (ov.classList.contains('h')) return; // already advanced (guards double key/click)
+  ov.classList.add('h');
   nextStep();
 }
 
@@ -1855,10 +1862,20 @@ function showResults() {
 updateMuteBtn();
 goHome();
 
-// Enter advances the feedback pop-up
+// Keyboard: 1-9 select an answer; Space/Enter advance the feedback pop-up.
 document.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && !document.getElementById('fb-ov').classList.contains('h')) {
-    e.preventDefault(); continueStep();
+  if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+  const fbOpen = !document.getElementById('fb-ov').classList.contains('h');
+  if (fbOpen) {
+    if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') { e.preventDefault(); continueStep(); }
+    return;
+  }
+  if (document.getElementById('scenario').style.display !== 'none') {
+    const n = parseInt(e.key, 10);
+    if (n >= 1 && n <= 9) {
+      const buttons = document.querySelectorAll('.choice-btn');
+      if (buttons[n - 1] && !buttons[n - 1].disabled) { e.preventDefault(); selectChoice(n - 1); }
+    }
   }
 });
 </script>
