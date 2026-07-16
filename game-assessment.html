@@ -194,6 +194,30 @@
   .btn.primary{background:var(--primary);color:#06210a;border-color:var(--primary);}
   .btn.primary:hover{background:var(--primary-light);}
 
+  /* tier select */
+  .tier-list{display:flex;flex-direction:column;gap:9px;margin-top:6px;}
+  .tier-card{display:flex;align-items:center;gap:13px;text-align:left;background:var(--surface2);
+    border:1px solid var(--border);border-radius:11px;padding:12px 14px;cursor:pointer;transition:.14s;
+    font-family:inherit;color:var(--text);}
+  .tier-card:hover{border-color:var(--primary);background:var(--border);transform:translateY(-1px);}
+  .tier-card .tc-ic{font-size:1.7rem;flex-shrink:0;}
+  .tier-card .tc-body{flex:1;min-width:0;}
+  .tier-card .tc-name{font-weight:800;color:var(--primary-light);font-size:1rem;}
+  .tier-card .tc-desc{display:block;font-size:0.76rem;color:var(--text-muted);line-height:1.4;margin-top:2px;}
+  .tier-card .tc-side{text-align:right;flex-shrink:0;}
+  .tier-card .tc-stars{color:var(--gold);font-size:0.95rem;letter-spacing:1px;}
+  .tier-card .tc-best{display:block;font-size:0.66rem;color:var(--text-muted);margin-top:2px;}
+  /* tier badge + clock + hint */
+  .level-btn{display:inline-flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);
+    color:var(--primary-light);font-size:0.82rem;font-weight:700;padding:8px 12px;border-radius:8px;cursor:pointer;
+    transition:.15s;white-space:nowrap;font-family:inherit;}
+  .level-btn:hover{border-color:var(--primary);}
+  .sb-clock{display:none;align-items:center;gap:6px;margin-left:auto;font-weight:800;font-size:0.95rem;color:var(--text);
+    background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:5px 11px;}
+  .sb-clock.urgent{color:#fff;background:var(--danger);border-color:var(--danger);animation:clockpulse .9s infinite;}
+  @keyframes clockpulse{0%,100%{opacity:1}50%{opacity:.6}}
+  .next-hint{color:var(--info);font-weight:700;}
+
   @media (max-width:820px){
     main{grid-template-columns:1fr;}
     .stage{position:static;}
@@ -217,8 +241,9 @@
     <p>Community Emergency Response Team</p>
   </div>
   <div class="hdr-actions">
+    <button class="level-btn" id="level-btn" onclick="openTierSelect()" title="Choose difficulty">🎚️ <span id="tier-name">Levels</span></button>
     <button class="icon-btn" id="sfx-btn" onclick="SND.toggle()" title="Sound effects">🔊</button>
-    <button class="icon-btn" onclick="newPatient()" title="New patient">🔄</button>
+    <button class="icon-btn" onclick="newPatient()" title="New patient (same level)">🔄</button>
     <a class="home-link" href="index.html">← Menu</a>
     <button class="theme-btn" onclick="toggleTheme()" aria-label="Toggle light or dark mode">☀️</button>
   </div>
@@ -345,12 +370,12 @@ function vitalsNormal(){ return {resp:rnd(12,18),respQ:'even, unlabored',pulse:r
   radial:true,skin:'warm, pink, dry',cap:'<2 sec'}; }
 
 /* ---- Archetype: Fall / blunt trauma ---- */
-function caseFall(){
+function caseFall(ctx){ ctx=ctx||{};
   const side=pick(['left','right']);
   const legKey='legs', armKey='arms';
-  const bigBleed=chance(0.6);
+  const bigBleed=ctx.hard?true:chance(0.6);
   const responsive=pick(['alert','alert','verbal']);
-  const shock=bigBleed||chance(0.4);
+  const shock=ctx.hard?true:(bigBleed||chance(0.4));
   const v=vitalsNormal();
   if(shock){ v.pulse=rnd(104,132); v.skin='pale, cool, clammy'; v.cap='3–4 sec'; v.radial=chance(0.6); }
   const findings={};
@@ -400,7 +425,7 @@ function caseFall(){
 }
 
 /* ---- Archetype: Heart attack (cardiac chest pain) ---- */
-function caseCardiac(){
+function caseCardiac(ctx){ ctx=ctx||{};
   const v=vitalsNormal(); v.pulse=rnd(88,116); v.skin='pale, cool, sweaty (diaphoretic)'; v.respQ='slightly fast, uncomfortable'; v.resp=rnd(18,24);
   const findings={
     chest:[F('No trauma or deformity; patient clutching center of chest','warn','pain')],
@@ -445,9 +470,9 @@ function caseCardiac(){
 }
 
 /* ---- Archetype: Diabetic emergency (altered mental status) ---- */
-function caseDiabetic(){
-  const low=chance(0.7); // hypoglycemia most common/teachable
-  const resp=low?pick(['verbal','pain']):pick(['alert','verbal']);
+function caseDiabetic(ctx){ ctx=ctx||{};
+  const low=ctx.hard?true:chance(0.7); // hypoglycemia most common/teachable
+  const resp=ctx.hard?'pain':(low?pick(['verbal','pain']):pick(['alert','verbal']));
   const v=vitalsNormal();
   if(low){ v.pulse=rnd(96,120); v.skin='pale, cool, sweaty'; } else { v.skin='warm, dry, flushed'; v.resp=rnd(18,26); }
   const findings={
@@ -493,8 +518,8 @@ function caseDiabetic(){
 }
 
 /* ---- Archetype: Heat emergency ---- */
-function caseHeat(){
-  const stroke=chance(0.55); // heat stroke (emergency) vs exhaustion
+function caseHeat(ctx){ ctx=ctx||{};
+  const stroke=ctx.hard?true:chance(0.55); // heat stroke (emergency) vs exhaustion
   const resp=stroke?pick(['verbal','pain']):'alert';
   const v=vitalsNormal(); v.pulse=rnd(108,140); v.resp=rnd(20,28);
   v.skin= stroke?'hot, red, dry (or sweaty) — very warm to touch':'pale, cool, heavy sweating';
@@ -543,8 +568,8 @@ function caseHeat(){
 }
 
 /* ---- Archetype: Seizure / postictal ---- */
-function caseSeizure(){
-  const active=chance(0.35); // actively seizing vs postictal (after)
+function caseSeizure(ctx){ ctx=ctx||{};
+  const active=ctx.hard?true:chance(0.35); // actively seizing vs postictal (after)
   const resp=active?'pain':pick(['verbal','pain']);
   const v=vitalsNormal(); v.pulse=rnd(92,118); v.respQ=active?'irregular during seizure':'snoring/deep, recovering';
   const findings={
@@ -593,8 +618,8 @@ function caseSeizure(){
 }
 
 /* ---- Archetype: Stroke (FAST) ---- */
-function caseStroke(){
-  const side=pick(['left','right']), resp=pick(['alert','verbal']);
+function caseStroke(ctx){ ctx=ctx||{};
+  const side=pick(['left','right']), resp=ctx.hard?'verbal':pick(['alert','verbal']);
   const findings={
     head:[F(`Facial droop on the ${side} side; uneven smile`,'crit','skin'),
           F('Speech is slurred and hard to understand','warn')],
@@ -636,8 +661,8 @@ function caseStroke(){
 }
 
 /* ---- Archetype: Hypothermia ---- */
-function caseHypothermia(){
-  const severe=chance(0.45), resp=severe?pick(['verbal','pain']):'alert';
+function caseHypothermia(ctx){ ctx=ctx||{};
+  const severe=ctx.hard?true:chance(0.45), resp=severe?pick(['verbal','pain']):'alert';
   const findings={
     head:[F(severe?'Confused, drowsy, slurred speech; not shivering':'Alert but shivering, pale','warn','skin')],
     arms:[F('Skin cold to the touch, pale/waxy'+(severe?'; no shivering':'; shivering'),'warn','skin')],
@@ -680,8 +705,8 @@ function caseHypothermia(){
 }
 
 /* ---- Archetype: Burns ---- */
-function caseBurns(){
-  const airway=chance(0.3), region=pick(['arms','legs','chest']), big=chance(0.4)||airway;
+function caseBurns(ctx){ ctx=ctx||{};
+  const airway=ctx.hard?true:chance(0.3), region=pick(['arms','legs','chest']), big=ctx.hard?true:(chance(0.4)||airway);
   const findings={};
   findings[region]=[F(`${big?'Large':'Patchy'} burn — red, blistered skin on the ${region==='chest'?'chest':region}`,'crit','burn')];
   if(airway) findings.head=[F('Soot around the mouth & nose, singed nasal hair, hoarse voice','crit','burn')];
@@ -723,16 +748,232 @@ function caseBurns(){
   };
 }
 
-const ARCHETYPES=[caseFall,caseCardiac,caseDiabetic,caseHeat,caseSeizure,caseStroke,caseHypothermia,caseBurns];
+/* ---- Archetype: Severe bleeding / tourniquet (Stop the Bleed) ---- */
+function caseHemorrhage(ctx){ ctx=ctx||{};
+  const side=pick(['left','right']), limb=pick(['arms','legs']);
+  const amputation=ctx.hard?chance(0.5):chance(0.2);
+  const v=vitalsNormal(); v.pulse=rnd(112,140); v.skin='pale, cool, clammy'; v.cap='3–4 sec'; v.radial=chance(0.5);
+  const findings={};
+  findings[limb]=[F(`${amputation?'Partial amputation':'Deep gash'} of the ${side} ${limb==='legs'?'thigh':'upper arm'} — bright-red blood spurting`,'crit','bleed'),
+                  F('Soaked clothing; a spreading pool of blood','crit','bleed')];
+  findings.head=[F('Pale, anxious, looking around','warn','skin')];
+  findings.chest=[F('Breathing fast','info')];
+  return {
+    archetype:'hemorrhage', title: amputation?'Traumatic amputation':'Life-threatening hemorrhage',
+    age:rnd(18,70), sex:pick(['M','F']), forceWeather:null,
+    mechanism: amputation?'Limb caught in machinery.':'Deep laceration from sharp metal/glass.',
+    chief:'Bleeding heavily — a lot of bright red blood.',
+    responsiveness: ctx.hard?pick(['verbal','pain']):pick(['alert','verbal']), airway:'open',
+    breathing:{rate:rnd(22,30),quality:'fast',adequate:true},
+    circulation:{pulse:v.pulse,radial:v.radial,skin:v.skin,cap:v.cap},
+    bleeding:{region:limb,severity:'arterial',side},
+    findings, hasSpineConcern:false, canSwallow:true, pain:null,
+    sample:{ s:'Massive bleeding, weakness, lightheaded', a:'None', m:pick(['None','A blood thinner']),
+      p:pick(['None','High blood pressure']), l:pick(['Lunch earlier','Coffee']), e:'Struck a sharp object / caught the limb — bleeding started at once.' },
+    triage:'immediate',
+    triageReason:'Uncontrolled arterial bleeding is the #1 preventable cause of death — IMMEDIATE, stop the bleed now.',
+    treatments:{
+      required:['tourniquet','packing','shock','activate'],
+      map:{
+        tourniquet:{ic:'🩹',label:'Apply a tourniquet high & tight above the wound',good:'For life-threatening limb bleeding that pressure won’t stop, a tourniquet 2–3" above the wound is the priority — tighten until bleeding stops and note the time.'},
+        packing:{ic:'🧻',label:'Pack the wound & hold firm pressure',good:'Pack a deep wound with gauze/cloth and press hard — direct pressure plus packing controls bleeding.'},
+        shock:{ic:'🧥',label:'Treat for shock (lay flat, keep warm)',good:'Major blood loss means shock — keep them warm and lying down.'},
+        activate:{ic:'📞',label:'Ensure rapid EMS transport',good:'This is load-and-go — confirm advanced help is coming fast.'},
+      },
+      harmful:{
+        elevate:{ic:'🦵',label:'Just elevate the limb and wait',bad:'Elevation alone won’t stop arterial bleeding — you need firm pressure/packing and a tourniquet.'},
+        loosen:{ic:'🔄',label:'Loosen the tourniquet every few minutes',bad:'Never periodically loosen a tourniquet — that restarts deadly bleeding. Leave it and note the time.'},
+        peek:{ic:'👀',label:'Keep lifting the dressing to check the wound',bad:'Lifting the dressing disrupts clotting — leave it in place and keep pressure.'},
+      }
+    },
+    teaching:['Life-threatening limb bleeding: direct pressure/packing, then a tourniquet high and tight.','Never loosen a tourniquet once applied — note the time it went on.','Treat for shock and get rapid transport.']
+  };
+}
+
+/* ---- Archetype: Anaphylaxis (epi-pen assist) ---- */
+function caseAnaphylaxis(ctx){ ctx=ctx||{};
+  const severe=ctx.hard?true:chance(0.5);
+  const trigger=pick(['a bee sting','peanuts','shellfish','a new medication']);
+  const v=vitalsNormal(); v.pulse=rnd(108,134); v.resp=rnd(22,30);
+  const findings={
+    head:[F('Lips and face swelling; anxious'+(severe?', voice getting hoarse':''),'crit','skin')],
+    neck:[F(severe?'Throat tightening — swelling of the airway':'Itchy throat','warn','skin')],
+    chest:[F(severe?'Wheezing, working hard to breathe':'Tight chest, mild wheeze','warn','pain')],
+    arms:[F('Raised red hives / welts over the skin','warn','skin')],
+  };
+  return {
+    archetype:'anaphylaxis', title:'Anaphylaxis (severe allergic reaction)',
+    age:rnd(8,70), sex:pick(['M','F']), forceWeather:null,
+    mechanism:`Sudden reaction after ${trigger}.`,
+    chief:'“My throat feels tight and I can’t breathe right.”',
+    responsiveness: severe?pick(['alert','verbal']):'alert', airway: severe?'swelling — at risk':'open',
+    breathing:{rate:v.resp,quality: severe?'wheezing, labored':'mild wheeze',adequate:!severe? true:true},
+    circulation:{pulse:v.pulse,radial:true,skin:'flushed, hives, warm',cap:'2–3 sec'},
+    bleeding:null, findings, hasSpineConcern:false, canSwallow:true,
+    pain:null,
+    sample:{ s:'Hives, swelling, throat tightness, trouble breathing', a:`Yes — ${trigger}`,
+      m:pick(['Carries an epinephrine auto-injector (EpiPen)','An antihistamine']), p:pick(['Severe allergies','Asthma']),
+      l:'Just ate / was stung', e:`Symptoms exploded within minutes of ${trigger}.` },
+    triage:'immediate',
+    triageReason:'Airway swelling and breathing difficulty from anaphylaxis is rapidly life-threatening — IMMEDIATE.',
+    treatments:{
+      required:['epi','position','activate','monitor'],
+      map:{
+        epi:{ic:'💉',label:'Help them use their epinephrine auto-injector',good:'Epinephrine is the treatment for anaphylaxis — assist the patient with their own prescribed auto-injector right away.'},
+        position:{ic:'🪑',label:'Position of comfort; sitting up eases breathing',good:'Let them sit up to breathe easier; be ready if they deteriorate.'},
+        activate:{ic:'📞',label:'Ensure EMS is en route (rapid transport)',good:'Even after epi, they need EMS — symptoms can return.'},
+        monitor:{ic:'👀',label:'Monitor airway & breathing closely',good:'Watch for worsening swelling; a second dose may be needed per protocol.'},
+      },
+      harmful:{
+        wait:{ic:'⏳',label:'Wait to see if it settles on its own',bad:'Anaphylaxis kills fast — don’t wait. Assist epinephrine immediately.'},
+        lay:{ic:'🛏️',label:'Lay them flat on their back',bad:'Someone struggling to breathe usually does worse flat — let them sit up.'},
+        water:{ic:'💧',label:'Give a big drink of water to “wash it down”',bad:'Don’t give fluids to a patient with a swelling, threatened airway — choking risk.'},
+      }
+    },
+    teaching:['Epinephrine is first-line for anaphylaxis — assist the patient’s own auto-injector fast.','Allergy history (the A in SAMPLE) is the key clue.','Always get EMS — symptoms can rebound after epi.']
+  };
+}
+
+/* ---- Archetype: Choking / airway obstruction ---- */
+function caseChoking(ctx){ ctx=ctx||{};
+  const unconscious=ctx.hard?chance(0.55):chance(0.25);
+  const findings={
+    neck:[F(unconscious?'Was seen choking, now limp':'Both hands clutching the throat (universal choking sign)','crit','pain')],
+    head:[F(unconscious?'Unresponsive, lips bluish (cyanotic)':'Panicked, can’t speak or cough, turning red','crit','skin')],
+    chest:[F(unconscious?'Little/no air movement':'No effective air movement — silent','crit','pain')],
+  };
+  return {
+    archetype:'choking', title: unconscious?'Choking → unresponsive':'Choking (conscious)',
+    age:rnd(3,80), sex:pick(['M','F']), forceWeather:null,
+    mechanism:'Suddenly choked while eating.',
+    chief: unconscious?'Was choking, now collapsed and unresponsive.':'Clutching throat, cannot speak or cough.',
+    responsiveness: unconscious?'unresponsive':'alert',
+    airway:'OBSTRUCTED', airwayObstructed:true,
+    breathing:{rate: unconscious?0:0,quality:'no effective air movement',adequate:false},
+    circulation:{pulse: unconscious?rnd(40,60):rnd(100,130),radial:!unconscious,skin: unconscious?'bluish, cool':'flushed, then dusky',cap:'2–3 sec'},
+    bleeding:null, findings, hasSpineConcern:false, canSwallow:false, pain:null,
+    sample:{ s:'Choking — obstructed airway', a:'Unknown', m:'Unknown', p:'Unknown',
+      l:'Was eating just now', e:'Food went down wrong; began choking suddenly.' },
+    triage:'immediate',
+    triageReason:'A blocked airway kills in minutes — this is the ultimate IMMEDIATE priority.',
+    treatments:{
+      required: unconscious?['cpr','look','activate']:['thrusts','encourage','activate'],
+      map:{
+        thrusts:{ic:'✊',label:'Abdominal thrusts (Heimlich) until it clears',good:'For a conscious choking adult who can’t breathe, give abdominal thrusts until the object comes out or they go unconscious.'},
+        encourage:{ic:'🗣️',label:'If they can cough, encourage hard coughing',good:'A patient still moving some air should be coached to cough — but a silent patient needs thrusts now.'},
+        cpr:{ic:'🫁',label:'Lower to the ground and start CPR; check mouth',good:'If a choking patient goes unresponsive, start CPR — chest compressions can expel the object; look in the mouth before breaths.'},
+        look:{ic:'👄',label:'Look in the mouth; remove object only if seen',good:'Only remove an object you can actually see — never a blind sweep.'},
+        activate:{ic:'📞',label:'Ensure 911/EMS is called immediately',good:'Get advanced help en route right away.'},
+      },
+      harmful:{
+        sweep:{ic:'🖐️',label:'Do a blind finger sweep of the throat',bad:'Never do a blind finger sweep — it can push the object deeper.'},
+        water:{ic:'💧',label:'Give water to “wash it down”',bad:'You can’t wash down an airway obstruction — it risks making things worse.'},
+        back:{ic:'🙅',label:'Stand by and wait for them to cough it up',bad:'A silent, unable-to-breathe patient won’t clear it alone — act now with thrusts.'},
+      }
+    },
+    teaching:['Can’t speak, cough, or breathe = give abdominal thrusts now.','If they go unresponsive, start CPR and look (don’t blindly sweep) for the object.','Encourage coughing only while they’re still moving air.']
+  };
+}
+
+/* ---- Archetype: Head & spinal injury ---- */
+function caseHeadSpine(ctx){ ctx=ctx||{};
+  const resp=ctx.hard?pick(['verbal','pain']):pick(['alert','verbal']);
+  const v=vitalsNormal(); v.pulse=rnd(58,92);
+  const findings={
+    head:[F('Deep scalp laceration & swelling; bruising behind the ear','crit','bleed'),
+          F('Confused, repeating questions','warn')],
+    eyes:[F(ctx.hard?'Pupils unequal — one blown':'Pupils equal but slow','warn','skin')],
+    neck:[F('Reports neck pain; tender midline over the spine','crit','pain')],
+    arms:[F(chance(0.5)?'Tingling / weakness in the hands':'Moves arms to command','info')],
+  };
+  return {
+    archetype:'headspine', title:'Head & suspected spinal injury',
+    age:rnd(16,78), sex:pick(['M','F']), forceWeather:null,
+    mechanism:'Fell from a roof / thrown in a crash — struck the head and neck.',
+    chief: resp==='alert'?'“My head is pounding and my neck really hurts.”':'Confused, groggy, slow to answer.',
+    responsiveness:resp, airway: (resp==='pain')?'at risk — use jaw-thrust':'open',
+    breathing:{rate:rnd(12,20),quality:'even',adequate:true},
+    circulation:{pulse:v.pulse,radial:true,skin:'warm, pink',cap:'<2 sec'},
+    bleeding:null, findings, hasSpineConcern:true, canSwallow: resp==='alert',
+    pain:{region:'the head and neck', o:'At the moment of impact', p:'Moving the head makes it much worse',
+      q:'Pounding headache; sharp neck pain', r:'From the neck down the spine', s:rnd(6,9), t:'Since the impact'},
+    sample:{ s:'Headache, neck pain, confusion', a:'None', m:pick(['None','A blood thinner']),
+      p:pick(['None','Prior concussion']), l:pick(['Lunch earlier','Unknown']), e:'Fell/was struck; hit the head and neck.' },
+    triage: (resp!=='alert')?'immediate':'delayed',
+    triageReason:(resp!=='alert')?'Altered mental status after a head injury is a red flag — IMMEDIATE.'
+      :'Alert with stable ABCs but a real spinal-injury mechanism — DELAYED, and protect the spine.',
+    treatments:{
+      required:['stabilize','minimize','monitor','activate'],
+      map:{
+        stabilize:{ic:'🤲',label:'Manual in-line stabilization of the head/neck',good:'Hold the head still in a neutral, in-line position — the core of spinal protection.'},
+        minimize:{ic:'🚫',label:'Minimize movement; do not move them unless unsafe',good:'Keep them still to protect the spine — only move for immediate danger or airway.'},
+        monitor:{ic:'👀',label:'Monitor mental status & airway (jaw-thrust if needed)',good:'Watch responsiveness; open the airway with a jaw-thrust to avoid moving the neck.'},
+        activate:{ic:'📞',label:'Ensure EMS is en route',good:'Head/spine injuries need advanced care and careful transport.'},
+      },
+      harmful:{
+        sit:{ic:'🪑',label:'Sit them up / help them walk it off',bad:'Never move a suspected spinal injury without need — you could cause paralysis.'},
+        turn:{ic:'🔄',label:'Turn the head to check the other side',bad:'Don’t turn or bend the head/neck — keep it in-line and still.'},
+        headtilt:{ic:'😮',label:'Open the airway with a head-tilt/chin-lift',bad:'For suspected spinal injury use a jaw-thrust, not a head-tilt, to avoid moving the neck.'},
+      }
+    },
+    teaching:['Suspect spinal injury with any significant head trauma — manual in-line stabilization.','Use a jaw-thrust (not head-tilt) to open the airway.','Altered mental status after head injury = immediate priority.']
+  };
+}
+
+/* per-archetype base difficulty (low tiers draw from diff ≤ 3) */
+caseFall.diff=2; caseCardiac.diff=3; caseDiabetic.diff=3; caseHeat.diff=2;
+caseSeizure.diff=3; caseStroke.diff=4; caseHypothermia.diff=2; caseBurns.diff=3;
+caseHemorrhage.diff=4; caseAnaphylaxis.diff=4; caseChoking.diff=5; caseHeadSpine.diff=5;
+
+const ARCHETYPES=[caseFall,caseCardiac,caseDiabetic,caseHeat,caseSeizure,caseStroke,caseHypothermia,caseBurns,
+  caseHemorrhage,caseAnaphylaxis,caseChoking,caseHeadSpine];
 
 /* ============================================================
    GAME STATE + CASE GENERATION
    ============================================================ */
-let G=null;
+let G=null, TIER=null;
+
+/* ---------- difficulty tiers (5-rank CERT ladder) ----------
+   Each rank escalates guidance, case complexity, scoring strictness, and time. */
+const TIERS=[
+  {n:1,name:'Recruit',   ic:'🔰', hint:true,  coach:true,  timed:false, win:0,  hardP:0.0,  thr:[72,48], desc:'Guided — next-step hints, full feedback, forgiving scoring, untimed.'},
+  {n:2,name:'Trainee',   ic:'🎓', hint:true,  coach:true,  timed:false, win:0,  hardP:0.15, thr:[78,55], desc:'Hints on, full feedback. Patients get a bit tougher.'},
+  {n:3,name:'Responder', ic:'🚑', hint:false, coach:true,  timed:true,  win:95, hardP:0.40, thr:[84,64], desc:'No hints. Scene clock runs. Altered patients appear.'},
+  {n:4,name:'Veteran',   ic:'🎖️', hint:false, coach:false, timed:true,  win:75, hardP:0.65, thr:[90,74], desc:'No hints, terse feedback, strict scoring, tighter clock.'},
+  {n:5,name:'Specialist',ic:'⭐', hint:false, coach:false, timed:true,  win:58, hardP:0.85, thr:[95,84], desc:'Expert — hardest patients, tightest clock and scoring.'},
+];
+function tierByN(n){ return TIERS.find(t=>t.n===n)||TIERS[0]; }
+
+/* ---------- progress (per-tier stars) ---------- */
+function loadProg(){ try{ return JSON.parse(localStorage.getItem('cert_assess_progress'))||{}; }catch(e){ return {}; } }
+function sumTierStars(p){ p=p||loadProg(); return p.tiers?Object.values(p.tiers).reduce((a,t)=>a+(t.stars||0),0):0; }
+
+/* ---------- tier-select start screen ---------- */
+function openTierSelect(){
+  const p=loadProg();
+  const cards=TIERS.map(t=>{
+    const td=(p.tiers&&p.tiers[t.n])||null, stars=td?td.stars:0;
+    const starStr=[1,2,3].map(i=>i<=stars?'★':'☆').join('');
+    const best=td&&td.best?`best ${td.best}%`:'not attempted';
+    return `<button class="tier-card" onclick="startTier(${t.n})">
+      <span class="tc-ic">${t.ic}</span>
+      <span class="tc-body"><span class="tc-name">${t.name}</span><span class="tc-desc">${t.desc}</span></span>
+      <span class="tc-side"><span class="tc-stars">${starStr}</span><span class="tc-best">${best}</span></span></button>`;
+  }).join('');
+  openOv(`<h2>🩺 Patient Assessment</h2>
+    <p style="text-align:center;color:var(--text-muted);margin-bottom:4px">Choose a difficulty. Every run randomizes a fresh patient.</p>
+    <p style="text-align:center;color:var(--gold);font-weight:700;font-size:.82rem;margin-bottom:12px">★ ${sumTierStars(p)} / 15 mastery</p>
+    <div class="tier-list">${cards}</div>`);
+}
+function startTier(n){ SND.open(); TIER=tierByN(n); closeOv(); newPatient(); }
 
 function generateCase(){
-  const gen=pick(ARCHETYPES);
-  const c=gen();
+  const ctx={ hard: chance(TIER?TIER.hardP:0) };
+  // low tiers draw from the simpler case pool; higher tiers use all cases
+  let pool = (TIER && TIER.n<=2) ? ARCHETYPES.filter(a=>(a.diff||3)<=3) : ARCHETYPES;
+  const gen=pick(pool.length?pool:ARCHETYPES);
+  const c=gen(ctx);
+  c.hardCase=ctx.hard;
   // Scene: weather (respect archetype forcing) + 1-2 hazards
   c.weather = c.forceWeather ? WEATHERS.find(w=>w.id===c.forceWeather) : pick(WEATHERS);
   c.hazards = shuffle(HAZARDS).slice(0,rnd(1,2));
@@ -743,13 +984,25 @@ function generateCase(){
   c.shirt=pick(SHIRTS);
   c.pants=pick(PANTS);
   c.hairStyle=(c.sex==='F'?chance(0.6):chance(0.15))?'long':'short';
-  // Build a quick "known" scaffold the UI fills in as the student assesses
+  // hard cases add a distractor finding to make head-to-toe less obvious
+  if(ctx.hard) addComplexity(c);
+  // the one primary-survey life-threat the clock can penalize if it's too slow
+  c.primaryCritical = c.bleeding ? 'bleed' : null;
   return c;
+}
+function addComplexity(c){
+  const used=Object.keys(c.findings);
+  const pool=['arms','legs','abdomen','chest','head'].filter(r=>!used.includes(r));
+  if(pool.length && chance(0.7))
+    c.findings[pick(pool)]=[F(pick(['Old surgical scar, well healed','Minor bruise, non-tender','Small healed abrasion','Tattoo — no injury']),'info')];
 }
 
 function newPatient(){
+  if(!TIER) TIER=TIERS[0];
+  stopClock();
   G={
     case:generateCase(),
+    tier:TIER.n,
     phase:0,
     view:'front',
     examined:{},        // region -> true once examined
@@ -767,13 +1020,44 @@ function newPatient(){
     triageChoice:null,
     treatment:{applied:{},harmful:{}},
     score:{ flags:{}, penalties:[] },
+    clock:{ t0:null, elapsed:0, criticalDone:false, deteriorated:false },
+    saved:false,
     log:[],
   };
   document.getElementById('log').innerHTML='';
   logMsg('Dispatched: possible medical/trauma patient. Size up the scene.','');
+  updateTierBadge();
   renderScene(); renderPatient(); renderVitals(); renderPhaseBar(); renderPhase();
+  updateClockDisplay();
   closeOv();
 }
+
+/* ---------- scene clock / time pressure ---------- */
+let clockTimer=null;
+function startClock(){ if(!G) return; G.clock.t0=Date.now();
+  if(clockTimer) clearInterval(clockTimer); clockTimer=setInterval(tickClock,1000); tickClock(); }
+function stopClock(){ if(clockTimer){ clearInterval(clockTimer); clockTimer=null; } }
+function tickClock(){ if(!G||!G.clock.t0) return;
+  G.clock.elapsed=Math.floor((Date.now()-G.clock.t0)/1000);
+  updateClockDisplay();
+  const c=G.case, cl=G.clock, T=tierByN(G.tier);
+  if(T.timed && T.win && c.triage==='immediate' && c.primaryCritical && !cl.criticalDone && !cl.deteriorated && cl.elapsed>T.win){
+    cl.deteriorated=true; SND.bad();
+    G.score.penalties.push('Patient deteriorated — a critical life-threat wasn’t controlled fast enough.');
+    c.circulation.pulse=Math.min(160,c.circulation.pulse+22); c.circulation.radial=false;
+    logMsg('⏱ Patient is deteriorating — too slow on the critical intervention!','bad');
+    renderVitals();
+  }
+}
+function updateClockDisplay(){ const el=document.getElementById('clock'); if(!el||!G) return;
+  const T=tierByN(G.tier), s=G.clock.elapsed||0;
+  el.textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+  const wrap=document.getElementById('sb-clock');
+  if(wrap){ wrap.style.display = (T.timed && G.clock.t0) ? 'flex' : 'none';
+    const danger=T.timed&&!G.clock.criticalDone&&G.case.primaryCritical&&G.case.triage==='immediate'&&T.win&&s>T.win-20;
+    wrap.classList.toggle('urgent',!!danger); }
+}
+function updateTierBadge(){ const b=document.getElementById('tier-name'); if(b&&G) b.textContent=tierByN(G.tier).name; }
 
 function logMsg(t,kind){ if(!G)return; G.log.push({t,kind});
   const ul=document.getElementById('log'); const li=document.createElement('li');
@@ -932,7 +1216,7 @@ function approachPatient(){
   if(!G.ppe.gloves){ SND.bad(); openOv(`<h2>Stop — BSI first</h2><p style="text-align:center;color:var(--text-muted)">
     Put on gloves (minimum PPE) before you make patient contact.</p>
     <div class="btn-row"><button class="btn primary" onclick="closeOv();suView('ppe')">Don PPE</button></div>`); return; }
-  SND.open(); logMsg('Approached patient with BSI in place.','good'); nextPhase();
+  SND.open(); logMsg('Approached patient with BSI in place.','good'); startClock(); nextPhase();
 }
 
 /* ---------- PHASE 2: Primary Assessment ---------- */
@@ -962,7 +1246,11 @@ function renderPrimary(el,P){
     <button class="act primary full" ${ready?'':'disabled'} onclick="finishPrimary()">
       ${ready?'Primary complete — go to Triage →':'Complete the primary survey (ABC + bleeding)'}</button>`;
 }
-function primFb(kind,html){ G.primary.lastFb=`<div class="feedback ${kind}">${html}</div>`;
+/* higher tiers get terse feedback — the teaching detail is deferred to the debrief */
+function maybeTerse(html){ if(!TIER||TIER.coach) return html;
+  const m=html.match(/<b>(.*?)<\/b>/); if(m) return m[1];
+  const txt=html.replace(/<[^>]+>/g,''); return txt.split(/(?<=[.!])\s/)[0]; }
+function primFb(kind,html){ G.primary.lastFb=`<div class="feedback ${kind}">${maybeTerse(html)}</div>`;
   const s=document.getElementById('prim-fb'); if(s) s.innerHTML=G.primary.lastFb; }
 
 function pConsent(){ const c=G.case; G.contactMade=true; SND.open();
@@ -993,8 +1281,12 @@ function pAirway(){ const c=G.case; SND.open(); G.primary.airway=true; G.known.a
 }
 function pBreathing(){ const c=G.case, b=c.breathing; SND.open(); G.primary.breathing=true; G.known.breathing=true; flag('breathing',1);
   const fast=b.rate>29;
-  primFb(fast?'info':'good',`<b>Breathing: ${b.rate}/min</b>, ${b.quality}.`+(fast?' That’s fast (>30) — a red flag for triage.':' Adequate.'));
-  logMsg(`Breathing checked: ${b.rate}/min, ${b.quality}.`,'good'); renderVitals(); renderPhase();
+  if(b.adequate===false){
+    primFb('bad',`<b>Breathing is INADEQUATE — ${b.quality}.</b> This is a life-threat: the airway/breathing must be fixed now (see Treatment).`);
+  } else {
+    primFb(fast?'info':'good',`<b>Breathing: ${b.rate}/min</b>, ${b.quality}.`+(fast?' That’s fast (>30) — a red flag for triage.':' Adequate.'));
+  }
+  logMsg(`Breathing checked: ${b.rate}/min, ${b.quality}.`,b.adequate===false?'bad':'good'); renderVitals(); renderPhase();
 }
 function pCirc(){ const c=G.case, ci=c.circulation; SND.open(); G.primary.circ=true; G.known.circulation=true; flag('circulation',1);
   const shock=/pale|cool|clammy|sweaty/.test(ci.skin)||ci.pulse>110||!ci.radial;
@@ -1017,6 +1309,7 @@ function pBleedScan(){ const c=G.case; SND.open(); G.primary.bleedScan=true;
 function describeBleed(c){ const r=c.bleeding.region, side=c.bleeding.side?c.bleeding.side+' ':'';
   return `steady dark-red bleeding from the ${side}${r==='legs'?'lower leg':r}`; }
 function pControlBleed(){ SND.good(); G.primary.bleedCtrl=true; G.known.bleedingControlled=true; flag('bleeding',1);
+  if(G.case.primaryCritical==='bleed') G.clock.criticalDone=true;
   primFb('good','<b>Direct pressure controls the bleeding.</b> The top life-threat is handled — now finish your ABCs.');
   logMsg('Controlled major bleeding with direct pressure.','good'); renderPhase();
 }
@@ -1039,11 +1332,11 @@ const TAGS={
 };
 function renderTriage(el,P){
   const c=G.case, done=!!G.triageChoice;
-  const rpmResp=c.breathing.rate, respFast=rpmResp>30;
+  const rpmResp=c.breathing.rate, respFast=rpmResp>30, apnea=(c.breathing.adequate===false);
   const perfOk=c.circulation.radial && !/3|4/.test(c.circulation.cap);
   const mentalOk=(c.responsiveness==='alert');
   const rpm=`<div class="findings"><div class="f-region">START · R-P-M</div><ul>
-    <li><b>Respirations:</b> ${rpmResp}/min ${respFast?'— <span style="color:var(--danger)">over 30 (Immediate)</span>':'— under 30'}</li>
+    <li><b>Respirations:</b> ${apnea?'<span style="color:var(--danger)">no effective breathing (Immediate)</span>':rpmResp+'/min '+(respFast?'— <span style="color:var(--danger)">over 30 (Immediate)</span>':'— under 30')}</li>
     <li><b>Perfusion:</b> ${c.circulation.radial?'radial pulse present':'<span style="color:var(--danger)">no radial pulse</span>'}, cap refill ${c.circulation.cap} ${perfOk?'':'<span style="color:var(--danger)">(Immediate)</span>'}</li>
     <li><b>Mental status:</b> ${mentalOk?'follows simple commands':'<span style="color:var(--danger)">cannot follow commands</span>'} (AVPU ${AVPU_DESC[c.responsiveness].l})</li>
   </ul></div>`;
@@ -1166,7 +1459,7 @@ function renderTreatment(el,P){
     <button class="act primary full" ${reqDone?'':'disabled'} onclick="nextPhase()">
       ${reqDone?'Care complete — hand off to EMS →':'Apply the care this patient needs'}</button>`;
 }
-function txFb(kind,html){ G.treatment.lastFb=`<div class="feedback ${kind}">${html}</div>`;
+function txFb(kind,html){ G.treatment.lastFb=`<div class="feedback ${kind}">${maybeTerse(html)}</div>`;
   const s=document.getElementById('tx-fb'); if(s) s.innerHTML=G.treatment.lastFb; }
 function doTx(key,kind){
   const c=G.case, tx=c.treatments, tr=G.treatment;
@@ -1204,19 +1497,30 @@ function computeScore(){
   add('Treatment & care',14, appliedReq/req.length, appliedReq+'/'+req.length+' key interventions');
   const totW=items.reduce((a,i)=>a+i.weight,0);
   const pen=G.score.penalties.slice();
+  const T=tierByN(G.tier);
   let pct=Math.round(items.reduce((a,i)=>a+i.weight*i.score,0)/totW*100);
   pct=Math.max(0,pct-pen.length*8);
-  const stars=(pct>=88&&pen.length===0)?3:((pct>=70&&pen.length<=1)?2:1);
-  return {items,pct,stars,pen};
+  let timeNote=null;
+  if(T.timed && G.clock.elapsed){
+    const par=(G.case.triage==='immediate'?150:210);
+    if(G.clock.elapsed>par){ pct=Math.max(0,pct-5); timeNote='Slow on scene — '+fmtTime(G.clock.elapsed)+' (par '+fmtTime(par)+')'; }
+  }
+  const thr=T.thr;   // per-tier star thresholds get stricter with rank
+  const stars=(pct>=thr[0]&&pen.length===0)?3:((pct>=thr[1]&&pen.length<=1)?2:1);
+  return {items,pct,stars,pen,timeNote,elapsed:G.clock.elapsed||0};
 }
+function fmtTime(s){ return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
 function saveProgress(stars,pct){
-  let p; try{ p=JSON.parse(localStorage.getItem('cert_assess_progress'))||{}; }catch(e){ p={}; }
-  p.completed=true; p.stars=Math.max(p.stars||0,stars); p.best=Math.max(p.best||0,pct); p.plays=(p.plays||0)+1;
+  const p=loadProg(); p.completed=true; p.tiers=p.tiers||{};
+  const tn=G.tier, cur=p.tiers[tn]||{stars:0,best:0,plays:0};
+  cur.stars=Math.max(cur.stars||0,stars); cur.best=Math.max(cur.best||0,pct); cur.plays=(cur.plays||0)+1;
+  p.tiers[tn]=cur;
+  p.stars=sumTierStars(p); p.best=Math.max(p.best||0,pct); p.plays=(p.plays||0)+1; // mirrors for the index
   localStorage.setItem('cert_assess_progress',JSON.stringify(p));
 }
 function renderDebrief(el,P){
-  const c=G.case, r=computeScore();
-  if(!G.saved){ G.saved=true; SND.win(); saveProgress(r.stars,r.pct); logMsg('Handed off to EMS — scenario complete.','good'); }
+  const c=G.case, r=computeScore(), T=tierByN(G.tier);
+  if(!G.saved){ G.saved=true; stopClock(); SND.win(); saveProgress(r.stars,r.pct); logMsg('Handed off to EMS — scenario complete.','good'); }
   const starStr=[1,2,3].map(i=>i<=r.stars?'★':'☆').join('');
   const rating=r.stars===3?'Excellent':(r.stars===2?'Good':'Completed');
   el.innerHTML=panelHead(P,'Hand-off complete. Here’s how your assessment went.')+`
@@ -1224,7 +1528,7 @@ function renderDebrief(el,P){
       <div style="font-size:2.1rem;color:var(--gold);letter-spacing:5px">${starStr}</div>
       <div style="font-weight:800;color:var(--primary-light);font-size:1.05rem">${rating} · ${r.pct}%</div>
       <div style="font-size:.82rem;color:var(--text-muted);margin-top:4px">
-        ${c.name}, ${c.age} — ${c.title}. Correct triage: ${tagChip(c.triage)}</div>
+        ${T.ic} ${T.name}${T.timed?' · ⏱ '+fmtTime(r.elapsed):''} — ${c.name}, ${c.age}, ${c.title}. Correct triage: ${tagChip(c.triage)}</div>
     </div>
     <div class="findings"><div class="f-region">Scorecard</div>
       ${r.items.map(i=>{ const pctI=Math.round(i.score*100);
@@ -1234,10 +1538,12 @@ function renderDebrief(el,P){
           <span>${mk} ${i.label}${i.detail?` <span style="color:var(--text-muted)">(${i.detail})</span>`:''}</span>
           <span style="color:${col};font-weight:700;flex-shrink:0">${pctI}%</span></div>`; }).join('')}
     </div>
+    ${r.timeNote?`<div class="feedback bad" style="border-color:var(--warn)">⏱ ${r.timeNote}</div>`:''}
     ${r.pen.length?`<div class="feedback bad"><b>Critical flags</b><ul style="margin:4px 0 0 16px">${r.pen.map(p=>`<li>${p}</li>`).join('')}</ul></div>`:''}
     <div class="feedback info"><b>Teaching points</b><ul style="margin:4px 0 0 16px">${c.teaching.map(t=>`<li>${t}</li>`).join('')}</ul></div>
     <div class="btn-row">
       <button class="btn primary" onclick="newPatient()">🔄 New Patient</button>
+      <button class="btn" onclick="openTierSelect()">🎚️ Levels</button>
       <a class="btn" href="index.html">🏠 Menu</a>
     </div>`;
 }
@@ -1253,9 +1559,11 @@ function renderScene(){
       <span><span class="sb-lbl">Weather</span><br>${c.weather.t}</span></div>
     <div class="sb-sep"></div>
     <div class="sb-item"><span class="sb-ic">⚠️</span>
-      <span><span class="sb-lbl">Scene hazards</span><br>${hz}</span></div>`;
+      <span><span class="sb-lbl">Scene hazards</span><br>${hz}</span></div>
+    <div class="sb-clock" id="sb-clock" title="Scene clock">⏱ <span id="clock">0:00</span></div>`;
   const meta=document.getElementById('patient-meta');
   meta.innerHTML=`${c.name} · ${c.age} y/o ${c.sex==='M'?'male':'female'}<small>${c.chief}</small>`;
+  updateClockDisplay();
 }
 
 function renderVitals(){
@@ -1271,11 +1579,27 @@ function renderVitals(){
 }
 
 function updateStageHint(){
-  const P=PHASES[G.phase]; const h=document.getElementById('stage-hint');
+  const P=PHASES[G.phase], h=document.getElementById('stage-hint');
+  if(tierByN(G.tier).hint && P.id!=='debrief'){ h.innerHTML='<span class="next-hint">▶ Next: '+getNextHint()+'</span>'; return; }
   if(P.id==='sizeup') h.textContent='Complete your scene size-up before approaching the patient.';
   else if(P.id==='secondary') h.textContent='Click each body region to examine it head-to-toe.';
   else if(P.id==='primary') h.textContent='Assess responsiveness and ABCs using the panel →';
   else h.textContent='';
+}
+function getNextHint(){
+  const P=PHASES[G.phase], s=G.sizeup, pr=G.primary, c=G.case;
+  if(P.id==='sizeup'){ if(!s.ppeDone) return 'put on your PPE (BSI)'; if(!s.sceneDone) return 'size up scene safety';
+    if(!s.resDone) return 'confirm patients & call for resources'; return 'approach the patient'; }
+  if(P.id==='primary'){ if(!pr.consent) return 'introduce yourself & get consent'; if(!pr.avpu) return 'check responsiveness (AVPU)';
+    if(!pr.airway) return 'check the airway'; if(!pr.breathing) return 'check breathing'; if(!pr.circ) return 'check circulation';
+    if(!pr.bleedScan) return 'scan for major bleeding'; if(c.bleeding&&!pr.bleedCtrl) return 'control the major bleeding now';
+    return 'go to triage'; }
+  if(P.id==='triage') return 'apply R-P-M, then tag the patient';
+  if(P.id==='secondary'){ const ex=REGIONS.filter(r=>G.examined[r]).length; if(ex<9) return 'examine the whole body (don’t forget the back)';
+    if(Object.keys(G.interview.sample).length<6) return 'take the SAMPLE history';
+    if(c.pain&&Object.keys(G.interview.opqrst).length<6) return 'ask OPQRST about the pain'; return 'move to treatment'; }
+  if(P.id==='treatment') return 'give the care this patient needs — avoid harmful options';
+  return '';
 }
 
 /* ---------- SVG patient ---------- */
@@ -1310,7 +1634,7 @@ function regionFlagged(reg){ // any discovered critical/warn finding shown on th
 }
 
 /* marker coordinates (front / back) for the current viewBox 0 0 220 470 */
-const MK_FRONT={head:[110,44],eyes:[110,50],neck:[110,92],chest:[110,140],abdomen:[110,196],
+const MK_FRONT={head:[92,40],eyes:[126,48],neck:[110,92],chest:[110,140],abdomen:[110,196],
   pelvis:[110,238],arms:[[60,168],[160,168]],legs:[[92,360],[128,360]],back:null};
 const MK_BACK={head:[110,44],neck:[110,92],back:[110,170],pelvis:[110,238],
   arms:[[60,168],[160,168]],legs:[[92,360],[128,360]],eyes:null,chest:null,abdomen:null};
@@ -1450,7 +1774,7 @@ document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeOv(); });
 ['pointerdown','keydown','touchstart'].forEach(ev=>
   window.addEventListener(ev,function once(){ SND.arm(); },{once:true}));
 SND.init();
-newPatient();
+openTierSelect();
 </script>
 </body>
 </html>

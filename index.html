@@ -270,15 +270,19 @@ function buildRecord(){
   const xs=jget('cert_xword_stars',{}); const xStars=sumVals(xs); const xDone=Object.keys(xs).length;
   const streak=(jget('cert_xword_streak',{streak:0}).streak)||0;
   const dailyDone=Object.keys(jget('cert_xword_daily',{})).length;
-  // Game 5 — Patient Assessment
+  // Game 5 — Patient Assessment (per-tier stars, 5 tiers × 3)
   const asmt=jget('cert_assess_progress',null);
-  const asmtStars=asmt?asmt.stars||0:0;
-  const asmtStat=asmt&&asmt.completed?`Best ${asmt.best||0}% · ${asmt.plays||0} patient${(asmt.plays||0)===1?'':'s'} assessed`:'Not completed yet';
+  const asmtTiers=(asmt&&asmt.tiers)?asmt.tiers:{};
+  const asmtStars=Object.values(asmtTiers).reduce((a,t)=>a+(t.stars||0),0);
+  const asmtDone=Object.keys(asmtTiers).length;
+  const asmtBest=Object.values(asmtTiers).reduce((a,t)=>Math.max(a,t.best||0),0);
+  const asmtMastered=Object.values(asmtTiers).some(t=>(t.stars||0)>=3);
+  const asmtStat=(asmt&&asmt.completed)?`${asmtDone}/5 tiers played · best ${asmtBest}%`:'Not completed yet';
 
   const rows=[
     {ic:'🎯',name:'Training Scenarios',stat:`${g1done}/${g1total} modules attempted`,stars:g1stars,max:g1max},
     {ic:'🚒',name:'Fire Scene RPG',stat:rpgStat,stars:rpgStars,max:3},
-    {ic:'🩺',name:'Patient Assessment',stat:asmtStat,stars:asmtStars,max:3},
+    {ic:'🩺',name:'Patient Assessment',stat:asmtStat,stars:asmtStars,max:15},
     {ic:'🧩',name:'Hazmat Placard Match',stat:`${placDone}/5 levels played`,stars:placStars,max:15},
     {ic:'✏️',name:'CERT Crossword',stat:`${xDone}/5 levels · 🔥 ${streak}-day streak · ${dailyDone} daily solved`,stars:xStars,max:15},
   ];
@@ -304,7 +308,7 @@ function buildRecord(){
   const badges=[
     {ic:'🎓',name:'First Steps',  earned:totStars>0,            desc:'Earn your first star in any game.'},
     {ic:'🩺',name:'Field Medic',  earned:!!(rpg&&rpg.completed),desc:'Complete the Fire Scene RPG mission.'},
-    {ic:'🚑',name:'Lifesaver',    earned:asmtStars>=3,          desc:'Earn 3 stars in Patient Assessment.'},
+    {ic:'🚑',name:'Lifesaver',    earned:asmtMastered,          desc:'Earn 3 stars on any Patient Assessment tier.'},
     {ic:'🧩',name:'Placard Pro',  earned:placStars>=15,         desc:'Earn 3 stars on all 5 Placard levels.'},
     {ic:'✏️',name:'Wordsmith',    earned:xStars>=15,            desc:'Earn 3 stars on all 5 Crossword levels.'},
     {ic:'📚',name:'Scholar',      earned:g1done>=g1total,       desc:'Attempt all 9 Scenario modules.'},
