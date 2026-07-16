@@ -1,0 +1,1456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script src="theme.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wallingford CERT — Patient Assessment</title>
+<style>
+  :root{
+    --bg:#0e1208; --surface:#1a2012; --surface2:#243018; --border:#3a5228;
+    --primary:#5aaa3a; --primary-dark:#4a8f2e; --primary-light:#7ac95a;
+    --text:#eef2e8; --text-muted:#8aa87a; --radius:12px; --gold:#e8c33a;
+    --danger:#ef4444; --warn:#f59e0b; --info:#56d4ff;
+    --imm:#e5484d; --del:#f2c94c; --min:#27ae60; --dec:#3a3a3a;
+    --skin:#d8a67d; --skin-line:#b07f56;
+  }
+  [data-theme="light"]{
+    --bg:#eef3e7; --surface:#ffffff; --surface2:#e7eedd; --border:#c2d2af;
+    --primary:#41902e; --primary-dark:#317022; --primary-light:#5aaa3a;
+    --text:#16210d; --text-muted:#5c6e4a; --muted:#5c6e4a;
+  }
+  [data-theme="light"] header{background:#e3ecd6;}
+  [data-theme="light"] footer{background:#e3ecd6;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);
+    min-height:100vh;display:flex;flex-direction:column;-webkit-tap-highlight-color:transparent;}
+
+  header{width:100%;background:#111a09;border-bottom:3px solid var(--primary);
+    padding:10px 22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  #cert-logo{height:48px;width:auto;}
+  .logo-badge{background:var(--primary);color:#000;font-weight:900;font-size:1.05rem;
+    letter-spacing:.1em;padding:6px 12px;border-radius:6px;}
+  header h1{font-size:1.12rem;font-weight:700;color:var(--primary);}
+  header p{font-size:0.76rem;color:var(--text-muted);}
+  .hdr-text{flex:1 1 0;min-width:0;}
+  .hdr-actions{margin-left:auto;display:flex;align-items:center;gap:9px;}
+  .home-link{color:var(--primary-light);text-decoration:none;font-size:0.85rem;font-weight:600;
+    border:1px solid var(--border);padding:8px 14px;border-radius:8px;transition:.15s;white-space:nowrap;}
+  .home-link:hover{background:var(--surface2);border-color:var(--primary);}
+  .icon-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);
+    font-size:1rem;line-height:1;padding:8px 11px;border-radius:8px;cursor:pointer;transition:.15s;}
+  .icon-btn:hover{border-color:var(--primary);}
+
+  /* ---- phase tracker ---- */
+  .phasebar{display:flex;gap:6px;padding:10px 18px;background:var(--surface);
+    border-bottom:1px solid var(--border);overflow-x:auto;}
+  .phase-pill{display:flex;align-items:center;gap:7px;flex:0 0 auto;padding:6px 12px;border-radius:20px;
+    border:1px solid var(--border);background:var(--bg);font-size:0.78rem;font-weight:600;color:var(--text-muted);
+    white-space:nowrap;transition:.2s;}
+  .phase-pill .pn{display:inline-flex;align-items:center;justify-content:center;width:19px;height:19px;
+    border-radius:50%;background:var(--surface2);color:var(--text-muted);font-size:0.7rem;font-weight:800;}
+  .phase-pill.active{border-color:var(--primary);color:var(--primary-light);background:var(--surface2);}
+  .phase-pill.active .pn{background:var(--primary);color:#06210a;}
+  .phase-pill.done{color:var(--primary);}
+  .phase-pill.done .pn{background:var(--primary-dark);color:#eafce0;}
+  .phase-pill.done .pn::after{content:'✓';}
+  .phase-pill.done .pn .num{display:none;}
+
+  /* ---- layout ---- */
+  main{flex:1;width:100%;max-width:1180px;margin:0 auto;padding:16px 18px 26px;
+    display:grid;grid-template-columns:minmax(300px,1fr) minmax(320px,1.15fr);gap:18px;align-items:start;}
+
+  /* scene banner */
+  .scene-banner{grid-column:1/-1;display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:11px 16px;}
+  .sb-item{display:flex;align-items:center;gap:7px;font-size:0.84rem;color:var(--text);}
+  .sb-item .sb-ic{font-size:1.15rem;}
+  .sb-item .sb-lbl{color:var(--text-muted);font-size:0.72rem;text-transform:uppercase;letter-spacing:.06em;}
+  .sb-hazard{color:var(--warn);font-weight:700;}
+  .sb-sep{width:1px;align-self:stretch;background:var(--border);}
+
+  /* patient stage */
+  .stage{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:14px;position:sticky;top:12px;display:flex;flex-direction:column;gap:10px;}
+  .stage-top{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  .patient-meta{font-size:0.86rem;color:var(--text);font-weight:600;}
+  .patient-meta small{display:block;color:var(--text-muted);font-weight:400;font-size:0.74rem;margin-top:1px;}
+  .flip-btn{background:var(--surface2);border:1px solid var(--border);color:var(--primary-light);
+    font-size:0.76rem;font-weight:700;padding:6px 11px;border-radius:8px;cursor:pointer;transition:.15s;white-space:nowrap;}
+  .flip-btn:hover{border-color:var(--primary);background:var(--border);}
+  .body-wrap{position:relative;width:100%;display:flex;justify-content:center;
+    background:radial-gradient(ellipse at 50% 42%,rgba(90,170,58,.10),transparent 70%);border-radius:10px;padding:6px 0;}
+  svg.patient{width:auto;height:min(52vh,440px);max-width:100%;display:block;touch-action:manipulation;}
+  .hot{fill:transparent;stroke:transparent;stroke-width:2;cursor:pointer;transition:fill .12s,stroke .12s;}
+  .hot:hover{fill:rgba(122,201,90,.16);stroke:var(--primary-light);}
+  .hot.examined{stroke:rgba(122,201,90,.5);stroke-dasharray:3 3;}
+  .hot.flagged{fill:rgba(229,72,77,.14);}
+  .region-label{position:absolute;pointer-events:none;background:#0a0e07ee;color:var(--text);
+    border:1px solid var(--primary);font-size:0.72rem;font-weight:700;padding:3px 8px;border-radius:6px;
+    transform:translate(-50%,-130%);white-space:nowrap;opacity:0;transition:opacity .12s;z-index:5;}
+  .stage-hint{text-align:center;font-size:0.76rem;color:var(--text-muted);min-height:1.1em;}
+
+  /* vitals strip */
+  .vitals{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;}
+  .vital{background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:7px 6px;text-align:center;}
+  .vital .v-lbl{font-size:0.62rem;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);}
+  .vital .v-val{font-size:0.98rem;font-weight:800;color:var(--text);margin-top:2px;}
+  .vital .v-val.unk{color:var(--text-muted);font-weight:600;}
+  .vital.hi .v-val{color:var(--danger);} .vital.warn .v-val{color:var(--warn);}
+
+  /* context panel */
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:16px 16px 18px;display:flex;flex-direction:column;gap:12px;min-height:340px;}
+  .panel-head{display:flex;align-items:flex-start;gap:10px;}
+  .panel-head .ph-ic{font-size:1.6rem;line-height:1;}
+  .panel-head h2{font-size:1.12rem;color:var(--primary);font-weight:800;}
+  .panel-head p{font-size:0.8rem;color:var(--text-muted);line-height:1.45;margin-top:2px;}
+
+  .act-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+  @media (max-width:420px){ .act-grid{grid-template-columns:1fr;} }
+  .act{display:flex;align-items:center;gap:9px;text-align:left;background:var(--surface2);
+    border:1px solid var(--border);color:var(--text);font-size:0.85rem;font-weight:600;
+    padding:11px 12px;border-radius:9px;cursor:pointer;transition:.14s;font-family:inherit;}
+  .act:hover:not(:disabled){border-color:var(--primary);background:var(--border);transform:translateY(-1px);}
+  .act:disabled{opacity:.45;cursor:default;}
+  .act.done{border-color:var(--primary-dark);}
+  .act.done::after{content:'✓';margin-left:auto;color:var(--primary);font-weight:800;}
+  .act .a-ic{font-size:1.15rem;flex-shrink:0;}
+  .act.full{grid-column:1/-1;}
+  .act.primary{background:var(--primary);color:#06210a;border-color:var(--primary);font-weight:800;justify-content:center;}
+  .act.primary:hover:not(:disabled){background:var(--primary-light);}
+  .act.warnbtn{color:var(--warn);}
+  .act.dangerbtn{color:#ff9b9b;}
+
+  .choice-q{font-size:0.9rem;font-weight:700;color:var(--text);margin-bottom:2px;}
+  .choices{display:flex;flex-direction:column;gap:8px;}
+  .choice{display:flex;align-items:center;gap:9px;text-align:left;background:var(--surface2);
+    border:1px solid var(--border);color:var(--text);font-size:0.85rem;padding:10px 12px;border-radius:9px;
+    cursor:pointer;transition:.14s;font-family:inherit;}
+  .choice:hover{border-color:var(--primary);background:var(--border);}
+  .choice.correct{border-color:var(--min);background:rgba(39,174,96,.14);}
+  .choice.wrong{border-color:var(--danger);background:rgba(239,68,68,.12);}
+  .choice .c-num{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;
+    border-radius:5px;background:var(--bg);border:1px solid var(--border);font-size:0.72rem;font-weight:800;
+    color:var(--text-muted);flex-shrink:0;}
+
+  .findings{background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:10px 12px;
+    font-size:0.84rem;line-height:1.5;color:var(--text);}
+  .findings .f-region{font-weight:800;color:var(--primary-light);font-size:0.78rem;text-transform:uppercase;
+    letter-spacing:.05em;margin-bottom:3px;}
+  .findings ul{margin:0;padding-left:18px;} .findings li{margin:2px 0;}
+  .findings .f-none{color:var(--text-muted);font-style:italic;}
+  .tag-line{display:inline-block;font-size:0.7rem;font-weight:800;padding:2px 8px;border-radius:5px;margin-left:6px;}
+
+  .feedback{border-radius:9px;padding:11px 13px;font-size:0.85rem;line-height:1.5;border:1px solid;}
+  .feedback.good{border-color:var(--min);background:rgba(39,174,96,.12);}
+  .feedback.bad{border-color:var(--danger);background:rgba(239,68,68,.10);}
+  .feedback.info{border-color:var(--info);background:rgba(86,212,255,.08);}
+  .feedback b{color:var(--primary-light);}
+
+  .interview{display:flex;flex-direction:column;gap:10px;}
+  .iv-tabs{display:flex;gap:6px;}
+  .iv-tab{flex:1;text-align:center;background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);
+    font-size:0.8rem;font-weight:700;padding:7px;border-radius:8px;cursor:pointer;transition:.14s;}
+  .iv-tab.active{border-color:var(--primary);color:var(--primary-light);background:var(--bg);}
+  .iv-q{display:flex;flex-direction:column;gap:6px;}
+  .iv-ask{display:flex;align-items:center;gap:8px;text-align:left;background:var(--surface2);border:1px solid var(--border);
+    color:var(--text);font-size:0.82rem;padding:9px 11px;border-radius:8px;cursor:pointer;transition:.14s;font-family:inherit;}
+  .iv-ask:hover:not(.asked){border-color:var(--primary);background:var(--border);}
+  .iv-ask.asked{opacity:.9;cursor:default;flex-direction:column;align-items:flex-start;gap:3px;}
+  .iv-ask .iv-letter{font-weight:800;color:var(--gold);flex-shrink:0;}
+  .iv-ask .iv-ans{color:var(--primary-light);font-size:0.82rem;font-style:italic;}
+  .iv-ask.asked .iv-qtext{color:var(--text-muted);font-size:0.74rem;}
+
+  /* log */
+  .log-wrap{grid-column:1/-1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:12px 15px;}
+  .log-wrap h3{font-size:0.74rem;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);margin-bottom:8px;}
+  #log{list-style:none;display:flex;flex-direction:column;gap:4px;max-height:150px;overflow-y:auto;}
+  #log li{font-size:0.8rem;color:var(--text-muted);padding-left:16px;position:relative;line-height:1.4;}
+  #log li::before{content:'›';position:absolute;left:2px;color:var(--primary);}
+  #log li.good{color:var(--text);} #log li.good::before{content:'✓';color:var(--min);}
+  #log li.bad{color:#ffc9c9;} #log li.bad::before{content:'!';color:var(--danger);}
+
+  footer{text-align:center;padding:16px;color:var(--text-muted);font-size:0.74rem;border-top:1px solid var(--border);}
+  footer span{color:var(--primary);}
+
+  /* overlay / debrief */
+  .ov{position:fixed;inset:0;background:rgba(6,9,5,.86);display:none;align-items:center;justify-content:center;
+    padding:18px;z-index:120;}
+  .ov.show{display:flex;animation:ovf .2s ease;}
+  @keyframes ovf{from{opacity:0}to{opacity:1}}
+  .ov-box{background:var(--surface);border:2px solid var(--primary);border-radius:14px;padding:24px;
+    max-width:560px;width:100%;max-height:90vh;overflow-y:auto;position:relative;}
+  .ov-box h2{font-size:1.5rem;color:var(--primary);margin-bottom:6px;text-align:center;}
+  .ov-x{position:absolute;top:12px;right:15px;background:none;border:none;color:var(--text-muted);font-size:1.6rem;
+    line-height:1;cursor:pointer;}
+  .ov-x:hover{color:var(--text);}
+  .btn-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:18px;}
+  .btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.9rem;font-weight:700;
+    padding:11px 18px;border-radius:9px;cursor:pointer;transition:.15s;font-family:inherit;text-decoration:none;
+    display:inline-flex;align-items:center;gap:7px;}
+  .btn:hover{border-color:var(--primary);background:var(--border);}
+  .btn.primary{background:var(--primary);color:#06210a;border-color:var(--primary);}
+  .btn.primary:hover{background:var(--primary-light);}
+
+  @media (max-width:820px){
+    main{grid-template-columns:1fr;}
+    .stage{position:static;}
+    svg.patient{height:46vh;}
+  }
+  @media (max-width:600px){
+    header{padding:8px 14px;}
+    .hdr-actions{margin-left:0;width:100%;justify-content:center;}
+    main{padding:12px 12px 20px;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <img id="cert-logo" src="cert-wallingford-logo.png" alt="Wallingford CERT"
+    onerror="this.style.display='none';document.getElementById('logo-fallback').style.display='flex'">
+  <div id="logo-fallback" style="display:none;align-items:center;"><div class="logo-badge">CERT</div></div>
+  <div class="hdr-text">
+    <h1>Wallingford CERT — Patient Assessment</h1>
+    <p>Community Emergency Response Team</p>
+  </div>
+  <div class="hdr-actions">
+    <button class="icon-btn" id="sfx-btn" onclick="SND.toggle()" title="Sound effects">🔊</button>
+    <button class="icon-btn" onclick="newPatient()" title="New patient">🔄</button>
+    <a class="home-link" href="index.html">← Menu</a>
+    <button class="theme-btn" onclick="toggleTheme()" aria-label="Toggle light or dark mode">☀️</button>
+  </div>
+</header>
+
+<div class="phasebar" id="phasebar"></div>
+
+<main>
+  <div class="scene-banner" id="scene-banner"></div>
+
+  <section class="stage">
+    <div class="stage-top">
+      <div class="patient-meta" id="patient-meta">Patient</div>
+      <button class="flip-btn" id="flip-btn" onclick="flipBody()">🔄 Check back</button>
+    </div>
+    <div class="body-wrap" id="body-wrap">
+      <div class="region-label" id="region-label"></div>
+      <!-- SVG injected by renderPatient() -->
+    </div>
+    <div class="stage-hint" id="stage-hint"></div>
+    <div class="vitals" id="vitals"></div>
+  </section>
+
+  <section class="panel" id="panel"><!-- phase content --></section>
+
+  <div class="log-wrap">
+    <h3>Action Log</h3>
+    <ul id="log"></ul>
+  </div>
+</main>
+
+<footer>
+  <span>Wallingford CERT</span> — Training Suite · Patient Assessment · For educational use — follow your local CERT program guidelines.
+</footer>
+
+<div class="ov" id="ov" onclick="if(event.target===this)closeOv()">
+  <div class="ov-box" id="ov-box"></div>
+</div>
+
+<script>
+/* ============================================================
+   Wallingford CERT — Patient Assessment
+   Single-file, data-driven case engine. No external deps.
+   ============================================================ */
+
+/* ---------- tiny SFX (Web Audio, self-contained) ---------- */
+const SND=(function(){
+  let ctx,on=(localStorage.getItem('cert_assess_sfx')!=='off'),comp;
+  function ac(){ if(!ctx){ ctx=new (window.AudioContext||window.webkitAudioContext)();
+    comp=ctx.createDynamicsCompressor(); comp.connect(ctx.destination);} return ctx; }
+  function tone(f,t,type,g,dur){ if(!on)return; ac(); const o=ctx.createOscillator(),ga=ctx.createGain();
+    o.type=type||'sine'; o.frequency.setValueAtTime(f,ctx.currentTime+t);
+    ga.gain.setValueAtTime(0,ctx.currentTime+t);
+    ga.gain.linearRampToValueAtTime(g||0.2,ctx.currentTime+t+0.012);
+    ga.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+t+(dur||0.16));
+    o.connect(ga); ga.connect(comp); o.start(ctx.currentTime+t); o.stop(ctx.currentTime+t+(dur||0.16)+0.03); }
+  return {
+    click(){ tone(320,0,'triangle',0.14,0.08); },
+    good(){ tone(540,0,'sine',0.2,0.12); tone(760,0.09,'sine',0.2,0.14); },
+    bad(){ tone(200,0,'sawtooth',0.16,0.16); tone(150,0.1,'sawtooth',0.14,0.2); },
+    open(){ tone(430,0,'triangle',0.15,0.1); },
+    tag(){ tone(600,0,'square',0.12,0.09); },
+    win(){ [523,659,784,1047].forEach((f,i)=>tone(f,i*0.11,'triangle',0.2,0.22)); },
+    toggle(){ on=!on; localStorage.setItem('cert_assess_sfx',on?'on':'off');
+      document.getElementById('sfx-btn').textContent=on?'🔊':'🔇'; if(on){ac();this.click();} },
+    arm(){ if(!on)return; ac(); if(ctx.state==='suspended') ctx.resume(); },
+    init(){ document.getElementById('sfx-btn').textContent=on?'🔊':'🔇'; }
+  };
+})();
+
+/* ---------- helpers ---------- */
+const rnd=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const chance=p=>Math.random()<p;
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+
+/* ---------- region geometry (front + back) ----------
+   Region keys match the CERT exam surfaces the student can examine. */
+const REGIONS=['head','eyes','neck','chest','abdomen','pelvis','arms','legs','back'];
+const REGION_NAME={head:'Head',eyes:'Eyes',neck:'Neck',chest:'Chest',abdomen:'Abdomen',
+  pelvis:'Pelvis',arms:'Arms',legs:'Legs',back:'Back / Spine'};
+
+/* ============================================================
+   CASE ARCHETYPES  (declarative-ish generators)
+   Each returns a concrete case instance for one patient.
+   ============================================================ */
+const MALE_NAMES=['Robert','James','David','John','Miguel','Thomas','Peter','Frank','Omar','Wei','Andre','Sam'];
+const FEMALE_NAMES=['Maria','Linda','Susan','Karen','Grace','Nancy','Aisha','Rosa','Ellen','Beth','Priya','Joan'];
+function name(sex){ return pick(sex==='M'?MALE_NAMES:FEMALE_NAMES); }
+
+/* weather / hazards pools (scene size-up) */
+const WEATHERS=[
+  {id:'clear',ic:'☀️',t:'Clear, mild (~68°F)'},
+  {id:'cold',ic:'❄️',t:'Cold, ~34°F, windy'},
+  {id:'hot',ic:'🥵',t:'Hot, ~96°F, humid'},
+  {id:'rain',ic:'🌧️',t:'Rain, wet ground'},
+  {id:'night',ic:'🌙',t:'Nighttime, low light'},
+];
+const HAZARDS=[
+  {id:'traffic',ic:'🚗',t:'Roadway / traffic'},
+  {id:'glass',ic:'🔶',t:'Broken glass & debris'},
+  {id:'wires',ic:'⚡',t:'Downed power line nearby'},
+  {id:'fuel',ic:'🛢️',t:'Fuel spill'},
+  {id:'crowd',ic:'👥',t:'Unsettled bystanders'},
+  {id:'unstable',ic:'🧱',t:'Unstable structure'},
+];
+
+/* appearance palettes — so no two patients look identical */
+const SKIN_TONES=[
+  {fill:'#f2cfa8',line:'#cf9f74'},{fill:'#e8b88e',line:'#c1895f'},{fill:'#d8a67d',line:'#b07f56'},
+  {fill:'#c78e63',line:'#9c6a42'},{fill:'#a9714a',line:'#7f5233'},{fill:'#7d4f31',line:'#5c381f'},
+];
+const HAIRS=['#2a1a10','#4a2f1a','#6b4423','#8a6a3a','#b8892f','#3a3a3a','#1c1c1c'];
+const GRAY_HAIRS=['#b9b9b9','#d5d5d5','#9a9a9a','#8a8f88'];
+const SHIRTS=['#4a6fa5','#5a7d54','#a5544a','#6a5aa5','#b58a3a','#3f8a8a','#8a5a7a','#556070'];
+const PANTS=['#3a4a63','#2f3a2a','#4a3a2a','#40404a','#334a4a'];
+
+/* A finding = {t:text, sev:'crit'|'warn'|'info', tag:'bleed'|'burn'|'deformity'|'pain'|'skin'|null} */
+function F(t,sev,tag){ return {t,sev:sev||'info',tag:tag||null}; }
+
+/* Common vitals generators */
+function vitalsNormal(){ return {resp:rnd(12,18),respQ:'even, unlabored',pulse:rnd(64,92),pulseAt:'radial',
+  radial:true,skin:'warm, pink, dry',cap:'<2 sec'}; }
+
+/* ---- Archetype: Fall / blunt trauma ---- */
+function caseFall(){
+  const side=pick(['left','right']);
+  const legKey='legs', armKey='arms';
+  const bigBleed=chance(0.6);
+  const responsive=pick(['alert','alert','verbal']);
+  const shock=bigBleed||chance(0.4);
+  const v=vitalsNormal();
+  if(shock){ v.pulse=rnd(104,132); v.skin='pale, cool, clammy'; v.cap='3–4 sec'; v.radial=chance(0.6); }
+  const findings={};
+  findings[legKey]=[F(`Obvious deformity & swelling, ${side} lower leg — angulated`,'crit','deformity'),
+                    F('Painful to touch; guarding the limb','warn','pain')];
+  if(bigBleed) findings[legKey].unshift(F(`Steady dark-red bleeding from a gash, ${side} shin`,'crit','bleed'));
+  findings.head=[F('Small scalp abrasion, no major bleeding','info')];
+  if(chance(0.4)) findings.arms=[F(`Road rash / abrasions to the ${pick(['left','right'])} forearm`,'info')];
+  findings.chest=[F('Equal chest rise, no obvious deformity','info')];
+  findings.abdomen=[F('Soft, non-tender','info')];
+  return {
+    archetype:'fall', title:'Fall from height',
+    age:rnd(16,74), sex:pick(['M','F']),
+    forceWeather:null,
+    mechanism:'Fell ~10 ft from a ladder onto pavement.',
+    chief:'“My leg is killing me.”',
+    responsiveness:responsive,
+    airway:'open, clear',
+    breathing:{rate:v.resp,quality:v.respQ,adequate:true},
+    circulation:{pulse:v.pulse,radial:v.radial,skin:v.skin,cap:v.cap},
+    bleeding: bigBleed?{region:legKey,severity:'major',side}:null,
+    findings,
+    hasSpineConcern:true,
+    pain:{region:`${side} lower leg`, o:'Sudden — the moment I landed', p:'Any movement makes it worse; still hurts at rest',
+      q:'Sharp, then a deep ache', r:'Stays in the lower leg', s:rnd(7,9), t:'Since the fall, about 10 minutes ago'},
+    sample:{ s:'Severe leg pain, scraped scalp', a:pick(['None','Penicillin']),
+      m:pick(['None','Blood-pressure pill (lisinopril)']), p:pick(['None','High blood pressure']),
+      l:pick(['Lunch about 2 hours ago','Coffee this morning']), e:'Lost footing on a ladder and fell.' },
+    triage: shock?'immediate':'delayed',
+    triageReason: shock
+      ? 'Signs of shock (fast pulse, pale/clammy skin, delayed cap refill) → serious perfusion problem = IMMEDIATE.'
+      : 'Breathing adequate, radial pulse present, follows commands, but a likely fracture can’t walk → DELAYED.',
+    treatments:{
+      required: (bigBleed?['bleed']:[]).concat(['splint','shock']),
+      map:{
+        bleed:{ic:'🩸',label:'Control bleeding (direct pressure)',good:'Direct pressure on the wound controls the major bleed — the top life-threat here.'},
+        splint:{ic:'🦴',label:'Splint the injured leg',good:'Splinting the deformed leg (immobilize joint above & below) reduces pain and further injury.'},
+        shock:{ic:'🧥',label:'Treat for shock (blanket, position, reassure)',good:'Keeping them warm and calm treats/pre-empts shock.'},
+      },
+      harmful:{
+        walk:{ic:'🚶',label:'Have them stand and walk it off',bad:'Never make a patient with a deformed/painful leg bear weight — you can worsen the injury.'},
+        straighten:{ic:'✋',label:'Straighten the deformed leg by hand',bad:'CERT does not realign deformities — splint as found.'},
+      }
+    },
+    teaching:['Control major bleeding before splinting.','Immobilize the joint above and below a suspected fracture.','Suspect spinal injury with any fall — minimize movement.']
+  };
+}
+
+/* ---- Archetype: Heart attack (cardiac chest pain) ---- */
+function caseCardiac(){
+  const v=vitalsNormal(); v.pulse=rnd(88,116); v.skin='pale, cool, sweaty (diaphoretic)'; v.respQ='slightly fast, uncomfortable'; v.resp=rnd(18,24);
+  const findings={
+    chest:[F('No trauma or deformity; patient clutching center of chest','warn','pain')],
+    arms:[F('Aching radiating into the left arm','warn','pain')],
+    head:[F('Sweaty brow, looks anxious and gray','warn','skin')],
+    abdomen:[F('Soft, non-tender','info')],
+    legs:[F('No injury; some ankle swelling','info')],
+  };
+  return {
+    archetype:'cardiac', title:'Chest pain / cardiac',
+    age:rnd(52,82), sex:pick(['M','F']),
+    forceWeather:null,
+    mechanism:'Sudden chest pressure while resting on the porch.',
+    chief:'“It feels like an elephant is sitting on my chest.”',
+    responsiveness:'alert', airway:'open, clear',
+    breathing:{rate:v.resp,quality:v.respQ,adequate:true},
+    circulation:{pulse:v.pulse,radial:true,skin:v.skin,cap:'2–3 sec'},
+    bleeding:null,
+    findings, hasSpineConcern:false,
+    pain:{region:'center of the chest', o:'Started ~20 min ago, at rest', p:'Nothing makes it better; worse with exertion',
+      q:'Heavy pressure / squeezing', r:'Spreads to the left arm and jaw', s:rnd(6,9), t:'Constant for about 20 minutes'},
+    sample:{ s:'Chest pressure, sweating, nausea, short of breath', a:'None',
+      m:pick(['Nitroglycerin, aspirin','Lisinopril and a baby aspirin']), p:'High blood pressure, prior heart trouble',
+      l:'Dinner a couple hours ago', e:'Was resting when the pressure started.' },
+    triage:'immediate',
+    triageReason:'A medical patient with a time-critical problem (possible heart attack) is high priority — IMMEDIATE / rapid transport.',
+    treatments:{
+      required:['position','calm','assist-med','activate'],
+      map:{
+        position:{ic:'🪑',label:'Position of comfort (sitting up)',good:'Let a conscious cardiac patient sit in the position that eases their breathing.'},
+        calm:{ic:'🧘',label:'Keep them calm & still; limit exertion',good:'Reducing exertion lowers the heart’s workload.'},
+        'assist-med':{ic:'💊',label:'Help them take their own aspirin/nitro',good:'CERT can assist a patient with their own prescribed medication per protocol.'},
+        activate:{ic:'📞',label:'Ensure 911/EMS is en route — rapid transport',good:'This is a load-and-go medical emergency; confirm advanced help is coming.'},
+      },
+      harmful:{
+        walk:{ic:'🚶',label:'Walk them to a vehicle',bad:'Exertion is dangerous for a cardiac patient — keep them at rest and wait for EMS.'},
+        lay:{ic:'🛏️',label:'Lay them flat',bad:'A patient short of breath usually breathes easier sitting up, not flat.'},
+      }
+    },
+    teaching:['Chest pressure radiating to the arm/jaw + sweating = suspect heart attack.','Keep cardiac patients at rest in a position of comfort.','CERT assists with a patient’s OWN prescribed meds — we don’t provide our own.']
+  };
+}
+
+/* ---- Archetype: Diabetic emergency (altered mental status) ---- */
+function caseDiabetic(){
+  const low=chance(0.7); // hypoglycemia most common/teachable
+  const resp=low?pick(['verbal','pain']):pick(['alert','verbal']);
+  const v=vitalsNormal();
+  if(low){ v.pulse=rnd(96,120); v.skin='pale, cool, sweaty'; } else { v.skin='warm, dry, flushed'; v.resp=rnd(18,26); }
+  const findings={
+    head:[F(low?'Sweaty, pale, confused and shaky':'Warm, flushed, breath smells fruity','warn','skin')],
+    chest:[F('No trauma; breathing on their own','info')],
+    arms:[F('Medical-alert bracelet: “DIABETIC”','info')],
+    abdomen:[F('Soft','info')],
+  };
+  return {
+    archetype:'diabetic', title:'Diabetic emergency',
+    age:rnd(24,78), sex:pick(['M','F']),
+    forceWeather:null,
+    mechanism:'Found confused and unsteady by a family member.',
+    chief: resp==='alert'?'“I feel shaky and weird.”':'Confused, gives only mumbled answers.',
+    responsiveness:resp, airway:'open',
+    breathing:{rate:v.resp,quality:low?'even':'deep and fast',adequate:true},
+    circulation:{pulse:v.pulse,radial:true,skin:v.skin,cap:'2–3 sec'},
+    bleeding:null,
+    findings, hasSpineConcern:false,
+    canSwallow: resp!=='pain', // if only responds to pain → cannot protect airway
+    pain:null,
+    sample:{ s:low?'Shaky, sweaty, confused, weak':'Very thirsty, frequent urination, confusion', a:'None',
+      m:pick(['Insulin','Metformin and insulin']), p:'Type 1 diabetes',
+      l: low?'Skipped lunch, then took insulin':'Hasn’t eaten much; missed medication',
+      e: low?'Took insulin but didn’t eat, then got shaky.':'Felt ill and increasingly confused over hours.' },
+    triage:'immediate',
+    triageReason:'Altered mental status is a red flag — the patient can’t protect themselves. Priority is IMMEDIATE.',
+    treatments:{
+      required: (resp!=='pain'?['sugar']:['recovery']).concat(['monitor','activate']),
+      map:{
+        sugar:{ic:'🧃',label:'Give oral glucose / sugar (juice) — they can swallow',good:'A conscious diabetic who can swallow gets sugar; hypoglycemia improves fast.'},
+        recovery:{ic:'↔️',label:'Recovery position, protect airway (can’t swallow)',good:'If they can’t swallow, don’t give anything by mouth — protect the airway and wait for EMS.'},
+        monitor:{ic:'👀',label:'Monitor mental status & airway',good:'Altered patients can deteriorate — keep watching airway and responsiveness.'},
+        activate:{ic:'📞',label:'Ensure EMS is en route',good:'Altered mental status needs advanced care — confirm EMS is coming.'},
+      },
+      harmful:{
+        forcefood:{ic:'🥪',label:'Force food/drink into a drowsy patient',bad:'Never give food or fluids to someone who can’t swallow — choking/aspiration risk.'},
+        insulin:{ic:'💉',label:'Give them more insulin',bad:'CERT never administers insulin — and more insulin would worsen a low-sugar patient.'},
+      }
+    },
+    teaching:['Altered mental status = treat as immediate.','Sugar for a conscious diabetic who CAN swallow; nothing by mouth if they can’t.','CERT does not give insulin.']
+  };
+}
+
+/* ---- Archetype: Heat emergency ---- */
+function caseHeat(){
+  const stroke=chance(0.55); // heat stroke (emergency) vs exhaustion
+  const resp=stroke?pick(['verbal','pain']):'alert';
+  const v=vitalsNormal(); v.pulse=rnd(108,140); v.resp=rnd(20,28);
+  v.skin= stroke?'hot, red, dry (or sweaty) — very warm to touch':'pale, cool, heavy sweating';
+  const findings={
+    head:[F(stroke?'Flushed, hot skin; confused, altered':'Sweaty, pale, dizzy but alert','warn','skin')],
+    chest:[F('Breathing fast','info')],
+    arms:[F('Skin very warm' + (stroke?'; not sweating much':', drenched in sweat'),'info','skin')],
+    legs:[F(chance(0.5)?'Muscle cramps in the legs':'No injury','info')],
+  };
+  return {
+    archetype:'heat', title: stroke?'Heat stroke':'Heat exhaustion',
+    age:rnd(18,80), sex:pick(['M','F']),
+    forceWeather:'hot',
+    mechanism:'Working outdoors in the heat for hours; collapsed.',
+    chief: stroke?'Confused, can’t answer clearly.':'“I got so dizzy and weak I had to sit down.”',
+    responsiveness:resp, airway:'open',
+    breathing:{rate:v.resp,quality:'fast',adequate:true},
+    circulation:{pulse:v.pulse,radial:true,skin:v.skin,cap:'2–3 sec'},
+    bleeding:null,
+    findings, hasSpineConcern:false,
+    canSwallow: resp==='alert',
+    pain:null,
+    sample:{ s: stroke?'Confusion, hot skin, headache':'Dizzy, weak, nausea, heavy sweating', a:'None',
+      m:'None', p:pick(['None','High blood pressure']),
+      l:'Hasn’t had water in hours', e:'Working in the sun all afternoon, then collapsed.' },
+    triage: stroke?'immediate':'delayed',
+    triageReason: stroke
+      ? 'Heat stroke with altered mental status and hot skin is life-threatening — IMMEDIATE, cool rapidly.'
+      : 'Heat exhaustion: alert, stable vitals — DELAYED; move to shade, cool, hydrate.',
+    treatments:{
+      required: ['cool','shade'].concat(stroke?['activate','monitor']:['hydrate']),
+      map:{
+        cool:{ic:'🧊',label:'Cool aggressively (wet skin, fan, cold packs to neck/armpits/groin)',good:'Rapid cooling is the priority for a hot, altered heat-stroke patient.'},
+        shade:{ic:'⛱️',label:'Move to shade / cooler area',good:'Get them out of the heat immediately.'},
+        hydrate:{ic:'💧',label:'Sips of water (alert & can swallow)',good:'An alert heat-exhaustion patient can sip cool water.'},
+        activate:{ic:'📞',label:'Ensure EMS is en route',good:'Heat stroke needs rapid transport.'},
+        monitor:{ic:'👀',label:'Monitor mental status & airway',good:'Watch an altered patient closely.'},
+      },
+      harmful:{
+        water_alt:{ic:'🥤',label:'Pour water into a confused patient’s mouth',bad:'Don’t give fluids by mouth to an altered patient — aspiration risk.'},
+        bundle:{ic:'🧥',label:'Wrap them in a blanket',bad:'This is a heat emergency — you want to cool them, not insulate them.'},
+      }
+    },
+    teaching:['Heat stroke = hot skin + altered mental status → cool fast, load and go.','Heat exhaustion = pale, sweaty, still alert → shade, rest, sip water.','Nothing by mouth for an altered patient.']
+  };
+}
+
+/* ---- Archetype: Seizure / postictal ---- */
+function caseSeizure(){
+  const active=chance(0.35); // actively seizing vs postictal (after)
+  const resp=active?'pain':pick(['verbal','pain']);
+  const v=vitalsNormal(); v.pulse=rnd(92,118); v.respQ=active?'irregular during seizure':'snoring/deep, recovering';
+  const findings={
+    head:[F(active?'Actively convulsing; jaw clenched':'Groggy, confused, slowly waking (postictal)','warn','skin')],
+    arms:[F(chance(0.5)?'Bruise where they struck the floor':'Medical-alert tag: “SEIZURE DISORDER”','info')],
+    chest:[F('Breathing on their own','info')],
+    abdomen:[F('Soft','info')],
+  };
+  if(chance(0.4)) findings.head.push(F('Bitten tongue, small amount of blood at the mouth','info','bleed'));
+  return {
+    archetype:'seizure', title: active?'Active seizure':'Post-seizure (postictal)',
+    age:rnd(8,70), sex:pick(['M','F']),
+    forceWeather:null,
+    mechanism:'Witnessed to suddenly stiffen and convulse, then collapse.',
+    chief: active?'Cannot respond — actively seizing.':'Mumbling, doesn’t know what happened.',
+    responsiveness:resp, airway: active?'clenched, noisy':'open, may snore',
+    breathing:{rate:v.resp,quality:v.respQ,adequate:true},
+    circulation:{pulse:v.pulse,radial:true,skin:'warm, may be flushed',cap:'<2 sec'},
+    bleeding:null,
+    findings, hasSpineConcern:false, active,
+    canSwallow:false,
+    pain:null,
+    sample:{ s: active?'Convulsions':'Confusion, fatigue, sore muscles', a:'None',
+      m:pick(['Anti-seizure medication','None reported']), p:'Seizure disorder / epilepsy',
+      l:'Unknown', e:'Suddenly seized without warning; bystanders saw them fall.' },
+    triage:'immediate',
+    triageReason:'During/just after a seizure the patient can’t protect their airway or follow commands — treat as IMMEDIATE until they recover.',
+    treatments:{
+      required: active?['protect','clear','time','airway']:['recovery','airway','reassure','monitor'],
+      map:{
+        protect:{ic:'🛡️',label:'Protect from injury (move hazards, cushion head)',good:'During a seizure, clear objects and pad the head — protect them from harm.'},
+        clear:{ic:'🚫',label:'Do NOT restrain or put anything in the mouth',good:'Never restrain a seizing patient or put objects in their mouth.'},
+        time:{ic:'⏱️',label:'Time the seizure',good:'Note how long it lasts — important for EMS (>5 min is critical).'},
+        airway:{ic:'↔️',label:'After it stops, position to protect the airway',good:'Once convulsions stop, roll them to protect the airway.'},
+        recovery:{ic:'↔️',label:'Recovery position (protect airway)',good:'A postictal patient can’t fully protect their airway — recovery position.'},
+        reassure:{ic:'🧘',label:'Reassure & reorient as they wake',good:'Postictal patients are confused — calm, quiet reassurance helps.'},
+        monitor:{ic:'👀',label:'Monitor breathing & responsiveness',good:'Watch for another seizure or airway trouble.'},
+      },
+      harmful:{
+        mouth:{ic:'🥄',label:'Put something in their mouth',bad:'Never — it can break teeth or block the airway. Old myth.'},
+        hold:{ic:'✊',label:'Hold them down to stop the shaking',bad:'Restraining a seizing patient can injure them and you. Let it run its course, protect from harm.'},
+      }
+    },
+    teaching:['Never restrain a seizing patient or put anything in their mouth.','Protect from injury, time it, then protect the airway afterward.','A seizure over 5 minutes is a critical emergency.']
+  };
+}
+
+/* ---- Archetype: Stroke (FAST) ---- */
+function caseStroke(){
+  const side=pick(['left','right']), resp=pick(['alert','verbal']);
+  const findings={
+    head:[F(`Facial droop on the ${side} side; uneven smile`,'crit','skin'),
+          F('Speech is slurred and hard to understand','warn')],
+    arms:[F(`Weakness and drift in the ${side} arm — can’t hold it up`,'warn')],
+    legs:[F(chance(0.5)?`Some weakness in the ${side} leg`:'No obvious leg injury','info')],
+    chest:[F('Breathing on their own','info')],
+  };
+  return {
+    archetype:'stroke', title:'Suspected stroke',
+    age:rnd(55,88), sex:pick(['M','F']), forceWeather:null,
+    mechanism:'Family saw a sudden face droop and slurred speech.',
+    chief:'Words are slurred and one side of the face is drooping.',
+    responsiveness:resp, airway:'open — watch for secretions',
+    breathing:{rate:rnd(14,20),quality:'even',adequate:true},
+    circulation:{pulse:rnd(78,110),radial:true,skin:'warm, pink',cap:'<2 sec'},
+    bleeding:null, findings, hasSpineConcern:false, canSwallow:false, pain:null,
+    sample:{ s:'Face droop, arm weakness, slurred speech', a:'None',
+      m:pick(['Blood-pressure meds','A blood thinner (warfarin)']), p:'High blood pressure',
+      l:pick(['Breakfast an hour ago','Unknown']),
+      e:`Symptoms started suddenly — last seen normal about ${rnd(20,55)} minutes ago (note the time!).` },
+    triage:'immediate',
+    triageReason:'Stroke is time-critical (“time is brain”). Rapid recognition and transport = IMMEDIATE.',
+    treatments:{
+      required:['time','position','npo','activate'],
+      map:{
+        time:{ic:'🕐',label:'Note the time last seen normal (FAST)',good:'Time of onset drives stroke treatment — document when they were last normal.'},
+        position:{ic:'🛋️',label:'Position of comfort; protect the airway',good:'Keep them comfortable and watch the airway — weakness affects swallowing.'},
+        npo:{ic:'🚫',label:'Nothing by mouth (no food or drink)',good:'Stroke patients can’t swallow safely — nothing by mouth.'},
+        activate:{ic:'📞',label:'Ensure rapid EMS transport',good:'Load-and-go — get them to definitive care fast.'},
+      },
+      harmful:{
+        food:{ic:'🥤',label:'Give them water or food',bad:'Stroke impairs swallowing — food or drink risks choking/aspiration.'},
+        aspirin:{ic:'💊',label:'Give aspirin',bad:'CERT doesn’t give aspirin for stroke — some strokes are bleeds and it could worsen them.'},
+        wait:{ic:'😴',label:'Let them lie down and “sleep it off”',bad:'Waiting wastes the narrow treatment window — act now.'},
+      }
+    },
+    teaching:['Use FAST: Face, Arm, Speech, Time.','Note the time last seen normal — it drives treatment.','Nothing by mouth; rapid transport.']
+  };
+}
+
+/* ---- Archetype: Hypothermia ---- */
+function caseHypothermia(){
+  const severe=chance(0.45), resp=severe?pick(['verbal','pain']):'alert';
+  const findings={
+    head:[F(severe?'Confused, drowsy, slurred speech; not shivering':'Alert but shivering, pale','warn','skin')],
+    arms:[F('Skin cold to the touch, pale/waxy'+(severe?'; no shivering':'; shivering'),'warn','skin')],
+    chest:[F('Breathing slow','info')],
+    legs:[F('Cold, stiff movements','info')],
+  };
+  return {
+    archetype:'hypothermia', title: severe?'Severe hypothermia':'Mild hypothermia',
+    age:rnd(16,86), sex:pick(['M','F']), forceWeather:'cold',
+    mechanism:'Found outdoors in the cold for a prolonged time.',
+    chief: severe?'Drowsy and confused, barely responding.':'“I c-can’t stop shivering.”',
+    responsiveness:resp, airway:'open',
+    breathing:{rate:severe?rnd(8,11):rnd(12,16),quality:'slow, shallow',adequate:true},
+    circulation:{pulse:severe?rnd(40,56):rnd(60,80),radial:true,skin:'cold, pale, waxy',cap:'>3 sec'},
+    bleeding:null, findings, hasSpineConcern:false, canSwallow: resp==='alert', pain:null,
+    sample:{ s: severe?'Confusion, drowsiness, cold skin':'Shivering, cold, numb hands', a:'None',
+      m:'None', p:pick(['None','Underactive thyroid']),
+      l:'Nothing warm for hours', e:'Exposed to cold/wet conditions for a long period.' },
+    triage: severe?'immediate':'delayed',
+    triageReason: severe
+      ? 'Severe hypothermia (altered, not shivering, slow pulse & breathing) is life-threatening — IMMEDIATE; warm gently.'
+      : 'Mild hypothermia: alert and shivering with stable vitals — DELAYED; shelter and warm.',
+    treatments:{
+      required: ['shelter','wet','insulate','gentle'].concat(severe?['activate']:[]),
+      map:{
+        shelter:{ic:'🏠',label:'Move to a warm, dry, sheltered place',good:'Get them out of the cold and wind first.'},
+        wet:{ic:'🧺',label:'Remove wet clothing',good:'Wet clothes pull heat away — replace with dry layers.'},
+        insulate:{ic:'🧥',label:'Insulate & cover (include the head)',good:'Wrap them to hold body heat — passive rewarming, including the head.'},
+        gentle:{ic:'🪶',label:'Handle gently; keep them still',good:'A cold heart is irritable — rough handling can trigger a dangerous rhythm.'},
+        activate:{ic:'📞',label:'Ensure EMS is en route',good:'Severe hypothermia needs advanced care.'},
+      },
+      harmful:{
+        rub:{ic:'🤲',label:'Vigorously rub/massage the arms & legs',bad:'Rubbing cold limbs can push cold blood to the core and harm the heart.'},
+        alcohol:{ic:'🥃',label:'Give alcohol to “warm them up”',bad:'Alcohol increases heat loss — never give it to a hypothermia patient.'},
+        hotwater:{ic:'🔥',label:'Rewarm hands & feet fast with hot water',bad:'Fast external rewarming of the extremities is dangerous — warm the core gradually.'},
+      }
+    },
+    teaching:['Move to warmth, remove wet clothes, insulate — passive rewarming.','Handle very gently — a cold heart is irritable.','No alcohol, no vigorous rubbing, no fast extremity rewarming.']
+  };
+}
+
+/* ---- Archetype: Burns ---- */
+function caseBurns(){
+  const airway=chance(0.3), region=pick(['arms','legs','chest']), big=chance(0.4)||airway;
+  const findings={};
+  findings[region]=[F(`${big?'Large':'Patchy'} burn — red, blistered skin on the ${region==='chest'?'chest':region}`,'crit','burn')];
+  if(airway) findings.head=[F('Soot around the mouth & nose, singed nasal hair, hoarse voice','crit','burn')];
+  else findings.head=[F('No facial burns','info')];
+  if(region!=='chest') findings.chest=[F('Breathing on their own'+(airway?', but hoarse':''),'info')];
+  return {
+    archetype:'burns', title: airway?'Burns w/ airway concern':'Thermal burn',
+    age:rnd(10,80), sex:pick(['M','F']), forceWeather:null,
+    mechanism: pick(['Scalded by boiling water.','Clothing caught fire at a grill.','Touched a hot surface.']),
+    chief:'“It burns — it really hurts!”',
+    responsiveness: airway?pick(['alert','verbal']):'alert',
+    airway: airway?'watch closely — smoke/heat exposure':'open, clear',
+    breathing:{rate:rnd(18,24),quality: airway?'hoarse — watch for swelling':'even',adequate:true},
+    circulation:{pulse:rnd(96,120),radial:true,skin:'warm; burned area weeping',cap:'2–3 sec'},
+    bleeding:null, findings, hasSpineConcern:false, canSwallow:true,
+    pain:{region:'the burned '+region, o:'Just now, at the time of the burn', p:'Cool water eases it; moving air hurts',
+      q:'Burning, stinging', r:'Stays over the burned area', s:rnd(6,9), t:'Constant since the burn'},
+    sample:{ s:'Painful burn'+(airway?', hoarse voice':''), a:'None', m:'None',
+      p:pick(['None','Asthma']), l:pick(['Lunch earlier','Coffee']), e:'Burned in a household/cooking accident.' },
+    triage: (big||airway)?'immediate':'delayed',
+    triageReason: airway?'Burns with airway/inhalation signs (soot, hoarseness) can swell the airway shut — IMMEDIATE.'
+      : (big?'A large burn means major fluid loss and infection risk — IMMEDIATE.':'A small, localized burn with stable vitals — DELAYED.'),
+    treatments:{
+      required: ['stop','cool','cover'].concat(airway?['airway','activate']:[]),
+      map:{
+        stop:{ic:'🛑',label:'Stop the burning; remove jewelry/tight items',good:'Stop the source and remove rings/watches before swelling starts.'},
+        cool:{ic:'💧',label:'Cool with clean, cool (not ice-cold) water',good:'Cool running water eases pain and limits burn depth — never ice.'},
+        cover:{ic:'🩹',label:'Cover loosely with a clean, dry dressing',good:'A clean dry cover protects the burn and reduces infection risk.'},
+        airway:{ic:'🫁',label:'Watch the airway closely for swelling',good:'Facial/inhalation burns can swell the airway shut — monitor constantly.'},
+        activate:{ic:'📞',label:'Ensure rapid EMS transport',good:'Large or airway burns need advanced care fast.'},
+      },
+      harmful:{
+        ice:{ic:'🧊',label:'Pack the burn in ice',bad:'Ice deepens tissue damage — use cool, not ice-cold, water.'},
+        butter:{ic:'🧈',label:'Apply butter, ointment, or cream',bad:'Never put grease or ointments on a burn — they trap heat and invite infection.'},
+        pop:{ic:'🫧',label:'Pop the blisters',bad:'Broken blisters invite infection — leave them intact.'},
+      }
+    },
+    teaching:['Stop the burning; cool with clean cool water (never ice); cover with a dry dressing.','Watch for airway burns — soot, hoarseness, singed nasal hair.','No butter or ointments; don’t pop blisters.']
+  };
+}
+
+const ARCHETYPES=[caseFall,caseCardiac,caseDiabetic,caseHeat,caseSeizure,caseStroke,caseHypothermia,caseBurns];
+
+/* ============================================================
+   GAME STATE + CASE GENERATION
+   ============================================================ */
+let G=null;
+
+function generateCase(){
+  const gen=pick(ARCHETYPES);
+  const c=gen();
+  // Scene: weather (respect archetype forcing) + 1-2 hazards
+  c.weather = c.forceWeather ? WEATHERS.find(w=>w.id===c.forceWeather) : pick(WEATHERS);
+  c.hazards = shuffle(HAZARDS).slice(0,rnd(1,2));
+  c.name=name(c.sex);
+  // appearance
+  c.skin=pick(SKIN_TONES);
+  c.hair=(c.age>63?pick(GRAY_HAIRS):pick(HAIRS));
+  c.shirt=pick(SHIRTS);
+  c.pants=pick(PANTS);
+  c.hairStyle=(c.sex==='F'?chance(0.6):chance(0.15))?'long':'short';
+  // Build a quick "known" scaffold the UI fills in as the student assesses
+  return c;
+}
+
+function newPatient(){
+  G={
+    case:generateCase(),
+    phase:0,
+    view:'front',
+    examined:{},        // region -> true once examined
+    known:{             // what the student has discovered / done
+      responsiveness:null, airway:false, breathing:false, circulation:false,
+      bleedingControlled:false,
+    },
+    ppe:{},             // ppe items donned
+    contactMade:false,  // touched patient?
+    consent:null,       // 'verbal'|'implied'|null
+    sizeup:{},          // size-up answers chosen
+    primary:{},         // primary-survey progress
+    secondary:{},       // head-to-toe / interview progress
+    interview:{sample:{},opqrst:{}},
+    triageChoice:null,
+    treatment:{applied:{},harmful:{}},
+    score:{ flags:{}, penalties:[] },
+    log:[],
+  };
+  document.getElementById('log').innerHTML='';
+  logMsg('Dispatched: possible medical/trauma patient. Size up the scene.','');
+  renderScene(); renderPatient(); renderVitals(); renderPhaseBar(); renderPhase();
+  closeOv();
+}
+
+function logMsg(t,kind){ if(!G)return; G.log.push({t,kind});
+  const ul=document.getElementById('log'); const li=document.createElement('li');
+  li.className=kind||''; li.textContent=t; ul.appendChild(li); ul.scrollTop=ul.scrollHeight; }
+
+/* mark a scoring flag once */
+function flag(key,val){ if(G.score.flags[key]===undefined) G.score.flags[key]=val; else if(val<G.score.flags[key]) G.score.flags[key]=val; }
+
+/* ============================================================
+   PHASES
+   ============================================================ */
+const PHASES=[
+  {id:'sizeup', n:'Size-Up', ic:'🔍', title:'Scene Size-Up',
+     blurb:'Before you touch anyone: read the scene, protect yourself, and call for help.'},
+  {id:'primary', n:'Primary', ic:'🫀', title:'Primary Assessment',
+     blurb:'Consent, level of responsiveness (AVPU), then Airway–Breathing–Circulation and any major bleeding.'},
+  {id:'triage', n:'Triage', ic:'🏷️', title:'START Triage',
+     blurb:'Using Respirations, Perfusion, and Mental status, assign this patient a triage tag.'},
+  {id:'secondary', n:'Head-to-Toe', ic:'🩺', title:'Secondary Assessment',
+     blurb:'Examine head-to-toe, take a SAMPLE history, and OPQRST for any pain.'},
+  {id:'treatment', n:'Treatment', ic:'➕', title:'Treatment & Care',
+     blurb:'Provide the care this patient needs — and avoid anything harmful.'},
+  {id:'debrief', n:'Debrief', ic:'📋', title:'Patient Care Report'},
+];
+
+function renderPhaseBar(){
+  const bar=document.getElementById('phasebar');
+  bar.innerHTML=PHASES.map((p,i)=>{
+    const cls=i<G.phase?'done':(i===G.phase?'active':'');
+    return `<div class="phase-pill ${cls}"><span class="pn"><span class="num">${i+1}</span></span>${p.n}</div>`;
+  }).join('');
+}
+
+function setPhase(i){ G.phase=i; renderPhaseBar(); renderPatient(); renderVitals(); renderPhase(); }
+function nextPhase(){ if(G.phase<PHASES.length-1) setPhase(G.phase+1); }
+
+/* dispatcher */
+function renderPhase(){
+  const P=PHASES[G.phase];
+  const el=document.getElementById('panel');
+  updateStageHint();
+  if(P.id==='sizeup') return renderSizeup(el,P);
+  if(P.id==='primary') return renderPrimary(el,P);
+  if(P.id==='triage') return renderTriage(el,P);
+  if(P.id==='secondary') return renderSecondary(el,P);
+  if(P.id==='treatment') return renderTreatment(el,P);
+  if(P.id==='debrief') return renderDebrief(el,P);
+}
+function panelHead(P,extra){ return `<div class="panel-head"><span class="ph-ic">${P.ic}</span>
+  <div><h2>${P.title}</h2><p>${extra||P.blurb}</p></div></div>`; }
+
+/* ---------- PHASE 1: Scene Size-Up ---------- */
+const PPE_ITEMS=[
+  {id:'gloves',ic:'🧤',t:'Gloves',req:true},
+  {id:'eye',ic:'🥽',t:'Eye protection'},
+  {id:'mask',ic:'😷',t:'Mask'},
+  {id:'gown',ic:'🦺',t:'Gown / apron'},
+];
+function renderSizeup(el,P){
+  const s=G.sizeup;
+  const done=(k)=>s[k]?'done':'';
+  let sub='';
+  if(s.view==='ppe') sub=ppeSubview();
+  else if(s.view==='scene') sub=sceneSubview();
+  else if(s.view==='resources') sub=resSubview();
+  const ready=s.ppeDone&&s.sceneDone&&s.resDone;
+  el.innerHTML=panelHead(P)+`
+    <div class="act-grid">
+      <button class="act ${done('ppeDone')}" onclick="suView('ppe')"><span class="a-ic">🧤</span>Don PPE (BSI)</button>
+      <button class="act ${done('sceneDone')}" onclick="suView('scene')"><span class="a-ic">🔍</span>Scene safety</button>
+      <button class="act ${done('resDone')} full" onclick="suView('resources')"><span class="a-ic">📞</span>Patients &amp; resources</button>
+    </div>
+    <div id="su-sub">${sub}</div>
+    <button class="act primary full" ${ready?'':'disabled'} onclick="approachPatient()">
+      ${ready?'Approach the patient →':'Complete all three size-up steps first'}</button>`;
+}
+function suView(v){ SND.click(); G.sizeup.view=(G.sizeup.view===v?null:v); renderPhase(); }
+
+function ppeSubview(){
+  const p=G.ppe;
+  return `<div class="findings"><div class="choice-q">Body Substance Isolation — select your PPE, then confirm.</div>
+    <div class="act-grid" style="margin-top:8px">`+
+    PPE_ITEMS.map(it=>`<button class="act ${p[it.id]?'done':''}" onclick="togglePPE('${it.id}')">
+      <span class="a-ic">${it.ic}</span>${it.t}</button>`).join('')+
+    `</div><button class="act primary full" style="margin-top:9px" onclick="confirmPPE()">Confirm PPE</button></div>`;
+}
+function togglePPE(id){ SND.click(); G.ppe[id]=!G.ppe[id]; renderPhase(); }
+function confirmPPE(){
+  const p=G.ppe;
+  if(!p.gloves){ SND.bad(); flashSU('bad','<b>Gloves are the minimum.</b> Always wear gloves for BSI before any patient contact.'); return; }
+  const bloody = !!G.case.bleeding || G.case.hazards.some(h=>h.id==='glass');
+  const extra = p.eye||p.mask;
+  G.sizeup.ppeDone=true; G.sizeup.view=null; SND.good();
+  if(bloody && !extra){ flag('sizeup_ppe',0.7);
+    logMsg('Donned gloves (BSI).','good');
+    flashSU('info','Gloves on — good. With bleeding or broken glass, add <b>eye protection</b> too (splash risk).'); }
+  else { flag('sizeup_ppe',1);
+    logMsg('Donned appropriate PPE (BSI).','good');
+    flashSU('good','<b>PPE on.</b> Good body-substance isolation before patient contact.'); }
+  renderPhase();
+}
+function sceneSubview(){
+  if(G.sizeup.sceneDone) return `<div class="feedback good">✓ Scene sized up. ${G.sizeup.sceneFb||''}</div>`;
+  const opts=[
+    {t:'Note the hazards, make the area as safe as you can, and approach only when it’s safe — never become a second victim.',ok:true},
+    {t:'Rush straight to the patient — seconds count and the hazards can wait.',ok:false,
+      fb:'Scene safety comes first. An injured rescuer helps no one.'},
+    {t:'Immediately drag the patient out of the area before assessing anything.',ok:false,
+      fb:'Don’t move a patient unnecessarily — you risk worsening a possible spinal injury.'},
+    {t:'Ignore the hazards — that’s the fire department’s problem, not yours.',ok:false,
+      fb:'You must account for hazards to keep yourself and the patient safe.'},
+  ];
+  return mcq('Your scene size-up. Which action fits CERT protocol?',opts,'scene');
+}
+function resSubview(){
+  if(G.sizeup.resDone) return `<div class="feedback good">✓ Resources handled. ${G.sizeup.resFb||''}</div>`;
+  const opts=[
+    {t:'Confirm how many patients there are and make sure 911/EMS and any needed resources are called.',ok:true},
+    {t:'Handle everything yourself — calling for more help just slows you down.',ok:false,
+      fb:'Size-up includes calling for adequate resources early.'},
+    {t:'Wait until you’ve finished treating the patient, then call for help.',ok:false,
+      fb:'Call early — advanced help takes time to arrive.'},
+    {t:'Only call for help if the patient specifically asks you to.',ok:false,
+      fb:'That’s your call to make as the responder, not the patient’s.'},
+  ];
+  return mcq('Part of size-up is getting the right help. What do you do?',opts,'resources');
+}
+/* generic single-answer MCQ used across phases */
+let _mcqStore={};
+function mcq(q,opts,key){
+  _mcqStore[key]=opts;
+  const sh=shuffle(opts.map((o,i)=>({o,i})));
+  return `<div class="findings"><div class="choice-q">${q}</div><div class="choices" style="margin-top:8px">`+
+    sh.map((x,n)=>`<button class="choice" data-key="${key}" data-i="${x.i}" onclick="answerMcq(this)">
+      <span class="c-num">${n+1}</span>${x.o.t}</button>`).join('')+`</div></div>`;
+}
+function answerMcq(btn){
+  const key=btn.getAttribute('data-key'), i=+btn.getAttribute('data-i');
+  const opt=_mcqStore[key][i];
+  document.querySelectorAll(`.choice[data-key="${key}"]`).forEach(b=>{ b.style.pointerEvents='none';
+    const bi=+b.getAttribute('data-i'); if(_mcqStore[key][bi].ok) b.classList.add('correct'); });
+  if(opt.ok){ SND.good(); btn.classList.add('correct'); onMcqCorrect(key); }
+  else { SND.bad(); btn.classList.add('wrong'); onMcqWrong(key,opt); }
+}
+function onMcqCorrect(key){
+  if(key==='scene'){ flag('sizeup_scene',1); G.sizeup.sceneDone=true; G.sizeup.sceneFb='Good judgment.'; logMsg('Scene sized up: hazards noted, scene made safe.','good'); setTimeout(renderPhase,650); }
+  if(key==='resources'){ flag('sizeup_resources',1); G.sizeup.resDone=true; G.sizeup.resFb='EMS and resources requested.'; logMsg('Confirmed patient count; called for EMS/resources.','good'); setTimeout(renderPhase,650); }
+}
+function onMcqWrong(key,opt){
+  if(key==='scene'){ flag('sizeup_scene',0); G.sizeup.sceneDone=true; G.sizeup.sceneFb=opt.fb; logMsg('Scene size-up: questionable choice.','bad'); setTimeout(renderPhase,1400); }
+  if(key==='resources'){ flag('sizeup_resources',0); G.sizeup.resDone=true; G.sizeup.resFb=opt.fb; logMsg('Resource call: questionable choice.','bad'); setTimeout(renderPhase,1400); }
+}
+function flashSU(kind,msg){ const sub=document.getElementById('su-sub');
+  if(sub) sub.innerHTML=`<div class="feedback ${kind}">${msg}</div>`; }
+function approachPatient(){
+  if(!G.ppe.gloves){ SND.bad(); openOv(`<h2>Stop — BSI first</h2><p style="text-align:center;color:var(--text-muted)">
+    Put on gloves (minimum PPE) before you make patient contact.</p>
+    <div class="btn-row"><button class="btn primary" onclick="closeOv();suView('ppe')">Don PPE</button></div>`); return; }
+  SND.open(); logMsg('Approached patient with BSI in place.','good'); nextPhase();
+}
+
+/* ---------- PHASE 2: Primary Assessment ---------- */
+const AVPU_DESC={
+  alert:{l:'A',t:'Alert',d:'Eyes open; answers your questions clearly and is oriented.'},
+  verbal:{l:'V',t:'Verbal',d:'Responds only when you speak — opens eyes or mumbles to your voice.'},
+  pain:{l:'P',t:'Pain',d:'No response to your voice; only groans or withdraws to a painful pinch.'},
+  unresponsive:{l:'U',t:'Unresponsive',d:'No response to voice or pain.'},
+};
+function renderPrimary(el,P){
+  const pr=G.primary, c=G.case;
+  const d=k=>pr[k]?'done':'';
+  const bleedNeedsCtrl = pr.bleedScan && c.bleeding && !pr.bleedCtrl;
+  const core=['consent','avpu','airway','breathing','circ','bleedScan'];
+  const ready=core.every(k=>pr[k]);
+  el.innerHTML=panelHead(P)+`
+    <div class="act-grid">
+      <button class="act ${d('consent')}" onclick="pConsent()"><span class="a-ic">🤝</span>Introduce &amp; get consent</button>
+      <button class="act ${d('avpu')}" onclick="pAvpu()"><span class="a-ic">👁️</span>Responsiveness (AVPU)</button>
+      <button class="act ${d('airway')}" onclick="pAirway()"><span class="a-ic">🫁</span>Airway</button>
+      <button class="act ${d('breathing')}" onclick="pBreathing()"><span class="a-ic">💨</span>Breathing</button>
+      <button class="act ${d('circ')}" onclick="pCirc()"><span class="a-ic">❤️</span>Circulation</button>
+      <button class="act ${d('bleedScan')}" onclick="pBleedScan()"><span class="a-ic">🔎</span>Scan for bleeding</button>
+      ${bleedNeedsCtrl?`<button class="act full dangerbtn" onclick="pControlBleed()"><span class="a-ic">🩸</span>Control major bleeding — now!</button>`:''}
+    </div>
+    <div id="prim-fb">${pr.lastFb||''}</div>
+    <button class="act primary full" ${ready?'':'disabled'} onclick="finishPrimary()">
+      ${ready?'Primary complete — go to Triage →':'Complete the primary survey (ABC + bleeding)'}</button>`;
+}
+function primFb(kind,html){ G.primary.lastFb=`<div class="feedback ${kind}">${html}</div>`;
+  const s=document.getElementById('prim-fb'); if(s) s.innerHTML=G.primary.lastFb; }
+
+function pConsent(){ const c=G.case; G.contactMade=true; SND.open();
+  if(c.responsiveness==='alert'||c.responsiveness==='verbal'){
+    G.consent='verbal'; primFb('good','You introduce yourself as a CERT volunteer and ask permission. <b>'+c.name+' gives verbal consent.</b>');
+    logMsg('Introduced self; obtained verbal consent.','good');
+  } else {
+    G.consent='implied'; primFb('info','They can’t answer, so <b>implied consent</b> applies — you may treat an unresponsive patient.');
+    logMsg('Patient unresponsive → implied consent applies.','good');
+  }
+  flag('consent',1); G.primary.consent=true; renderPhase();
+}
+function pAvpu(){ const c=G.case; const a=AVPU_DESC[c.responsiveness]; SND.open();
+  G.known.responsiveness=c.responsiveness; G.primary.avpu=true; flag('avpu',1);
+  primFb(c.responsiveness==='alert'?'good':'info',`<b>AVPU = ${a.l} (${a.t}).</b> ${a.d}`);
+  logMsg(`Responsiveness checked: ${a.l} — ${a.t}.`,'good'); renderVitals(); renderPhase();
+}
+function pAirway(){ const c=G.case; SND.open(); G.primary.airway=true; G.known.airway=true; flag('airway',1);
+  if(c.responsiveness==='alert'||c.responsiveness==='verbal'){
+    primFb('good','<b>Airway is open</b> — the patient is speaking/making sounds, so air is moving.');
+    logMsg('Airway: open (patient vocalizing).','good');
+  } else {
+    const man=c.hasSpineConcern?'jaw-thrust (trauma — protect the spine)':'head-tilt/chin-lift';
+    primFb('good',`Patient isn’t talking — you open the airway with a <b>${man}</b>. Airway now clear.`);
+    logMsg('Airway opened manually.','good');
+  }
+  renderPhase();
+}
+function pBreathing(){ const c=G.case, b=c.breathing; SND.open(); G.primary.breathing=true; G.known.breathing=true; flag('breathing',1);
+  const fast=b.rate>29;
+  primFb(fast?'info':'good',`<b>Breathing: ${b.rate}/min</b>, ${b.quality}.`+(fast?' That’s fast (>30) — a red flag for triage.':' Adequate.'));
+  logMsg(`Breathing checked: ${b.rate}/min, ${b.quality}.`,'good'); renderVitals(); renderPhase();
+}
+function pCirc(){ const c=G.case, ci=c.circulation; SND.open(); G.primary.circ=true; G.known.circulation=true; flag('circulation',1);
+  const shock=/pale|cool|clammy|sweaty/.test(ci.skin)||ci.pulse>110||!ci.radial;
+  primFb(shock?'info':'good',
+    `<b>Pulse ${ci.pulse}</b> (${ci.radial?'radial present':'no radial — carotid only'}); skin ${ci.skin}; cap refill ${ci.cap}.`+
+    (shock?' <b>Signs of shock</b> — note this for triage & treatment.':''));
+  logMsg(`Circulation: pulse ${ci.pulse}, skin ${ci.skin.split(',')[0]}.`,'good'); renderVitals(); renderPhase();
+}
+function pBleedScan(){ const c=G.case; SND.open(); G.primary.bleedScan=true;
+  if(c.bleeding){ G.examined[c.bleeding.region]=true;
+    primFb('bad',`Rapid blood sweep finds <b>major bleeding</b> — ${c.case_bleed_desc||describeBleed(c)}. Control it before anything else!`);
+    logMsg('Found MAJOR bleeding on rapid sweep.','bad'); renderPatient();
+  } else {
+    flag('bleeding',1); G.primary.bleedCtrl=true;
+    primFb('good','Rapid blood sweep: <b>no life-threatening bleeding</b> found.');
+    logMsg('Blood sweep: no major bleeding.','good');
+  }
+  renderPhase();
+}
+function describeBleed(c){ const r=c.bleeding.region, side=c.bleeding.side?c.bleeding.side+' ':'';
+  return `steady dark-red bleeding from the ${side}${r==='legs'?'lower leg':r}`; }
+function pControlBleed(){ SND.good(); G.primary.bleedCtrl=true; G.known.bleedingControlled=true; flag('bleeding',1);
+  primFb('good','<b>Direct pressure controls the bleeding.</b> The top life-threat is handled — now finish your ABCs.');
+  logMsg('Controlled major bleeding with direct pressure.','good'); renderPhase();
+}
+function finishPrimary(){ const c=G.case, pr=G.primary;
+  if(!pr.consent){ SND.bad(); primFb('bad','Introduce yourself and get consent before hands-on care.'); return; }
+  if(c.bleeding && !pr.bleedCtrl){ SND.bad();
+    openOv(`<h2>Uncontrolled bleeding</h2><p style="text-align:center;color:var(--text-muted)">
+      You found major bleeding but haven’t controlled it. Severe bleeding is the top life-threat — control it first.</p>
+      <div class="btn-row"><button class="btn primary" onclick="closeOv()">Go back</button>
+      <button class="btn" onclick="closeOv();skipBleed()">Proceed anyway</button></div>`); return; }
+  SND.good(); nextPhase();
+}
+function skipBleed(){ flag('bleeding',0); G.score.penalties.push('Advanced with uncontrolled major bleeding.');
+  logMsg('Left scene without controlling major bleeding.','bad'); nextPhase(); }
+const TAGS={
+  immediate:{c:'var(--imm)',l:'Immediate',code:'RED',sub:'Life-threatening — treat & transport first'},
+  delayed:{c:'var(--del)',l:'Delayed',code:'YELLOW',sub:'Serious but can wait a short time'},
+  minor:{c:'var(--min)',l:'Minor',code:'GREEN',sub:'“Walking wounded” — minor injuries'},
+  deceased:{c:'var(--dec)',l:'Deceased/Expectant',code:'BLACK',sub:'Not breathing after airway opened'},
+};
+function renderTriage(el,P){
+  const c=G.case, done=!!G.triageChoice;
+  const rpmResp=c.breathing.rate, respFast=rpmResp>30;
+  const perfOk=c.circulation.radial && !/3|4/.test(c.circulation.cap);
+  const mentalOk=(c.responsiveness==='alert');
+  const rpm=`<div class="findings"><div class="f-region">START · R-P-M</div><ul>
+    <li><b>Respirations:</b> ${rpmResp}/min ${respFast?'— <span style="color:var(--danger)">over 30 (Immediate)</span>':'— under 30'}</li>
+    <li><b>Perfusion:</b> ${c.circulation.radial?'radial pulse present':'<span style="color:var(--danger)">no radial pulse</span>'}, cap refill ${c.circulation.cap} ${perfOk?'':'<span style="color:var(--danger)">(Immediate)</span>'}</li>
+    <li><b>Mental status:</b> ${mentalOk?'follows simple commands':'<span style="color:var(--danger)">cannot follow commands</span>'} (AVPU ${AVPU_DESC[c.responsiveness].l})</li>
+  </ul></div>`;
+  let fb='';
+  if(done){ const correct=(G.triageChoice===c.triage);
+    fb=`<div class="feedback ${correct?'good':'bad'}">
+      ${correct?'✓ <b>Correct tag.</b> ':'✗ <b>Not the best tag.</b> The correct tag is '+tagChip(c.triage)+'. '}
+      ${c.triageReason}</div>`;
+  }
+  el.innerHTML=panelHead(P)+rpm+`
+    <div class="choice-q">Assign this patient a START triage tag:</div>
+    <div class="choices">`+
+    Object.keys(TAGS).map(k=>{ const t=TAGS[k];
+      const st=done?(k===c.triage?'correct':(k===G.triageChoice?'wrong':'')):'';
+      return `<button class="choice ${st}" ${done?'disabled':''} onclick="pickTriage('${k}')">
+        <span class="c-num" style="background:${t.c};color:#06210a;border:none">${t.code[0]}</span>
+        <b>${t.l}</b> — <span style="color:var(--text-muted)">${t.sub}</span></button>`;
+    }).join('')+`</div>
+    <div id="tri-fb">${fb}</div>
+    ${done?'<button class="act primary full" onclick="nextPhase()">Continue to head-to-toe →</button>':''}`;
+}
+function tagChip(k){ const t=TAGS[k]; return `<span class="tag-line" style="background:${t.c};color:#06210a">${t.code} · ${t.l}</span>`; }
+function pickTriage(k){
+  G.triageChoice=k; const c=G.case; const correct=(k===c.triage);
+  if(correct){ SND.tag(); flag('triage',1); logMsg(`Triaged: ${TAGS[k].code} (correct).`,'good'); }
+  else { SND.bad(); flag('triage',0); logMsg(`Triaged: ${TAGS[k].code} — should be ${TAGS[c.triage].code}.`,'bad');
+    const order={minor:0,delayed:1,immediate:2,deceased:3};
+    if(order[k]<order[c.triage]) G.score.penalties.push('Under-triaged the patient (assigned a lower priority than warranted).');
+  }
+  renderPhase();
+}
+const SAMPLE_Q=[
+  {k:'s',L:'S',q:'Signs & symptoms — what’s bothering you?'},
+  {k:'a',L:'A',q:'Any allergies?'},
+  {k:'m',L:'M',q:'Any medications?'},
+  {k:'p',L:'P',q:'Past medical history?'},
+  {k:'l',L:'L',q:'Last oral intake?'},
+  {k:'e',L:'E',q:'Events leading up to this?'},
+];
+const OPQRST_Q=[
+  {k:'o',L:'O',q:'Onset — what were you doing when it started?'},
+  {k:'p',L:'P',q:'Provocation — better or worse with anything?'},
+  {k:'q',L:'Q',q:'Quality — what does it feel like?'},
+  {k:'r',L:'R',q:'Region / radiation — where is it? does it spread?'},
+  {k:'s',L:'S',q:'Severity — 0 to 10?'},
+  {k:'t',L:'T',q:'Time — how long? constant or come & go?'},
+];
+function renderSecondary(el,P){
+  const sec=G.secondary; const view=sec.view||'exam';
+  const examinedN=REGIONS.filter(r=>G.examined[r]).length;
+  const askedN=Object.keys(G.interview.sample).length;
+  const opN=Object.keys(G.interview.opqrst).length;
+  const hasPain=!!G.case.pain;
+  const ready = examinedN>=6 && askedN>=5 && (!hasPain||opN>=4);
+  let body='';
+  if(view==='exam'){
+    const chips=REGIONS.map(r=>`<button class="choice" style="padding:7px 9px" onclick="examineRegion('${r}')">
+      <span class="c-num">${G.examined[r]?'✓':''}</span>${REGION_NAME[r]}${r==='back'?' (flip)':''}</button>`).join('');
+    body=`<div class="findings"><div class="choice-q">Head-to-toe — tap the body or a region below (${examinedN}/9 examined).
+      Remember to log-roll and check the back.</div>
+      <div class="choices" style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:6px">${chips}</div></div>
+      <div class="findings" id="exam-findings" style="display:${sec.lastReg?'block':'none'}">${sec.lastFindingHtml||''}</div>`;
+  } else {
+    const tab=sec.ivTab||'sample';
+    const qs = tab==='sample'?SAMPLE_Q:OPQRST_Q;
+    const store = tab==='sample'?G.interview.sample:G.interview.opqrst;
+    let note='';
+    if(tab==='sample' && G.case.responsiveness!=='alert' && G.case.responsiveness!=='verbal')
+      note=`<div class="feedback info" style="margin-bottom:8px">This patient can’t give a full history — lean on medical-ID tags and bystanders.</div>`;
+    if(tab==='opqrst' && !hasPain)
+      note=`<div class="feedback info">No pain complaint for this patient — OPQRST isn’t needed here. (SAMPLE still applies.)</div>`;
+    const list = (tab==='opqrst'&&!hasPain)?'' :
+      `<div class="interview">`+qs.map(x=>{
+        const asked=store[x.k];
+        const ans = tab==='sample'?G.case.sample[x.k]:opqrstAns(x.k);
+        return asked
+          ? `<div class="iv-ask asked"><span><span class="iv-letter">${x.L}</span> <span class="iv-qtext">${x.q}</span></span><span class="iv-ans">“${ans}”</span></div>`
+          : `<button class="iv-ask" onclick="ask('${tab}','${x.k}')"><span class="iv-letter">${x.L}</span> ${x.q}</button>`;
+      }).join('')+`</div>`;
+    body=note+list;
+  }
+  el.innerHTML=panelHead(P)+`
+    <div class="iv-tabs">
+      <div class="iv-tab ${view==='exam'?'active':''}" onclick="secView('exam')">🔍 Head-to-Toe</div>
+      <div class="iv-tab ${view==='history'&&(sec.ivTab||'sample')==='sample'?'active':''}" onclick="secView('history','sample')">🗣️ SAMPLE</div>
+      <div class="iv-tab ${view==='history'&&sec.ivTab==='opqrst'?'active':''}" onclick="secView('history','opqrst')">📈 OPQRST</div>
+    </div>
+    ${body}
+    <button class="act primary full" ${ready?'':'disabled'} onclick="nextPhase()">
+      ${ready?'Assessment complete — go to Treatment →':'Examine head-to-toe & take a history first'}</button>`;
+}
+function opqrstAns(k){ const p=G.case.pain; if(!p) return ''; return k==='s'?(p.s+'/10'):p[k]; }
+function secView(v,tab){ SND.click(); G.secondary.view=v; if(tab) G.secondary.ivTab=tab; renderPhase(); }
+function ask(tab,k){ SND.open();
+  (tab==='sample'?G.interview.sample:G.interview.opqrst)[k]=true;
+  const ans=tab==='sample'?G.case.sample[k]:opqrstAns(k);
+  logMsg(`${tab==='sample'?'SAMPLE':'OPQRST'} — asked ${k.toUpperCase()}: “${ans}”.`,'');
+  renderPhase();
+}
+function renderTreatment(el,P){
+  const c=G.case, tx=c.treatments, tr=G.treatment;
+  if(!tr.order){ // build a stable shuffled tray: correct options + harmful distractors
+    const keys=Object.keys(tx.map).map(k=>({k,kind:'good'}))
+      .concat(Object.keys(tx.harmful).map(k=>({k,kind:'harm'})));
+    tr.order=shuffle(keys);
+  }
+  const reqDone=tx.required.every(k=>tr.applied[k]);
+  const opts=tr.order.map(o=>{
+    const item=o.kind==='good'?tx.map[o.k]:tx.harmful[o.k];
+    const applied=tr.applied[o.k], harmed=tr.harmful[o.k];
+    const st=applied?'correct':(harmed?'wrong':'');
+    return `<button class="choice ${st}" ${applied||harmed?'disabled':''} onclick="doTx('${o.k}','${o.kind}')">
+      <span class="a-ic">${item.ic}</span> ${item.label}</button>`;
+  }).join('');
+  const appliedReq=tx.required.filter(k=>tr.applied[k]).length;
+  el.innerHTML=panelHead(P,`Provide the care <b>${c.name}</b> needs. Choose wisely — some options can do harm.`)+`
+    <div class="choice-q">Interventions applied: ${appliedReq}/${tx.required.length}</div>
+    <div class="choices">${opts}</div>
+    <div id="tx-fb">${tr.lastFb||''}</div>
+    <button class="act primary full" ${reqDone?'':'disabled'} onclick="nextPhase()">
+      ${reqDone?'Care complete — hand off to EMS →':'Apply the care this patient needs'}</button>`;
+}
+function txFb(kind,html){ G.treatment.lastFb=`<div class="feedback ${kind}">${html}</div>`;
+  const s=document.getElementById('tx-fb'); if(s) s.innerHTML=G.treatment.lastFb; }
+function doTx(key,kind){
+  const c=G.case, tx=c.treatments, tr=G.treatment;
+  if(kind==='good'){ tr.applied[key]=true; SND.good();
+    txFb('good','<b>Good.</b> '+tx.map[key].good);
+    logMsg('Treatment: '+tx.map[key].label+'.','good');
+  } else { tr.harmful[key]=true; SND.bad();
+    txFb('bad','<b>Harmful — avoid this.</b> '+tx.harmful[key].bad);
+    G.score.penalties.push('Applied a harmful/incorrect treatment: '+tx.harmful[key].label+'.');
+    logMsg('Chose a harmful treatment: '+tx.harmful[key].label+'.','bad');
+  }
+  renderPhase();
+}
+function computeScore(){
+  const c=G.case, f=G.score.flags, items=[];
+  const add=(label,weight,score,detail)=>items.push({label,weight,score:Math.max(0,Math.min(1,score||0)),detail});
+  add('PPE / BSI before contact',6, f.sizeup_ppe);
+  add('Scene safety',4, f.sizeup_scene);
+  add('Called for resources',3, f.sizeup_resources);
+  add('Consent',5, f.consent);
+  add('Responsiveness (AVPU)',5, f.avpu);
+  add('Airway',6, f.airway);
+  add('Breathing',6, f.breathing);
+  add('Circulation',6, f.circulation);
+  add(c.bleeding?'Controlled major bleeding':'Scanned for major bleeding', c.bleeding?12:5, f.bleeding);
+  add('Correct START triage',12, f.triage,
+    'you: '+(G.triageChoice?TAGS[G.triageChoice].code:'—')+' · correct: '+TAGS[c.triage].code);
+  const flagged=REGIONS.filter(r=>(c.findings[r]||[]).some(x=>x.sev!=='info'));
+  const foundFlagged=flagged.filter(r=>G.examined[r]).length;
+  const examScore=flagged.length?foundFlagged/flagged.length:(REGIONS.filter(r=>G.examined[r]).length/REGIONS.length);
+  add('Head-to-toe exam',10, examScore, foundFlagged+'/'+flagged.length+' injuries found');
+  add('SAMPLE history',8, Object.keys(G.interview.sample).length/6, Object.keys(G.interview.sample).length+'/6 asked');
+  if(c.pain) add('OPQRST (pain)',6, Object.keys(G.interview.opqrst).length/6, Object.keys(G.interview.opqrst).length+'/6 asked');
+  const req=c.treatments.required, appliedReq=req.filter(k=>G.treatment.applied[k]).length;
+  add('Treatment & care',14, appliedReq/req.length, appliedReq+'/'+req.length+' key interventions');
+  const totW=items.reduce((a,i)=>a+i.weight,0);
+  const pen=G.score.penalties.slice();
+  let pct=Math.round(items.reduce((a,i)=>a+i.weight*i.score,0)/totW*100);
+  pct=Math.max(0,pct-pen.length*8);
+  const stars=(pct>=88&&pen.length===0)?3:((pct>=70&&pen.length<=1)?2:1);
+  return {items,pct,stars,pen};
+}
+function saveProgress(stars,pct){
+  let p; try{ p=JSON.parse(localStorage.getItem('cert_assess_progress'))||{}; }catch(e){ p={}; }
+  p.completed=true; p.stars=Math.max(p.stars||0,stars); p.best=Math.max(p.best||0,pct); p.plays=(p.plays||0)+1;
+  localStorage.setItem('cert_assess_progress',JSON.stringify(p));
+}
+function renderDebrief(el,P){
+  const c=G.case, r=computeScore();
+  if(!G.saved){ G.saved=true; SND.win(); saveProgress(r.stars,r.pct); logMsg('Handed off to EMS — scenario complete.','good'); }
+  const starStr=[1,2,3].map(i=>i<=r.stars?'★':'☆').join('');
+  const rating=r.stars===3?'Excellent':(r.stars===2?'Good':'Completed');
+  el.innerHTML=panelHead(P,'Hand-off complete. Here’s how your assessment went.')+`
+    <div style="text-align:center">
+      <div style="font-size:2.1rem;color:var(--gold);letter-spacing:5px">${starStr}</div>
+      <div style="font-weight:800;color:var(--primary-light);font-size:1.05rem">${rating} · ${r.pct}%</div>
+      <div style="font-size:.82rem;color:var(--text-muted);margin-top:4px">
+        ${c.name}, ${c.age} — ${c.title}. Correct triage: ${tagChip(c.triage)}</div>
+    </div>
+    <div class="findings"><div class="f-region">Scorecard</div>
+      ${r.items.map(i=>{ const pctI=Math.round(i.score*100);
+        const col=i.score>=0.9?'var(--min)':(i.score>=0.5?'var(--warn)':'var(--danger)');
+        const mk=i.score>=0.9?'✓':(i.score>=0.5?'◐':'✗');
+        return `<div style="display:flex;justify-content:space-between;gap:8px;padding:3px 0;font-size:.82rem;border-bottom:1px solid var(--border)">
+          <span>${mk} ${i.label}${i.detail?` <span style="color:var(--text-muted)">(${i.detail})</span>`:''}</span>
+          <span style="color:${col};font-weight:700;flex-shrink:0">${pctI}%</span></div>`; }).join('')}
+    </div>
+    ${r.pen.length?`<div class="feedback bad"><b>Critical flags</b><ul style="margin:4px 0 0 16px">${r.pen.map(p=>`<li>${p}</li>`).join('')}</ul></div>`:''}
+    <div class="feedback info"><b>Teaching points</b><ul style="margin:4px 0 0 16px">${c.teaching.map(t=>`<li>${t}</li>`).join('')}</ul></div>
+    <div class="btn-row">
+      <button class="btn primary" onclick="newPatient()">🔄 New Patient</button>
+      <a class="btn" href="index.html">🏠 Menu</a>
+    </div>`;
+}
+
+/* ============================================================
+   SCENE + VITALS + PATIENT RENDER
+   ============================================================ */
+function renderScene(){
+  const c=G.case;
+  const hz=c.hazards.map(h=>`<span class="sb-hazard">${h.ic} ${h.t}</span>`).join(' · ');
+  document.getElementById('scene-banner').innerHTML=`
+    <div class="sb-item"><span class="sb-ic">${c.weather.ic}</span>
+      <span><span class="sb-lbl">Weather</span><br>${c.weather.t}</span></div>
+    <div class="sb-sep"></div>
+    <div class="sb-item"><span class="sb-ic">⚠️</span>
+      <span><span class="sb-lbl">Scene hazards</span><br>${hz}</span></div>`;
+  const meta=document.getElementById('patient-meta');
+  meta.innerHTML=`${c.name} · ${c.age} y/o ${c.sex==='M'?'male':'female'}<small>${c.chief}</small>`;
+}
+
+function renderVitals(){
+  const c=G.case, k=G.known, el=document.getElementById('vitals');
+  const unk='<span class="v-val unk">—</span>';
+  const respShown=k.breathing, pulseShown=k.circulation, skinShown=k.circulation, avpuShown=!!k.responsiveness;
+  const avpuMap={alert:'A',verbal:'V',pain:'P',unresponsive:'U'};
+  el.innerHTML=`
+    <div class="vital"><div class="v-lbl">AVPU</div>${avpuShown?`<div class="v-val">${avpuMap[c.responsiveness]}</div>`:unk}</div>
+    <div class="vital ${respShown&&c.breathing.rate>29?'hi':''}"><div class="v-lbl">Resp</div>${respShown?`<div class="v-val">${c.breathing.rate}</div>`:unk}</div>
+    <div class="vital ${pulseShown&&c.circulation.pulse>110?'warn':''}"><div class="v-lbl">Pulse</div>${pulseShown?`<div class="v-val">${c.circulation.pulse}</div>`:unk}</div>
+    <div class="vital"><div class="v-lbl">Skin</div>${skinShown?`<div class="v-val" style="font-size:.68rem">${c.circulation.skin.split(',')[0]}</div>`:unk}</div>`;
+}
+
+function updateStageHint(){
+  const P=PHASES[G.phase]; const h=document.getElementById('stage-hint');
+  if(P.id==='sizeup') h.textContent='Complete your scene size-up before approaching the patient.';
+  else if(P.id==='secondary') h.textContent='Click each body region to examine it head-to-toe.';
+  else if(P.id==='primary') h.textContent='Assess responsiveness and ABCs using the panel →';
+  else h.textContent='';
+}
+
+/* ---------- SVG patient ---------- */
+function renderPatient(){
+  const c=G.case, wrap=document.getElementById('body-wrap');
+  const label=document.getElementById('region-label');
+  const front=(G.view==='front');
+  const svg=buildBodySVG(front,G.case);
+  wrap.querySelector('svg')?.remove();
+  wrap.insertAdjacentHTML('beforeend',svg);
+  // wire hotspots
+  wrap.querySelectorAll('.hot').forEach(h=>{
+    const reg=h.getAttribute('data-region');
+    h.addEventListener('click',()=>onRegionClick(reg));
+    h.addEventListener('mouseenter',e=>{ label.textContent=REGION_NAME[reg]; label.style.opacity='1';
+      positionLabel(e,wrap,label); });
+    h.addEventListener('mousemove',e=>positionLabel(e,wrap,label));
+    h.addEventListener('mouseleave',()=>{ label.style.opacity='0'; });
+    if(G.examined[reg]) h.classList.add('examined');
+    if(regionFlagged(reg)) h.classList.add('flagged');
+  });
+  // flip button label
+  document.getElementById('flip-btn').textContent = front?'🔄 Check back':'🔄 Front';
+  drawMarkers(wrap,front);
+}
+function positionLabel(e,wrap,label){ const r=wrap.getBoundingClientRect();
+  label.style.left=(e.clientX-r.left)+'px'; label.style.top=(e.clientY-r.top)+'px'; }
+
+function regionFlagged(reg){ // any discovered critical/warn finding shown on the body
+  if(!G.examined[reg]) return false;
+  const f=(G.case.findings[reg]||[]); return f.some(x=>x.tag&&x.sev!=='info');
+}
+
+/* marker coordinates (front / back) for the current viewBox 0 0 220 470 */
+const MK_FRONT={head:[110,44],eyes:[110,50],neck:[110,92],chest:[110,140],abdomen:[110,196],
+  pelvis:[110,238],arms:[[60,168],[160,168]],legs:[[92,360],[128,360]],back:null};
+const MK_BACK={head:[110,44],neck:[110,92],back:[110,170],pelvis:[110,238],
+  arms:[[60,168],[160,168]],legs:[[92,360],[128,360]],eyes:null,chest:null,abdomen:null};
+
+function drawMarkers(wrap,front){
+  const svg=wrap.querySelector('svg'); if(!svg)return;
+  // clear old
+  svg.querySelectorAll('.mk').forEach(n=>n.remove());
+  const map=front?MK_FRONT:MK_BACK;
+  const TAG_ICON={bleed:'🩸',burn:'🔥',deformity:'🦴',pain:'❗',skin:'⚕️'};
+  Object.keys(G.case.findings).forEach(reg=>{
+    if(!G.examined[reg]) return;
+    const coords=map[reg]; if(!coords) return;
+    const flist=(G.case.findings[reg]||[]).filter(f=>f.tag&&f.sev!=='info');
+    const tags=[...new Set(flist.map(f=>f.tag))];
+    if(!tags.length) return;
+    let spots=Array.isArray(coords[0])?coords:[coords];
+    // for paired limbs, localize to the injured side from the finding text
+    if(spots.length===2){
+      const txt=flist.map(f=>f.t).join(' ').toLowerCase();
+      const L=/\bleft\b/.test(txt), R=/\bright\b/.test(txt);
+      if(L&&!R) spots=[spots[1]];       // patient left  = viewer right (larger x)
+      else if(R&&!L) spots=[spots[0]];  // patient right = viewer left  (smaller x)
+    }
+    spots.forEach(([x,y])=>{
+      tags.slice(0,2).forEach((tg,i)=>{
+        const g=document.createElementNS('http://www.w3.org/2000/svg','text');
+        g.setAttribute('class','mk'); g.setAttribute('x',x+(tags.length>1?(i*16-8):0));
+        g.setAttribute('y',y); g.setAttribute('text-anchor','middle');
+        g.setAttribute('font-size','15'); g.textContent=TAG_ICON[tg]||'❗';
+        svg.appendChild(g);
+      });
+    });
+  });
+}
+
+/* returns an SVG string of the body (front or back) with hotspots */
+function buildBodySVG(front,c){
+  const skin=c.skin.fill, line=c.skin.line, shirt=c.shirt, pants=c.pants, hair=c.hair;
+  const longHair=c.hairStyle==='long';
+  const head = front
+    ? `${longHair?`<path d="M74 40 Q72 96 84 104 L88 60 Q80 44 82 30 Q110 4 138 30 Q140 44 132 60 L136 104 Q148 96 146 40 Q140 8 110 8 Q80 8 74 40" fill="${hair}"/>`:''}
+       <circle cx="110" cy="46" r="30" fill="${skin}" stroke="${line}" stroke-width="2"/>
+       <ellipse cx="98" cy="44" rx="4" ry="5" fill="#2a1c12"/><ellipse cx="122" cy="44" rx="4" ry="5" fill="#2a1c12"/>
+       <path d="M100 60 Q110 66 120 60" fill="none" stroke="${line}" stroke-width="2" stroke-linecap="round"/>
+       <path d="M80 30 Q110 6 140 30 Q140 20 110 16 Q80 20 80 30" fill="${hair}"/>`
+    : `${longHair?`<path d="M76 40 Q74 104 110 108 Q146 104 144 40 Q140 8 110 8 Q80 8 76 40" fill="${hair}"/>`:''}
+       <circle cx="110" cy="46" r="30" fill="${skin}" stroke="${line}" stroke-width="2"/>
+       <path d="M80 40 Q110 8 140 40 Q140 66 110 72 Q80 66 80 40" fill="${hair}"/>`;
+  const body = `
+    <!-- neck -->
+    <rect x="98" y="72" width="24" height="20" rx="6" fill="${skin}" stroke="${line}" stroke-width="2"/>
+    <!-- torso (shirt) -->
+    <path d="M74 96 Q110 86 146 96 L150 150 Q150 210 138 236 L82 236 Q70 210 70 150 Z" fill="${shirt}" stroke="rgba(0,0,0,.28)" stroke-width="2"/>
+    ${front?'':'<line x1="110" y1="96" x2="110" y2="232" stroke="rgba(0,0,0,.28)" stroke-width="2"/>'}
+    <!-- arms -->
+    <path d="M74 100 Q56 108 52 150 L48 210 Q48 220 58 220 L66 210 L68 150 Q70 120 78 108 Z" fill="${shirt}" stroke="rgba(0,0,0,.28)" stroke-width="2"/>
+    <path d="M146 100 Q164 108 168 150 L172 210 Q172 220 162 220 L154 210 L152 150 Q150 120 142 108 Z" fill="${shirt}" stroke="rgba(0,0,0,.28)" stroke-width="2"/>
+    <!-- forearms/hands (skin) -->
+    <rect x="48" y="206" width="16" height="40" rx="8" fill="${skin}" stroke="${line}" stroke-width="2"/>
+    <rect x="156" y="206" width="16" height="40" rx="8" fill="${skin}" stroke="${line}" stroke-width="2"/>
+    <!-- pelvis/pants -->
+    <path d="M80 232 L140 232 L146 262 Q140 272 128 272 L92 272 Q80 272 74 262 Z" fill="${pants}" stroke="rgba(0,0,0,.3)" stroke-width="2"/>
+    <!-- legs -->
+    <path d="M84 268 L104 268 L102 360 L98 430 L84 430 L82 360 Z" fill="${pants}" stroke="rgba(0,0,0,.3)" stroke-width="2"/>
+    <path d="M116 268 L136 268 L138 360 L136 430 L122 430 L118 360 Z" fill="${pants}" stroke="rgba(0,0,0,.3)" stroke-width="2"/>
+    <!-- shoes -->
+    <path d="M80 430 L98 430 L100 444 Q90 450 78 446 Z" fill="#22303f"/>
+    <path d="M122 430 L140 430 L142 446 Q130 450 120 444 Z" fill="#22303f"/>`;
+  // hotspots (transparent, clickable). Two shapes for arms/legs → same region.
+  const hot = `
+    <ellipse class="hot" data-region="head" cx="110" cy="46" rx="31" ry="31" rx="31"/>
+    ${front?'<rect class="hot" data-region="eyes" x="86" y="36" width="48" height="16" rx="6"/>':''}
+    <rect class="hot" data-region="neck" x="96" y="70" width="28" height="24" rx="6"/>
+    ${front
+      ? `<rect class="hot" data-region="chest" x="74" y="94" width="72" height="60" rx="10"/>
+         <rect class="hot" data-region="abdomen" x="76" y="154" width="68" height="52" rx="10"/>`
+      : `<rect class="hot" data-region="back" x="74" y="94" width="72" height="112" rx="10"/>`}
+    <path class="hot" data-region="pelvis" d="M74 206 L146 206 L146 272 L74 272 Z"/>
+    <path class="hot" data-region="arms" d="M46 100 L78 100 L70 210 L48 246 L44 210 Z"/>
+    <path class="hot" data-region="arms" d="M142 100 L174 100 L176 210 L172 246 L150 210 Z"/>
+    <rect class="hot" data-region="legs" x="80" y="268" width="26" height="164"/>
+    <rect class="hot" data-region="legs" x="114" y="268" width="26" height="164"/>`;
+  return `<svg class="patient" viewBox="0 0 220 470" xmlns="http://www.w3.org/2000/svg" aria-label="Patient figure">
+    ${head}${body}${hot}</svg>`;
+}
+
+function flipBody(){ SND.click(); G.view=(G.view==='front')?'back':'front'; renderPatient(); }
+
+/* region click — behavior depends on phase (examine in secondary; contextual elsewhere) */
+function onRegionClick(reg){
+  const P=PHASES[G.phase];
+  if(P.id==='secondary'){ examineRegion(reg); return; }
+  if(P.id==='primary'){
+    // map body regions to the matching primary check for tactile interaction
+    const pr=G.primary;
+    if((reg==='head'||reg==='eyes')&&!pr.avpu) return pAvpu();
+    if(reg==='neck'&&!pr.airway) return pAirway();
+    if(reg==='chest'&&!pr.breathing) return pBreathing();
+    if((reg==='arms'||reg==='neck')&&!pr.circ) return pCirc();
+    SND.click(); primFb('info',`Use the panel actions to complete the primary survey. (Tapped the ${REGION_NAME[reg].toLowerCase()}.)`);
+    return;
+  }
+  if(P.id==='treatment'){ SND.click(); return; }
+  SND.click();
+  flashPanelNote(`You’ll examine the ${REGION_NAME[reg].toLowerCase()} during the assessment phases.`);
+}
+
+function examineRegion(reg,quiet){
+  const firstLook=!G.examined[reg];
+  G.examined[reg]=true; SND.open();
+  const f=G.case.findings[reg]||[];
+  if(firstLook) logMsg(`Examined ${REGION_NAME[reg].toLowerCase()}.`,f.some(x=>x.sev!=='info')?'bad':'');
+  // persist the finding so it survives panel re-render
+  G.secondary.lastReg=reg;
+  G.secondary.lastFindingHtml = f.length
+    ? `<div class="f-region">${REGION_NAME[reg]}</div><ul>${f.map(x=>`<li>${x.t}</li>`).join('')}</ul>`
+    : `<div class="f-region">${REGION_NAME[reg]}</div><div class="f-none">No abnormal findings.</div>`;
+  renderPatient();
+  if(PHASES[G.phase].id==='secondary') renderPhase();
+  else { const slot=document.getElementById('exam-findings'); if(slot){ slot.innerHTML=G.secondary.lastFindingHtml; slot.style.display='block'; } }
+}
+
+function flashPanelNote(msg){
+  let n=document.getElementById('panel-note');
+  if(!n){ n=document.createElement('div'); n.id='panel-note'; n.className='feedback info';
+    document.getElementById('panel').appendChild(n); }
+  n.textContent=msg;
+}
+
+/* ---------- overlay ---------- */
+function openOv(html){ document.getElementById('ov-box').innerHTML=html; document.getElementById('ov').classList.add('show'); }
+function closeOv(){ document.getElementById('ov').classList.remove('show'); }
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeOv(); });
+
+/* ---------- boot ---------- */
+['pointerdown','keydown','touchstart'].forEach(ev=>
+  window.addEventListener(ev,function once(){ SND.arm(); },{once:true}));
+SND.init();
+newPatient();
+</script>
+</body>
+</html>
