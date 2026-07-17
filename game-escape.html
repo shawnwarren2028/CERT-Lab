@@ -389,7 +389,7 @@ function genAcronym(cx){
   const clues = scrambled ? shuffle(a.clues) : a.clues.slice();
   const decoys = cx>=3 ? shuffle(DECOY_LETTERS).slice(0,Math.min(cx-1,3)) : [];
   const bank = shuffle(a.w.split('').concat(decoys)).map(v=>({v,used:false}));
-  return { type:'acronym', word:a.w, aContext:a.ctx, clues, showLetters:cx===1, revealHint:false,
+  return { type:'acronym', word:a.w, aContext:a.ctx, clues, orderedClues:a.clues.slice(), showLetters:cx===1, revealHint:false,
     state:{ slots:a.w.split('').map(()=>null), bank },
     target:a.w.split(''), solution:a.w };
 }
@@ -606,10 +606,29 @@ function winRun(){
       <a class="btn" href="index.html">🏠 Menu</a>
     </div>`);
 }
+const PZ_TITLE={acronym:'Mnemonic Lock',triage:'Triage Lock',placard:'Hazmat Lock',sequence:'Sequence Lock'};
+function tagChipEsc(tag){ const col={immediate:'var(--imm)',delayed:'var(--del)',minor:'var(--min)',deceased:'#555'}[tag];
+  return `<span style="display:inline-block;font-size:.72rem;font-weight:800;padding:1px 8px;border-radius:5px;background:${col};color:${tag==='delayed'?'#06210a':'#fff'}">${TAG_LBL[tag]}</span>`; }
+function puzzleAnswer(p){
+  if(p.type==='acronym'){ const oc=p.orderedClues||p.clues;
+    return `<div style="font-weight:800;color:var(--primary-light);font-size:1.15rem;text-align:center;letter-spacing:3px">${p.word}</div>
+      <ul style="margin:6px 0 0 18px;font-size:.84rem;line-height:1.5">${oc.map(c=>`<li><b>${c[0]}</b> — ${c[1]}</li>`).join('')}</ul>`; }
+  if(p.type==='triage')
+    return `<ul style="margin:2px 0 0 18px;font-size:.85rem;line-height:1.7;list-style:none;padding-left:0">${p.survs.map(s=>`<li>${s.name} → ${tagChipEsc(s.correct)}</li>`).join('')}</ul>`;
+  if(p.type==='placard'){
+    if(p.variant==='nfpa') return `<div style="text-align:center;font-size:.9rem;line-height:1.7">Health <b>${p.nfpa.h}</b> · Fire <b>${p.nfpa.f}</b> · Reactivity <b>${p.nfpa.r}</b><br>Combination: <b style="color:var(--primary-light);letter-spacing:2px">${p.target.join('-')}</b></div>`;
+    return `<ul style="margin:2px 0 6px 18px;font-size:.85rem;line-height:1.6">${p.cls.map(c=>`<li>Class <b>${c.n}</b> — ${c.name}</li>`).join('')}</ul>
+      <div style="text-align:center">Combination: <b style="color:var(--primary-light);letter-spacing:2px">${p.target.join('-')}</b></div>`; }
+  if(p.type==='sequence')
+    return `<ol style="margin:2px 0 0 20px;font-size:.85rem;line-height:1.6">${p.target.map(s=>`<li>${s}</li>`).join('')}</ol>`;
+  return '';
+}
 function timeUp(){
   G.ended=true; stopClock(); SND.lose();
+  const p=G.rooms[G.cur].puzzle, th=ROOM_THEME[p.type];
   openOv(`<h2 style="color:var(--danger)">⏰ Time's up!</h2>
-    <p style="text-align:center;color:var(--text-muted)">The clock ran out before you escaped — you reached room ${G.cur+1} of ${G.rooms.length}. Regroup and try again.</p>
+    <p style="text-align:center;color:var(--text-muted)">The clock ran out on room ${G.cur+1} of ${G.rooms.length}. Here's the answer you were working on:</p>
+    <div class="feedback info" style="margin-top:10px"><b>${th.ic} ${PZ_TITLE[p.type]} — correct answer</b>${puzzleAnswer(p)}</div>
     <div class="btn-row">
       <button class="btn primary" style="flex:0" onclick="startTier(${G.tier})">🔄 Try Again</button>
       <button class="btn" onclick="openTierSelect()">🎚️ Levels</button>
