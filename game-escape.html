@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script src="theme.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wallingford CERT — Escape Room</title>
+<style>
+  :root{
+    --bg:#0e1208; --surface:#1a2012; --surface2:#243018; --border:#3a5228;
+    --primary:#5aaa3a; --primary-dark:#4a8f2e; --primary-light:#7ac95a;
+    --text:#eef2e8; --text-muted:#8aa87a; --radius:12px; --gold:#e8c33a;
+    --danger:#ef4444; --warn:#f59e0b; --info:#56d4ff;
+    --imm:#e5484d; --del:#f2c94c; --min:#27ae60; --dec:#3a3a3a;
+  }
+  [data-theme="light"]{
+    --bg:#eef3e7; --surface:#ffffff; --surface2:#e7eedd; --border:#c2d2af;
+    --primary:#41902e; --primary-dark:#317022; --primary-light:#5aaa3a;
+    --text:#16210d; --text-muted:#5c6e4a; --muted:#5c6e4a;
+  }
+  [data-theme="light"] header{background:#e3ecd6;}
+  [data-theme="light"] footer{background:#e3ecd6;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);
+    min-height:100vh;display:flex;flex-direction:column;-webkit-tap-highlight-color:transparent;}
+
+  header{width:100%;background:#111a09;border-bottom:3px solid var(--primary);
+    padding:10px 22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  #cert-logo{height:48px;width:auto;}
+  .logo-badge{background:var(--primary);color:#000;font-weight:900;font-size:1.05rem;
+    letter-spacing:.1em;padding:6px 12px;border-radius:6px;}
+  header h1{font-size:1.12rem;font-weight:700;color:var(--primary);}
+  header p{font-size:0.76rem;color:var(--text-muted);}
+  .hdr-text{flex:1 1 0;min-width:0;}
+  .hdr-actions{margin-left:auto;display:flex;align-items:center;gap:9px;}
+  .home-link{color:var(--primary-light);text-decoration:none;font-size:0.85rem;font-weight:600;
+    border:1px solid var(--border);padding:8px 14px;border-radius:8px;transition:.15s;white-space:nowrap;}
+  .home-link:hover{background:var(--surface2);border-color:var(--primary);}
+  .icon-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);
+    font-size:1rem;line-height:1;padding:8px 11px;border-radius:8px;cursor:pointer;transition:.15s;}
+  .icon-btn:hover{border-color:var(--primary);}
+  .level-btn{display:inline-flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);
+    color:var(--primary-light);font-size:0.82rem;font-weight:700;padding:8px 12px;border-radius:8px;cursor:pointer;
+    transition:.15s;white-space:nowrap;font-family:inherit;}
+  .level-btn:hover{border-color:var(--primary);}
+
+  main{flex:1;width:100%;max-width:760px;margin:0 auto;padding:16px 18px 26px;display:flex;flex-direction:column;gap:14px;}
+
+  /* room header */
+  .room-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--surface);
+    border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;}
+  .room-name{font-size:1.05rem;font-weight:800;color:var(--primary);}
+  .room-name small{display:block;font-size:0.72rem;color:var(--text-muted);font-weight:600;margin-top:2px;}
+  .clock{margin-left:auto;display:flex;align-items:center;gap:6px;font-weight:800;font-size:1.05rem;color:var(--text);
+    background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:6px 12px;}
+  .clock.urgent{color:#fff;background:var(--danger);border-color:var(--danger);animation:pulse .9s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
+  .dots{display:flex;gap:6px;}
+  .dots .d{width:12px;height:12px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);}
+  .dots .d.done{background:var(--primary);border-color:var(--primary);}
+  .dots .d.cur{background:var(--gold);border-color:var(--gold);}
+
+  /* puzzle panel */
+  .puzzle{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 18px 20px;
+    display:flex;flex-direction:column;gap:14px;}
+  .pz-head{display:flex;align-items:flex-start;gap:12px;}
+  .pz-lock{font-size:2.1rem;line-height:1;filter:grayscale(.1);}
+  .pz-head h2{font-size:1.16rem;color:var(--primary);font-weight:800;}
+  .pz-head p{font-size:0.85rem;color:var(--text-muted);line-height:1.5;margin-top:3px;}
+  .pz-intro{font-size:0.9rem;line-height:1.55;background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:11px 13px;}
+  .pz-intro b{color:var(--primary-light);}
+
+  /* clue list */
+  .clues{display:flex;flex-direction:column;gap:6px;}
+  .clue{display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--border);
+    border-radius:8px;padding:8px 12px;font-size:0.88rem;}
+  .clue .c-badge{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;padding:0 5px;
+    border-radius:6px;background:var(--bg);border:1px solid var(--border);font-weight:800;color:var(--gold);font-size:0.82rem;}
+
+  /* slots + bank (letters/digits/tiles) */
+  .slots{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;}
+  .slot{min-width:40px;height:48px;padding:0 8px;border-radius:9px;border:2px dashed var(--border);background:var(--bg);
+    display:flex;align-items:center;justify-content:center;font-size:1.25rem;font-weight:800;color:var(--text);cursor:pointer;transition:.12s;}
+  .slot.filled{border-style:solid;border-color:var(--primary);background:var(--surface2);}
+  .slot.tile{min-width:96px;font-size:0.82rem;font-weight:700;text-align:center;line-height:1.2;}
+  .slot.ok{border-color:var(--min);background:rgba(39,174,96,.16);}
+  .slot.bad{border-color:var(--danger);background:rgba(239,68,68,.14);animation:shake .3s;}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+  .bank{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;}
+  .bank .chip{min-width:40px;height:44px;padding:0 10px;border-radius:9px;border:1px solid var(--border);background:var(--surface2);
+    color:var(--text);font-size:1.1rem;font-weight:800;cursor:pointer;transition:.12s;display:flex;align-items:center;justify-content:center;}
+  .bank .chip:hover{border-color:var(--primary);background:var(--border);}
+  .bank .chip.tile{min-width:96px;font-size:0.82rem;font-weight:700;text-align:center;line-height:1.2;padding:6px 10px;height:auto;min-height:44px;}
+  .bank .chip.used{opacity:.32;pointer-events:none;}
+  .bank .chip.key{min-width:52px;height:48px;font-size:1.2rem;}
+
+  /* keypad readout */
+  .combo{display:flex;gap:8px;justify-content:center;align-items:center;}
+
+  /* placards */
+  .placards{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;}
+  .placard-wrap{display:flex;flex-direction:column;align-items:center;gap:6px;}
+  .placard-wrap .pl-label{font-size:0.72rem;color:var(--text-muted);font-weight:600;text-align:center;max-width:120px;}
+
+  /* triage survivors */
+  .survivors{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;}
+  .surv{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:11px 12px;}
+  .surv .s-name{font-weight:700;font-size:0.9rem;color:var(--text);}
+  .surv .s-vitals{font-size:0.78rem;color:var(--text-muted);margin:5px 0 8px;line-height:1.5;}
+  .surv .s-tags{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
+  .tagbtn{font-size:0.72rem;font-weight:800;padding:6px 4px;border-radius:6px;border:1px solid var(--border);
+    background:var(--surface2);color:var(--text);cursor:pointer;transition:.12s;}
+  .tagbtn:hover{border-color:var(--primary);}
+  .tagbtn.sel{color:#06210a;}
+  .tagbtn.sel[data-tag="immediate"]{background:var(--imm);border-color:var(--imm);color:#fff;}
+  .tagbtn.sel[data-tag="delayed"]{background:var(--del);border-color:var(--del);}
+  .tagbtn.sel[data-tag="minor"]{background:var(--min);border-color:var(--min);color:#fff;}
+  .tagbtn.sel[data-tag="deceased"]{background:#555;border-color:#555;color:#fff;}
+  .surv.wrong{border-color:var(--danger);}
+  .surv.right{border-color:var(--min);}
+
+  .feedback{border-radius:9px;padding:10px 13px;font-size:0.85rem;line-height:1.5;border:1px solid;}
+  .feedback.good{border-color:var(--min);background:rgba(39,174,96,.12);}
+  .feedback.bad{border-color:var(--danger);background:rgba(239,68,68,.10);}
+  .feedback.info{border-color:var(--info);background:rgba(86,212,255,.08);}
+
+  .room-actions{display:flex;gap:10px;flex-wrap:wrap;}
+  .btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.9rem;font-weight:700;
+    padding:11px 16px;border-radius:9px;cursor:pointer;transition:.15s;font-family:inherit;text-decoration:none;
+    display:inline-flex;align-items:center;gap:7px;}
+  .btn:hover{border-color:var(--primary);background:var(--border);}
+  .btn.primary{background:var(--primary);color:#06210a;border-color:var(--primary);flex:1;justify-content:center;}
+  .btn.primary:hover{background:var(--primary-light);}
+  .btn:disabled{opacity:.5;cursor:default;}
+
+  footer{text-align:center;padding:16px;color:var(--text-muted);font-size:0.74rem;border-top:1px solid var(--border);}
+  footer span{color:var(--primary);}
+
+  /* overlay */
+  .ov{position:fixed;inset:0;background:rgba(6,9,5,.86);display:none;align-items:center;justify-content:center;padding:18px;z-index:120;}
+  .ov.show{display:flex;animation:ovf .2s ease;}
+  @keyframes ovf{from{opacity:0}to{opacity:1}}
+  .ov-box{background:var(--surface);border:2px solid var(--primary);border-radius:14px;padding:24px;max-width:560px;width:100%;
+    max-height:90vh;overflow-y:auto;position:relative;}
+  .ov-box h2{font-size:1.5rem;color:var(--primary);margin-bottom:6px;text-align:center;}
+  .ov-x{position:absolute;top:12px;right:15px;background:none;border:none;color:var(--text-muted);font-size:1.6rem;line-height:1;cursor:pointer;}
+  .ov-x:hover{color:var(--text);}
+  .btn-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:18px;}
+  .tier-list{display:flex;flex-direction:column;gap:9px;margin-top:6px;}
+  .tier-card{display:flex;align-items:center;gap:13px;text-align:left;background:var(--surface2);border:1px solid var(--border);
+    border-radius:11px;padding:12px 14px;cursor:pointer;transition:.14s;font-family:inherit;color:var(--text);}
+  .tier-card:hover{border-color:var(--primary);background:var(--border);transform:translateY(-1px);}
+  .tier-card .tc-ic{font-size:1.7rem;flex-shrink:0;}
+  .tier-card .tc-body{flex:1;min-width:0;}
+  .tier-card .tc-name{font-weight:800;color:var(--primary-light);font-size:1rem;}
+  .tier-card .tc-desc{display:block;font-size:0.76rem;color:var(--text-muted);line-height:1.4;margin-top:2px;}
+  .tier-card .tc-side{text-align:right;flex-shrink:0;}
+  .tier-card .tc-stars{color:var(--gold);font-size:0.95rem;letter-spacing:1px;}
+  .tier-card .tc-best{display:block;font-size:0.66rem;color:var(--text-muted);margin-top:2px;}
+
+  @media (max-width:600px){
+    header{padding:8px 14px;}
+    .hdr-actions{margin-left:0;width:100%;justify-content:center;}
+    main{padding:12px 12px 20px;}
+    .clock{margin-left:0;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <img id="cert-logo" src="cert-wallingford-logo.png" alt="Wallingford CERT"
+    onerror="this.style.display='none';document.getElementById('logo-fallback').style.display='flex'">
+  <div id="logo-fallback" style="display:none;align-items:center;"><div class="logo-badge">CERT</div></div>
+  <div class="hdr-text">
+    <h1>Wallingford CERT — Escape Room</h1>
+    <p>Community Emergency Response Team</p>
+  </div>
+  <div class="hdr-actions">
+    <button class="level-btn" id="level-btn" onclick="openTierSelect()" title="Choose difficulty">🎚️ <span id="tier-name">Levels</span></button>
+    <button class="icon-btn" id="sfx-btn" onclick="SND.toggle()" title="Sound effects">🔊</button>
+    <a class="home-link" href="index.html">← Menu</a>
+    <button class="theme-btn" onclick="toggleTheme()" aria-label="Toggle light or dark mode">☀️</button>
+  </div>
+</header>
+
+<main id="main"><!-- room injected here --></main>
+
+<footer>
+  <span>Wallingford CERT</span> — Training Suite · Escape Room · For educational use — follow your local CERT program guidelines.
+</footer>
+
+<div class="ov" id="ov" onclick="if(event.target===this)closeOv()"><div class="ov-box" id="ov-box"></div></div>
+
+<script src="cert-terms.js"></script>
+<script>
+/* ============================================================
+   Wallingford CERT — Escape Room
+   Sequence of themed rooms; each room is a CERT puzzle whose
+   solution opens the lock to the next. Single file, no deps.
+   ============================================================ */
+
+/* ---------- SFX ---------- */
+const SND=(function(){
+  let ctx,on=(localStorage.getItem('cert_escape_sfx')!=='off'),comp;
+  function ac(){ if(!ctx){ ctx=new (window.AudioContext||window.webkitAudioContext)();
+    comp=ctx.createDynamicsCompressor(); comp.connect(ctx.destination);} return ctx; }
+  function tone(f,t,type,g,dur){ if(!on)return; ac(); const o=ctx.createOscillator(),ga=ctx.createGain();
+    o.type=type||'sine'; o.frequency.setValueAtTime(f,ctx.currentTime+t);
+    ga.gain.setValueAtTime(0,ctx.currentTime+t); ga.gain.linearRampToValueAtTime(g||0.2,ctx.currentTime+t+0.012);
+    ga.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+t+(dur||0.16));
+    o.connect(ga); ga.connect(comp); o.start(ctx.currentTime+t); o.stop(ctx.currentTime+t+(dur||0.16)+0.03); }
+  return {
+    click(){ tone(300,0,'triangle',0.12,0.07); },
+    place(){ tone(440,0,'triangle',0.13,0.07); },
+    good(){ tone(540,0,'sine',0.2,0.12); tone(760,0.09,'sine',0.2,0.14); },
+    bad(){ tone(200,0,'sawtooth',0.16,0.16); tone(150,0.1,'sawtooth',0.14,0.2); },
+    unlock(){ tone(400,0,'square',0.14,0.08); tone(620,0.09,'square',0.14,0.1); tone(880,0.2,'triangle',0.18,0.22); },
+    win(){ [523,659,784,1047,1319].forEach((f,i)=>tone(f,i*0.11,'triangle',0.2,0.24)); },
+    lose(){ [400,320,240,180].forEach((f,i)=>tone(f,i*0.14,'sawtooth',0.16,0.28)); },
+    toggle(){ on=!on; localStorage.setItem('cert_escape_sfx',on?'on':'off');
+      document.getElementById('sfx-btn').textContent=on?'🔊':'🔇'; if(on){ac();this.click();} },
+    arm(){ if(!on)return; ac(); if(ctx.state==='suspended') ctx.resume(); },
+    init(){ document.getElementById('sfx-btn').textContent=on?'🔊':'🔇'; }
+  };
+})();
+
+/* ---------- helpers ---------- */
+const rnd=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const chance=p=>Math.random()<p;
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function fmtTime(s){ s=Math.max(0,s); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
+
+/* ---------- difficulty tiers (5-rank suite ladder) ---------- */
+const TIERS=[
+  {n:1,name:'Recruit',   ic:'🔰', rooms:3, perRoom:120, hints:3, cx:1, desc:'3 rooms, generous clock, 3 hints, mnemonics shown in order.'},
+  {n:2,name:'Trainee',   ic:'🎓', rooms:3, perRoom:100, hints:2, cx:2, desc:'3 rooms, scrambled clues, 2 hints.'},
+  {n:3,name:'Responder', ic:'🚑', rooms:4, perRoom:88,  hints:2, cx:3, desc:'4 rooms, tougher puzzles, decoys creep in, 2 hints.'},
+  {n:4,name:'Veteran',   ic:'🎖️', rooms:4, perRoom:74,  hints:1, cx:4, desc:'4 rooms, tight clock, red herrings, 1 hint.'},
+  {n:5,name:'Specialist',ic:'⭐', rooms:5, perRoom:66,  hints:0, cx:5, desc:'5 rooms, hardest puzzles, tightest clock, no hints.'},
+];
+function tierByN(n){ return TIERS.find(t=>t.n===n)||TIERS[0]; }
+
+/* ---------- progress ---------- */
+function loadProg(){ try{ return JSON.parse(localStorage.getItem('cert_escape_progress'))||{}; }catch(e){ return {}; } }
+function sumTierStars(p){ p=p||loadProg(); return p.tiers?Object.values(p.tiers).reduce((a,t)=>a+(t.stars||0),0):0; }
+function saveProgress(tierN,stars,sec){
+  const p=loadProg(); p.completed=true; p.tiers=p.tiers||{};
+  const cur=p.tiers[tierN]||{stars:0,bestSec:null,plays:0};
+  cur.stars=Math.max(cur.stars||0,stars);
+  cur.bestSec=(cur.bestSec==null)?sec:Math.min(cur.bestSec,sec);
+  cur.plays=(cur.plays||0)+1; p.tiers[tierN]=cur;
+  p.stars=sumTierStars(p); localStorage.setItem('cert_escape_progress',JSON.stringify(p));
+}
+
+/* ---------- tier select ---------- */
+let TIER=null;
+function openTierSelect(){
+  const p=loadProg();
+  const cards=TIERS.map(t=>{
+    const td=(p.tiers&&p.tiers[t.n])||null, stars=td?td.stars:0;
+    const starStr=[1,2,3].map(i=>i<=stars?'★':'☆').join('');
+    const best=td&&td.bestSec!=null?`best ${fmtTime(td.bestSec)}`:'not cleared';
+    return `<button class="tier-card" onclick="startTier(${t.n})">
+      <span class="tc-ic">${t.ic}</span>
+      <span class="tc-body"><span class="tc-name">${t.name}</span><span class="tc-desc">${t.desc}</span></span>
+      <span class="tc-side"><span class="tc-stars">${starStr}</span><span class="tc-best">${best}</span></span></button>`;
+  }).join('');
+  openOv(`<h2>🔓 CERT Escape Room</h2>
+    <p style="text-align:center;color:var(--text-muted);margin-bottom:4px">An earthquake struck the Wallingford EOC at 143 Hopehill Road. Work the CERT stations, crack each lock, and escape before the clock runs out.</p>
+    <p style="text-align:center;color:var(--gold);font-weight:700;font-size:.82rem;margin-bottom:12px">★ ${sumTierStars(p)} / 15 mastery</p>
+    <div class="tier-list">${cards}</div>`);
+}
+function startTier(n){ SND.click(); TIER=tierByN(n); closeOv(); startRun(); }
+
+/* ---------- room / puzzle framework ---------- */
+let G=null, clockTimer=null;
+const PUZZLE_TYPES=['acronym','triage','placard','sequence'];
+const ROOM_THEME={
+  acronym:{name:'Command Post',ic:'📋'}, triage:{name:'Triage Bay',ic:'🩺'},
+  placard:{name:'Hazmat Locker',ic:'☢️'}, sequence:{name:'Ops Board',ic:'🗂️'},
+};
+
+function startRun(){
+  const T=TIER;
+  // build a room sequence: shuffle the 4 puzzle types, repeat to fill room count
+  let order=shuffle(PUZZLE_TYPES);
+  while(order.length<T.rooms) order=order.concat(shuffle(PUZZLE_TYPES));
+  order=order.slice(0,T.rooms);
+  const rooms=order.map(type=>({ type, puzzle:genPuzzle(type,T.cx), solved:false }));
+  G={ tier:T.n, rooms, cur:0, hintsLeft:T.hints, hintsUsed:0, wrongs:0,
+      total:T.rooms*T.perRoom, left:T.rooms*T.perRoom, t0:Date.now(), ended:false };
+  updateTierBadge();
+  renderRoom();
+  startClock();
+  closeOv();
+}
+function updateTierBadge(){ const b=document.getElementById('tier-name'); if(b&&G) b.textContent=tierByN(G.tier).name; }
+
+function startClock(){ if(clockTimer) clearInterval(clockTimer); clockTimer=setInterval(tick,1000); }
+function stopClock(){ if(clockTimer){ clearInterval(clockTimer); clockTimer=null; } }
+function tick(){ if(!G||G.ended) return; G.left--; updateClock();
+  if(G.left<=0){ G.left=0; timeUp(); } }
+function updateClock(){ const el=document.getElementById('clock'); if(!el||!G) return;
+  el.firstElementChild ? el.querySelector('#clk').textContent=fmtTime(G.left) : el.textContent='⏱ '+fmtTime(G.left);
+  el.classList.toggle('urgent', G.left<=30); }
+
+/* dispatch to puzzle generators (filled in as each type is built) */
+function genPuzzle(type,cx){
+  if(type==='acronym') return genAcronym(cx);
+  if(type==='triage') return genTriage(cx);
+  if(type==='placard') return genPlacard(cx);
+  if(type==='sequence') return genSequence(cx);
+  return genAcronym(cx);
+}
+
+/* ---------- render a room ---------- */
+function renderRoom(){
+  const T=tierByN(G.tier), room=G.rooms[G.cur], p=room.puzzle, th=ROOM_THEME[room.type];
+  const dots=G.rooms.map((r,i)=>`<span class="d ${i<G.cur?'done':(i===G.cur?'cur':'')}"></span>`).join('');
+  const hintBtn = T.hints>0
+    ? `<button class="btn" onclick="useHint()" ${G.hintsLeft<=0?'disabled':''}>💡 Hint (${G.hintsLeft})</button>` : '';
+  document.getElementById('main').innerHTML=`
+    <div class="room-top">
+      <div class="room-name">${th.ic} ${th.name}<small>Room ${G.cur+1} of ${G.rooms.length}</small></div>
+      <div class="clock" id="clock">⏱ <span id="clk">${fmtTime(G.left)}</span></div>
+    </div>
+    <div class="dots">${dots}</div>
+    <div class="puzzle" id="puzzle"></div>
+    <div class="room-actions">
+      ${hintBtn}
+      <button class="btn primary" onclick="tryLock()">🔓 Try the lock</button>
+    </div>`;
+  renderPuzzle(p);
+  updateClock();
+}
+function renderPuzzle(p){
+  const el=document.getElementById('puzzle');
+  if(p.type==='acronym') return renderAcronym(el,p);
+  if(p.type==='triage') return renderTriage(el,p);
+  if(p.type==='placard') return renderPlacard(el,p);
+  if(p.type==='sequence') return renderSequence(el,p);
+}
+function pzHead(lock,title,desc){ return `<div class="pz-head"><span class="pz-lock">${lock}</span>
+  <div><h2>${title}</h2><p>${desc}</p></div></div>`; }
+function pzFeedback(kind,msg){ const el=document.getElementById('pz-fb');
+  const html=`<div class="feedback ${kind}">${msg}</div>`;
+  if(el) el.innerHTML=html; else { const d=document.createElement('div'); d.id='pz-fb'; d.innerHTML=html;
+    document.getElementById('puzzle').appendChild(d); } }
+
+/* ---------- shared: slots + bank ---------- */
+/* p.state = { slots:[], bank:[{v,used}] }  (chars or tile strings) */
+function renderSlotsBank(el,p,opts){
+  opts=opts||{};
+  const tileCls=opts.tile?' tile':'';
+  const slots=p.state.slots.map((v,i)=>`<div class="slot${tileCls} ${v!=null?'filled':''}" onclick="slotClear(${i})">${v!=null?v:''}</div>`).join('');
+  const bank=p.state.bank.map((b,i)=>`<div class="chip${tileCls} ${b.used?'used':''}" onclick="bankPick(${i})">${b.v}</div>`).join('');
+  el.insertAdjacentHTML('beforeend',`<div class="slots">${slots}</div><div class="bank">${bank}</div><div id="pz-fb"></div>`);
+}
+function bankPick(i){ const p=curPuzzle(); const b=p.state.bank[i]; if(b.used) return;
+  const slot=p.state.slots.indexOf(null); if(slot<0) return;
+  p.state.slots[slot]=b.v; b.used=true; SND.place(); renderRoom(); }
+function slotClear(i){ const p=curPuzzle(); const v=p.state.slots[i]; if(v==null) return;
+  // return the first matching used bank chip
+  const b=p.state.bank.find(x=>x.used && x.v===v); if(b) b.used=false;
+  p.state.slots[i]=null; SND.click(); renderRoom(); }
+function curPuzzle(){ return G.rooms[G.cur].puzzle; }
+
+/* ============================================================
+   PUZZLE 1 — ACRONYM LOCK
+   ============================================================ */
+const ACRONYMS=[
+  {w:'SAMPLE',ctx:'patient history',clues:[['S','Signs & symptoms'],['A','Allergies'],['M','Medications'],['P','Past medical history'],['L','Last oral intake'],['E','Events leading up to it']]},
+  {w:'OPQRST',ctx:'assessing pain',clues:[['O','Onset'],['P','Provocation / palliation'],['Q','Quality'],['R','Region / radiation'],['S','Severity (0–10)'],['T','Time / duration']]},
+  {w:'AVPU',ctx:'level of responsiveness',clues:[['A','Alert'],['V','responds to Verbal'],['P','responds to Pain'],['U','Unresponsive']]},
+  {w:'PASS',ctx:'using a fire extinguisher',clues:[['P','Pull the pin'],['A','Aim at the base'],['S','Squeeze the handle'],['S','Sweep side to side']]},
+  {w:'RICE',ctx:'a sprain/strain',clues:[['R','Rest'],['I','Ice'],['C','Compression'],['E','Elevation']]},
+  {w:'CSM',ctx:'checking a limb',clues:[['C','Circulation'],['S','Sensation'],['M','Movement']]},
+  {w:'RPM',ctx:'START triage',clues:[['R','Respirations'],['P','Perfusion'],['M','Mental status']]},
+  {w:'BSI',ctx:'protecting yourself',clues:[['B','Body'],['S','Substance'],['I','Isolation']]},
+];
+const DECOY_LETTERS=['B','K','X','N','T','H','D','G'];
+function genAcronym(cx){
+  // bias toward longer acronyms at higher complexity
+  const poolLong=ACRONYMS.filter(a=>a.w.length>=5), poolShort=ACRONYMS.filter(a=>a.w.length<5);
+  const a = cx>=4 ? pick(poolLong) : (cx<=2 ? pick(ACRONYMS) : pick(chance(0.6)?poolLong:poolShort));
+  const scrambled = cx>=2;
+  const clues = scrambled ? shuffle(a.clues) : a.clues.slice();
+  const decoys = cx>=3 ? shuffle(DECOY_LETTERS).slice(0,Math.min(cx-1,3)) : [];
+  const bank = shuffle(a.w.split('').concat(decoys)).map(v=>({v,used:false}));
+  return { type:'acronym', word:a.w, aContext:a.ctx, clues, showLetters:cx===1, revealHint:false,
+    state:{ slots:a.w.split('').map(()=>null), bank },
+    target:a.w.split(''), solution:a.w };
+}
+function renderAcronym(el,p){
+  el.innerHTML=pzHead('🔤','Mnemonic Lock','Reconstruct the CERT mnemonic these steps describe, then spell it into the lock.');
+  const intro=`<div class="pz-intro">These are the steps of a CERT mnemonic used for <b>${p.aContext}</b>.
+    ${p.showLetters?'Each step shows its letter.':'Figure out the mnemonic and spell it.'}</div>`;
+  const clues=`<div class="clues">${p.clues.map(c=>`<div class="clue">
+    <span class="c-badge">${p.showLetters||p.revealHint?c[0]:'?'}</span>${c[1]}</div>`).join('')}</div>`;
+  el.insertAdjacentHTML('beforeend',intro+clues);
+  renderSlotsBank(el,p);
+}
+
+/* ============================================================
+   PUZZLE 2 — TRIAGE-TO-CODE (START)
+   ============================================================ */
+const SNAMES=['Alex','Sam','Jordan','Casey','Riley','Morgan','Dana','Pat','Lee','Taylor','Chris','Robin','Jamie','Drew'];
+const TAG_LBL={immediate:'Immediate',delayed:'Delayed',minor:'Minor',deceased:'Deceased'};
+function synthSurv(tag){
+  const s={correct:tag, walk:false, breathing:true, resp:16, radial:true, follows:true};
+  if(tag==='minor'){ s.walk=true; s.resp=rnd(12,20); }
+  else if(tag==='deceased'){ s.breathing=false; s.resp=0; s.radial=false; s.follows=false; }
+  else if(tag==='immediate'){ const k=pick(['resp','perf','mental']);
+    if(k==='resp') s.resp=rnd(32,44);
+    else if(k==='perf'){ s.resp=rnd(14,28); s.radial=false; }
+    else { s.resp=rnd(14,28); s.follows=false; } }
+  else { s.resp=rnd(12,28); } // delayed
+  return s;
+}
+function genTriage(cx){
+  const count=2+cx; // 3..7
+  const bag=['immediate','delayed','minor','delayed','minor'];
+  if(cx>=3) bag.push('immediate'); if(cx>=4) bag.push('deceased','immediate'); if(cx>=5) bag.push('deceased');
+  const names=shuffle(SNAMES).slice(0,count);
+  const survs=[]; for(let i=0;i<count;i++) survs.push(Object.assign({name:names[i]}, synthSurv(pick(bag))));
+  return { type:'triage', survs, showLegend:cx<=2, showResult:false, state:{ tags:survs.map(()=>null) } };
+}
+function renderTriage(el,p){
+  el.innerHTML=pzHead('🩺','Triage Lock','Tag every survivor with the correct START triage color. Get them all right and the lock releases.');
+  if(p.showLegend) el.insertAdjacentHTML('beforeend',`<div class="pz-intro"><b>START:</b> can walk → <b style="color:var(--min)">Minor</b>. Not breathing after airway opened → <b>Deceased</b>. Breathing over 30/min, no radial pulse, or won’t follow commands → <b style="color:var(--imm)">Immediate</b>. Otherwise → <b style="color:var(--del)">Delayed</b>.</div>`);
+  const cards=p.survs.map((s,i)=>{
+    const vit=['Walking: '+(s.walk?'<b>yes</b>':'no')];
+    vit.push('Breathing: '+(s.breathing?('<b>'+s.resp+'/min</b>'):'<b>none</b> (airway opened, still not breathing)'));
+    if(s.breathing){ vit.push('Radial pulse: '+(s.radial?'present':'<b>absent</b>'));
+      vit.push('Mental: '+(s.follows?'follows commands':'<b>won’t follow commands</b>')); }
+    const btns=['immediate','delayed','minor','deceased'].map(t=>
+      `<button class="tagbtn ${p.state.tags[i]===t?'sel':''}" data-tag="${t}" onclick="triageTag(${i},'${t}')">${TAG_LBL[t]}</button>`).join('');
+    const cls=p.showResult&&p.state.tags[i]?(p.state.tags[i]===s.correct?'right':'wrong'):'';
+    return `<div class="surv ${cls}"><div class="s-name">🧍 ${s.name}</div><div class="s-vitals">${vit.join('<br>')}</div><div class="s-tags">${btns}</div></div>`;
+  }).join('');
+  el.insertAdjacentHTML('beforeend',`<div class="survivors">${cards}</div><div id="pz-fb"></div>`);
+}
+function triageTag(i,t){ curPuzzle().state.tags[i]=t; curPuzzle().showResult=false; SND.place(); renderRoom(); }
+function validateTriage(p){ return p.state.tags.every((t,i)=>t===p.survs[i].correct); }
+
+/* ============================================================
+   PUZZLE 3 — HAZMAT PLACARD CIPHER (DOT classes + NFPA 704)
+   ============================================================ */
+const DOT_CLASSES=[
+  {n:1,name:'Explosives',color:'#f0932b',sym:'💥'},
+  {n:2,name:'Gases',color:'#26a65b',sym:'🫧'},
+  {n:3,name:'Flammable Liquid',color:'#e74c3c',sym:'🔥'},
+  {n:4,name:'Flammable Solid',color:'#c0392b',sym:'🔥'},
+  {n:5,name:'Oxidizer',color:'#f1c40f',sym:'⭕',dark:true},
+  {n:6,name:'Poison / Toxic',color:'#f5f5f5',sym:'☠️',dark:true},
+  {n:7,name:'Radioactive',color:'#f1c40f',sym:'☢️',dark:true},
+  {n:8,name:'Corrosive',color:'#2c3e50',sym:'🧪'},
+  {n:9,name:'Miscellaneous',color:'#7f8c8d',sym:'❗'},
+];
+function diamondSVG(cls,showNum){
+  const S=92,c=S/2;
+  return `<svg width="${S}" height="${S}" viewBox="0 0 ${S} ${S}" aria-label="DOT placard">
+    <rect x="16" y="16" width="60" height="60" rx="5" transform="rotate(45 ${c} ${c})" fill="${cls.color}" stroke="#0c0c0c" stroke-width="2.5"/>
+    <text x="${c}" y="${c-2}" text-anchor="middle" font-size="20">${cls.sym}</text>
+    <text x="${c}" y="${S-13}" text-anchor="middle" font-size="17" font-weight="800" fill="${cls.dark?'#111':'#fff'}">${showNum?cls.n:'?'}</text>
+  </svg>`;
+}
+function nfpaSVG(h,f,r,labels){
+  const dia=(cx,cy,col,txt,tcol)=>`<polygon points="${cx},${cy-25} ${cx+25},${cy} ${cx},${cy+25} ${cx-25},${cy}" fill="${col}" stroke="#0c0c0c" stroke-width="1.5"/>`+
+    (txt!=null?`<text x="${cx}" y="${cy+6}" text-anchor="middle" font-size="18" font-weight="800" fill="${tcol}">${txt}</text>`:'');
+  const lab=labels?`<text x="27" y="100" text-anchor="middle" font-size="8" fill="#8aa87a">HEALTH</text>
+    <text x="52" y="6" text-anchor="middle" font-size="8" fill="#8aa87a">FIRE</text>
+    <text x="82" y="100" text-anchor="middle" font-size="8" fill="#8aa87a">REACT</text>`:'';
+  return `<svg width="104" height="112" viewBox="0 0 104 112" aria-label="NFPA 704 diamond">
+    ${dia(52,28,'#e74c3c',f,'#fff')}${dia(27,53,'#2a6fdb',h,'#fff')}${dia(77,53,'#f1c40f',r,'#111')}${dia(52,78,'#f5f5f5',null,'#111')}${lab}</svg>`;
+}
+function genPlacard(cx){
+  const showNum = cx<=2;
+  if(chance(0.45)){
+    const h=rnd(0,4),f=rnd(0,4),r=rnd(0,4);
+    return { type:'placard', variant:'nfpa', nfpa:{h,f,r}, showLabels:cx<=3,
+      prompt:'Read the NFPA 704 fire diamond. Enter the numbers in order — Health, Fire, Reactivity.',
+      target:[String(h),String(f),String(r)], state:{slots:[null,null,null]} };
+  }
+  const n = cx>=4?3:2;
+  const cls = shuffle(DOT_CLASSES).slice(0,n);
+  const prompt = showNum
+    ? `Read each DOT hazard-class placard and enter its class number, left to right (${cls.map(c=>c.name).join(', ')}).`
+    : `Identify each DOT placard from its color & symbol, then enter the hazard-class numbers left to right.`;
+  return { type:'placard', variant:'dot', cls, showNum, prompt, target:cls.map(c=>String(c.n)), state:{slots:cls.map(()=>null)} };
+}
+function renderPlacard(el,p){
+  el.innerHTML=pzHead('☢️','Hazmat Lock',p.prompt);
+  let placards;
+  if(p.variant==='nfpa') placards=`<div class="placard-wrap">${nfpaSVG(p.nfpa.h,p.nfpa.f,p.nfpa.r,p.showLabels)}</div>`;
+  else placards=p.cls.map((c,i)=>`<div class="placard-wrap">${diamondSVG(c,p.showNum)}<span class="pl-label">${i+1}. ${p.showNum?c.name:'class ?'}</span></div>`).join('');
+  el.insertAdjacentHTML('beforeend',`<div class="placards">${placards}</div>`);
+  renderKeypad(el,p);
+}
+function renderKeypad(el,p){
+  const slots=p.state.slots.map(v=>`<div class="slot ${v!=null?'filled':''}">${v!=null?v:''}</div>`).join('');
+  const keys=[1,2,3,4,5,6,7,8,9,0].map(d=>`<div class="chip key" onclick="keyPush('${d}')">${d}</div>`).join('');
+  el.insertAdjacentHTML('beforeend',`<div class="combo">${slots}</div>
+    <div class="bank">${keys}<div class="chip key" onclick="keyBack()">⌫</div></div><div id="pz-fb"></div>`);
+}
+function keyPush(d){ const p=curPuzzle(); const i=p.state.slots.indexOf(null); if(i<0) return; p.state.slots[i]=d; SND.place(); renderRoom(); }
+function keyBack(){ const p=curPuzzle(); let i=-1; for(let k=0;k<p.state.slots.length;k++) if(p.state.slots[k]!=null) i=k; if(i>=0){ p.state.slots[i]=null; SND.click(); renderRoom(); } }
+
+/* ============================================================
+   PUZZLE 4 — SEQUENCE / ORDERING
+   ============================================================ */
+const SEQUENCES=[
+  {name:'using a fire extinguisher (PASS)',steps:['Pull the pin','Aim at the base of the fire','Squeeze the handle','Sweep side to side']},
+  {name:'the CERT patient assessment',steps:['Scene size-up','Primary check (ABCs)','START triage','Head-to-toe exam','Treatment & care']},
+  {name:'START triage on one patient',steps:['Can they get up and walk?','Check breathing (open airway)','Check perfusion (radial pulse)','Check mental status','Assign a triage tag']},
+  {name:'a head-to-toe survey (top to bottom)',steps:['Head','Neck','Chest','Abdomen','Pelvis','Legs']},
+  {name:'arriving on scene',steps:['Ensure scene safety','Don PPE (BSI)','Size up the scene','Call for more resources','Begin triage']},
+];
+const SEQ_DECOYS=['Call the mayor','Rewind the tape','Charge your phone','Water the plants','Post it online'];
+function genSequence(cx){
+  const s=pick(SEQUENCES), steps=s.steps.slice();
+  const decoys = cx>=3 ? shuffle(SEQ_DECOYS).slice(0,Math.min(cx-2,2)) : [];
+  const bank = shuffle(steps.concat(decoys)).map(v=>({v,used:false}));
+  return { type:'sequence', seqName:s.name, target:steps, hasDecoys:decoys.length>0, state:{ slots:steps.map(()=>null), bank } };
+}
+function renderSequence(el,p){
+  el.innerHTML=pzHead('🗂️','Sequence Lock','Put the steps in the correct order — tap a step to drop it into the next slot, tap a slot to send it back.');
+  el.insertAdjacentHTML('beforeend',`<div class="pz-intro">Order the steps for <b>${p.seqName}</b>${p.hasDecoys?' — heads up, some steps don’t belong and should stay out.':'.'}</div>`);
+  renderSlotsBank(el,p,{tile:true});
+}
+
+/* ---------- validate current puzzle ---------- */
+function tryLock(){
+  const room=G.rooms[G.cur], p=room.puzzle;
+  const ok = validatePuzzle(p);
+  if(ok){ SND.unlock(); solveRoom(); }
+  else { SND.bad(); G.wrongs++;
+    if(p.type==='triage'){
+      const anyTagged=p.state.tags.some(t=>t!=null);
+      if(!anyTagged){ pzFeedback('bad','Tag each survivor first, then try the lock.'); return; }
+      if(tierByN(G.tier).cx<=3){ p.showResult=true; renderRoom();
+        pzFeedback('bad','Some tags are off — check the highlighted survivors and fix them.'); }
+      else pzFeedback('bad','Not all tags are correct. Re-check your START calls.');
+      return;
+    }
+    if(p.state && p.state.slots){ document.querySelectorAll('#puzzle .slot').forEach(s=>s.classList.add('bad'));
+      setTimeout(()=>document.querySelectorAll('#puzzle .slot').forEach(s=>s.classList.remove('bad')),350); }
+    pzFeedback('bad','That lock didn’t open. Re-check your answer.'); }
+}
+function validatePuzzle(p){
+  if(p.type==='triage') return validateTriage(p);
+  return p.target && p.state.slots.every((v,i)=>v!=null) && p.state.slots.join('|')===p.target.join('|');
+}
+
+function solveRoom(){
+  G.rooms[G.cur].solved=true;
+  const last = G.cur>=G.rooms.length-1;
+  const el=document.getElementById('puzzle');
+  el.innerHTML=`<div style="text-align:center;padding:20px 0">
+    <div style="font-size:3rem">🔓</div>
+    <div style="font-size:1.2rem;font-weight:800;color:var(--primary);margin-top:8px">Lock opened!</div>
+    <div style="color:var(--text-muted);font-size:.9rem;margin-top:4px">${last?'The exit is ahead…':'The door swings open to the next room.'}</div></div>`;
+  document.querySelector('.room-actions').style.display='none';
+  setTimeout(()=>{ if(last){ winRun(); } else { G.cur++; renderRoom(); } }, 1100);
+}
+
+/* ---------- hints ---------- */
+function useHint(){
+  if(G.hintsLeft<=0) return; const p=curPuzzle();
+  G.hintsLeft--; G.hintsUsed++; SND.click();
+  applyHint(p);
+  renderRoom();
+}
+function applyHint(p){
+  if(p.type==='acronym'){ p.revealHint=true; p.showLetters=true; autoFillFirst(p); }
+  else if(p.type==='sequence'||p.type==='placard'){ if(p.variant!=='dot'||true) p.showNum=true; autoFillFirst(p); }
+  else if(p.type==='triage'){ // correctly tag the first survivor that's untagged or wrong
+    const i=p.state.tags.findIndex((t,k)=>t!==p.survs[k].correct);
+    if(i>=0) p.state.tags[i]=p.survs[i].correct; }
+}
+function autoFillFirst(p){ if(!p.target||!p.state.slots) return;
+  const i=p.state.slots.findIndex((v,idx)=>v!==p.target[idx]); if(i<0) return;
+  if(p.state.bank && p.state.slots[i]!=null){ const b=p.state.bank.find(x=>x.used&&x.v===p.state.slots[i]); if(b) b.used=false; }
+  p.state.slots[i]=p.target[i];
+  if(p.state.bank){ const b=p.state.bank.find(x=>!x.used&&x.v===p.target[i]); if(b) b.used=true; }
+}
+
+/* ---------- win / lose ---------- */
+function winRun(){
+  G.ended=true; stopClock(); SND.win();
+  const sec=Math.round((Date.now()-G.t0)/1000);
+  const stars=starRating(sec);
+  saveProgress(G.tier,stars,sec);
+  const starStr=[1,2,3].map(i=>i<=stars?'★':'☆').join('');
+  openOv(`<h2>🚪 You escaped!</h2>
+    <div style="text-align:center">
+      <div style="font-size:2.1rem;color:var(--gold);letter-spacing:5px">${starStr}</div>
+      <div style="color:var(--text-muted);font-size:.9rem;margin-top:6px">
+        ${tierByN(G.tier).ic} ${tierByN(G.tier).name} · ⏱ ${fmtTime(sec)} · 💡 ${G.hintsUsed} hints · ✗ ${G.wrongs} wrong tries</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn primary" style="flex:0" onclick="startTier(${G.tier})">🔄 Replay</button>
+      <button class="btn" onclick="openTierSelect()">🎚️ Levels</button>
+      <a class="btn" href="index.html">🏠 Menu</a>
+    </div>`);
+}
+function timeUp(){
+  G.ended=true; stopClock(); SND.lose();
+  openOv(`<h2 style="color:var(--danger)">⏰ Time's up!</h2>
+    <p style="text-align:center;color:var(--text-muted)">The clock ran out before you escaped — you reached room ${G.cur+1} of ${G.rooms.length}. Regroup and try again.</p>
+    <div class="btn-row">
+      <button class="btn primary" style="flex:0" onclick="startTier(${G.tier})">🔄 Try Again</button>
+      <button class="btn" onclick="openTierSelect()">🎚️ Levels</button>
+      <a class="btn" href="index.html">🏠 Menu</a>
+    </div>`);
+}
+function starRating(sec){
+  // 3 stars: no hints, ≤1 wrong, plenty of time left; scales down from there
+  const frac = G.left/G.total; // time remaining fraction at escape
+  let stars=3;
+  if(G.hintsUsed>0 || G.wrongs>2 || frac<0.25) stars=2;
+  if(G.hintsUsed>=3 || G.wrongs>=5 || frac<0.08) stars=1;
+  return Math.max(1,stars);
+}
+
+/* ---------- overlay ---------- */
+function openOv(html){ document.getElementById('ov-box').innerHTML=html; document.getElementById('ov').classList.add('show'); }
+function closeOv(){ document.getElementById('ov').classList.remove('show'); }
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&G&&G.ended) closeOv(); });
+
+/* ---------- boot ---------- */
+['pointerdown','keydown','touchstart'].forEach(ev=>window.addEventListener(ev,function once(){ SND.arm(); },{once:true}));
+SND.init();
+openTierSelect();
+</script>
+</body>
+</html>
