@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script src="theme.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wallingford CERT — Scene Search</title>
+<style>
+  :root{
+    --bg:#0e1208; --surface:#1a2012; --surface2:#243018; --border:#3a5228;
+    --primary:#5aaa3a; --primary-dark:#4a8f2e; --primary-light:#7ac95a;
+    --text:#eef2e8; --text-muted:#8aa87a; --radius:12px; --gold:#e8c33a;
+    --danger:#ef4444; --warn:#f59e0b; --info:#56d4ff;
+  }
+  [data-theme="light"]{
+    --bg:#eef3e7; --surface:#ffffff; --surface2:#e7eedd; --border:#c2d2af;
+    --primary:#41902e; --primary-dark:#317022; --primary-light:#5aaa3a;
+    --text:#16210d; --text-muted:#5c6e4a; --muted:#5c6e4a;
+  }
+  [data-theme="light"] header{background:#e3ecd6;}
+  [data-theme="light"] footer{background:#e3ecd6;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);
+    min-height:100vh;display:flex;flex-direction:column;-webkit-tap-highlight-color:transparent;}
+
+  header{width:100%;background:#111a09;border-bottom:3px solid var(--primary);
+    padding:10px 22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  #cert-logo{height:48px;width:auto;}
+  .logo-badge{background:var(--primary);color:#000;font-weight:900;font-size:1.05rem;letter-spacing:.1em;padding:6px 12px;border-radius:6px;}
+  header h1{font-size:1.12rem;font-weight:700;color:var(--primary);}
+  header p{font-size:0.76rem;color:var(--text-muted);}
+  .hdr-text{flex:1 1 0;min-width:0;}
+  .hdr-actions{margin-left:auto;display:flex;align-items:center;gap:9px;}
+  .home-link{color:var(--primary-light);text-decoration:none;font-size:0.85rem;font-weight:600;
+    border:1px solid var(--border);padding:8px 14px;border-radius:8px;transition:.15s;white-space:nowrap;}
+  .home-link:hover{background:var(--surface2);border-color:var(--primary);}
+  .icon-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:1rem;line-height:1;
+    padding:8px 11px;border-radius:8px;cursor:pointer;transition:.15s;}
+  .icon-btn:hover{border-color:var(--primary);}
+  .level-btn{display:inline-flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);
+    color:var(--primary-light);font-size:0.82rem;font-weight:700;padding:8px 12px;border-radius:8px;cursor:pointer;
+    transition:.15s;white-space:nowrap;font-family:inherit;}
+  .level-btn:hover{border-color:var(--primary);}
+
+  main{flex:1;width:100%;max-width:1000px;margin:0 auto;padding:14px 16px 24px;display:flex;flex-direction:column;gap:12px;}
+
+  /* top bar */
+  .searchbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--border);
+    border-radius:var(--radius);padding:10px 14px;}
+  .sb-scene{font-size:1rem;font-weight:800;color:var(--primary);}
+  .sb-scene small{display:block;font-size:0.72rem;color:var(--text-muted);font-weight:600;margin-top:2px;}
+  .sb-stat{font-size:0.82rem;color:var(--text-muted);font-weight:700;}
+  .clock{margin-left:auto;display:flex;align-items:center;gap:6px;font-weight:800;font-size:1.05rem;color:var(--text);
+    background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:6px 12px;}
+  .clock.urgent{color:#fff;background:var(--danger);border-color:var(--danger);animation:pulse .9s infinite;}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
+
+  /* layout: scene + checklist */
+  .play{display:grid;grid-template-columns:1fr 220px;gap:12px;align-items:start;}
+  @media (max-width:760px){ .play{grid-template-columns:1fr;} }
+
+  .scene-wrap{background:#0a0e07;border:1px solid var(--border);border-radius:var(--radius);overflow:auto;position:relative;
+    max-height:70vh;}
+  svg.scene{display:block;height:auto;}
+  .hot{cursor:pointer;}
+  .zoom{position:absolute;top:8px;right:8px;display:flex;gap:5px;z-index:4;}
+  .zoom button{width:32px;height:32px;border-radius:7px;border:1px solid var(--border);background:#0c1207cc;color:var(--text);
+    font-size:1rem;font-weight:800;cursor:pointer;}
+  .zoom button:hover{border-color:var(--primary);}
+  .float-msg{position:absolute;left:50%;transform:translateX(-50%);top:10px;z-index:5;background:#0a0e07ee;border:1px solid var(--primary);
+    color:var(--text);font-size:0.82rem;padding:7px 13px;border-radius:20px;max-width:92%;text-align:center;opacity:0;transition:opacity .2s;pointer-events:none;}
+  .float-msg.show{opacity:1;}
+  .float-msg.miss{border-color:var(--danger);}
+
+  /* checklist */
+  .checklist{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 12px 14px;}
+  .checklist h3{font-size:0.74rem;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);margin-bottom:9px;}
+  .chk{display:flex;align-items:center;gap:9px;padding:6px 4px;border-bottom:1px solid var(--border);font-size:0.85rem;}
+  .chk:last-child{border-bottom:none;}
+  .chk .chk-ic{width:30px;height:30px;flex-shrink:0;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:2px;}
+  .chk .chk-name{flex:1;min-width:0;}
+  .chk .chk-kind{font-size:0.64rem;text-transform:uppercase;letter-spacing:.04em;color:var(--text-muted);}
+  .chk.found{opacity:.55;}
+  .chk.found .chk-name{text-decoration:line-through;color:var(--min,#27ae60);}
+  .chk .chk-box{width:18px;height:18px;border-radius:5px;border:1px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:0.8rem;}
+  .chk.found .chk-box{background:var(--primary);border-color:var(--primary);color:#06210a;}
+  .kind-hazard{color:var(--warn);} .kind-gear{color:var(--info);}
+
+  .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;}
+  .btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.88rem;font-weight:700;
+    padding:10px 15px;border-radius:9px;cursor:pointer;transition:.15s;font-family:inherit;text-decoration:none;
+    display:inline-flex;align-items:center;gap:7px;justify-content:center;}
+  .btn:hover{border-color:var(--primary);background:var(--border);}
+  .btn.primary{background:var(--primary);color:#06210a;border-color:var(--primary);}
+  .btn.primary:hover{background:var(--primary-light);}
+  .btn:disabled{opacity:.5;cursor:default;}
+
+  footer{text-align:center;padding:16px;color:var(--text-muted);font-size:0.74rem;border-top:1px solid var(--border);}
+  footer span{color:var(--primary);}
+
+  .ov{position:fixed;inset:0;background:rgba(6,9,5,.86);display:none;align-items:center;justify-content:center;padding:18px;z-index:120;}
+  .ov.show{display:flex;animation:ovf .2s ease;}
+  @keyframes ovf{from{opacity:0}to{opacity:1}}
+  .ov-box{background:var(--surface);border:2px solid var(--primary);border-radius:14px;padding:24px;max-width:560px;width:100%;
+    max-height:90vh;overflow-y:auto;position:relative;}
+  .ov-box h2{font-size:1.5rem;color:var(--primary);margin-bottom:6px;text-align:center;}
+  .ov-x{position:absolute;top:12px;right:15px;background:none;border:none;color:var(--text-muted);font-size:1.6rem;line-height:1;cursor:pointer;}
+  .btn-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:18px;}
+  .feedback{border-radius:9px;padding:10px 13px;font-size:0.85rem;line-height:1.5;border:1px solid;}
+  .feedback.info{border-color:var(--info);background:rgba(86,212,255,.08);}
+  .tier-list{display:flex;flex-direction:column;gap:9px;margin-top:6px;}
+  .tier-card{display:flex;align-items:center;gap:13px;text-align:left;background:var(--surface2);border:1px solid var(--border);
+    border-radius:11px;padding:12px 14px;cursor:pointer;transition:.14s;font-family:inherit;color:var(--text);}
+  .tier-card:hover{border-color:var(--primary);background:var(--border);transform:translateY(-1px);}
+  .tier-card .tc-ic{font-size:1.7rem;flex-shrink:0;}
+  .tier-card .tc-body{flex:1;min-width:0;}
+  .tier-card .tc-name{font-weight:800;color:var(--primary-light);font-size:1rem;}
+  .tier-card .tc-desc{display:block;font-size:0.76rem;color:var(--text-muted);line-height:1.4;margin-top:2px;}
+  .tier-card .tc-side{text-align:right;flex-shrink:0;}
+  .tier-card .tc-stars{color:var(--gold);font-size:0.95rem;letter-spacing:1px;}
+  .tier-card .tc-best{display:block;font-size:0.66rem;color:var(--text-muted);margin-top:2px;}
+
+  @media (max-width:600px){
+    header{padding:8px 14px;}
+    .hdr-actions{margin-left:0;width:100%;justify-content:center;}
+    main{padding:12px 12px 20px;}
+    .clock{margin-left:0;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <img id="cert-logo" src="cert-wallingford-logo.png" alt="Wallingford CERT"
+    onerror="this.style.display='none';document.getElementById('logo-fallback').style.display='flex'">
+  <div id="logo-fallback" style="display:none;align-items:center;"><div class="logo-badge">CERT</div></div>
+  <div class="hdr-text">
+    <h1>Wallingford CERT — Scene Search</h1>
+    <p>Community Emergency Response Team</p>
+  </div>
+  <div class="hdr-actions">
+    <button class="level-btn" id="level-btn" onclick="openTierSelect()" title="Choose difficulty">🎚️ <span id="tier-name">Levels</span></button>
+    <button class="icon-btn" id="sfx-btn" onclick="SND.toggle()" title="Sound effects">🔊</button>
+    <a class="home-link" href="index.html">← Menu</a>
+    <button class="theme-btn" onclick="toggleTheme()" aria-label="Toggle light or dark mode">☀️</button>
+  </div>
+</header>
+
+<main id="main"><!-- game injected here --></main>
+
+<footer><span>Wallingford CERT</span> — Training Suite · Scene Search · For educational use — follow your local CERT program guidelines.</footer>
+
+<div class="ov" id="ov" onclick="if(event.target===this)closeOv()"><div class="ov-box" id="ov-box"></div></div>
+
+<script>
+/* ============================================================
+   Wallingford CERT — Scene Search (hidden-object hazard & gear hunt)
+   Procedural flat-vector scenes; find hazards + CERT gear before
+   the clock runs out. Single file, no deps.
+   ============================================================ */
+
+/* ---------- SFX ---------- */
+const SND=(function(){
+  let ctx,on=(localStorage.getItem('cert_search_sfx')!=='off'),comp;
+  function ac(){ if(!ctx){ ctx=new (window.AudioContext||window.webkitAudioContext)(); comp=ctx.createDynamicsCompressor(); comp.connect(ctx.destination);} return ctx; }
+  function tone(f,t,type,g,dur){ if(!on)return; ac(); const o=ctx.createOscillator(),ga=ctx.createGain();
+    o.type=type||'sine'; o.frequency.setValueAtTime(f,ctx.currentTime+t);
+    ga.gain.setValueAtTime(0,ctx.currentTime+t); ga.gain.linearRampToValueAtTime(g||0.2,ctx.currentTime+t+0.012);
+    ga.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+t+(dur||0.16));
+    o.connect(ga); ga.connect(comp); o.start(ctx.currentTime+t); o.stop(ctx.currentTime+t+(dur||0.16)+0.03); }
+  return {
+    click(){ tone(300,0,'triangle',0.12,0.07); },
+    found(){ tone(560,0,'sine',0.2,0.1); tone(820,0.08,'sine',0.2,0.13); },
+    miss(){ tone(180,0,'sawtooth',0.14,0.14); },
+    win(){ [523,659,784,1047,1319].forEach((f,i)=>tone(f,i*0.1,'triangle',0.2,0.22)); },
+    lose(){ [400,320,240,180].forEach((f,i)=>tone(f,i*0.14,'sawtooth',0.16,0.28)); },
+    toggle(){ on=!on; localStorage.setItem('cert_search_sfx',on?'on':'off'); document.getElementById('sfx-btn').textContent=on?'🔊':'🔇'; if(on){ac();this.click();} },
+    arm(){ if(!on)return; ac(); if(ctx.state==='suspended') ctx.resume(); },
+    init(){ document.getElementById('sfx-btn').textContent=on?'🔊':'🔇'; }
+  };
+})();
+
+/* ---------- helpers ---------- */
+const rnd=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+const rndf=(a,b)=>Math.random()*(b-a)+a;
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function fmtTime(s){ s=Math.max(0,s); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
+
+/* ============================================================
+   ICON LIBRARY — each returns SVG drawn in a 0..40 box
+   ============================================================ */
+const ICON={
+  /* --- hazards --- */
+  powerline:()=>`<line x1="8" y1="6" x2="8" y2="36" stroke="#6b5333" stroke-width="3"/>
+    <line x1="2" y1="12" x2="16" y2="12" stroke="#6b5333" stroke-width="2.5"/>
+    <path d="M14 12 Q26 30 38 18" fill="none" stroke="#111" stroke-width="1.6"/>
+    <path d="M30 22 l3 5 l-4 0 l3 5" fill="none" stroke="#ffe14d" stroke-width="2"/>`,
+  gasleak:()=>`<rect x="10" y="10" width="20" height="22" rx="2" fill="#c9cdd2" stroke="#5a5f63" stroke-width="1.5"/>
+    <circle cx="20" cy="19" r="5" fill="#eef1f4" stroke="#5a5f63" stroke-width="1"/><line x1="20" y1="19" x2="23" y2="16" stroke="#333" stroke-width="1.2"/>
+    <rect x="18" y="30" width="4" height="6" fill="#5a5f63"/>
+    <g stroke="#9fe870" stroke-width="1.6" opacity=".9"><path d="M30 8 q4 3 0 6" fill="none"/><path d="M33 6 q5 4 0 8" fill="none"/></g>`,
+  propane:()=>`<rect x="6" y="16" width="28" height="13" rx="6.5" fill="#e6e6e6" stroke="#8a8f92" stroke-width="1.5"/>
+    <rect x="30" y="18" width="6" height="9" rx="2" fill="#cf5a2e"/><rect x="18" y="12" width="4" height="5" fill="#8a8f92"/>
+    <text x="14" y="27" font-size="7" font-weight="800" fill="#cf5a2e">LPG</text>`,
+  hazmatdrum:()=>`<rect x="11" y="10" width="18" height="26" rx="3" fill="#d8a12e" stroke="#7a5b18" stroke-width="1.5"/>
+    <ellipse cx="20" cy="10" rx="9" ry="2.6" fill="#e8b53f" stroke="#7a5b18" stroke-width="1"/>
+    <line x1="11" y1="18" x2="29" y2="18" stroke="#7a5b18" stroke-width="1"/><line x1="11" y1="28" x2="29" y2="28" stroke="#7a5b18" stroke-width="1"/>
+    <rect x="15" y="20" width="10" height="10" transform="rotate(45 20 25)" fill="#e5484d" stroke="#111" stroke-width="1"/>
+    <text x="20" y="27" font-size="6" text-anchor="middle" font-weight="800" fill="#fff">3</text>`,
+  spill:()=>`<path d="M5 30 Q10 20 20 24 Q30 18 35 28 Q32 36 20 35 Q8 37 5 30 Z" fill="#5b6e2a" stroke="#3e4d1c" stroke-width="1.2"/>
+    <ellipse cx="16" cy="28" rx="3" ry="1.6" fill="#8fae3f" opacity=".8"/><ellipse cx="26" cy="30" rx="2.4" ry="1.3" fill="#8fae3f" opacity=".7"/>`,
+  flames:()=>`<path d="M20 6 C26 14 30 16 28 24 C34 22 32 32 24 36 C28 30 22 30 22 24 C18 30 14 28 16 22 C12 26 12 18 20 6 Z" fill="#ef6a1a"/>
+    <path d="M20 16 C23 21 24 23 22 28 C26 26 24 32 20 34 C21 30 18 30 18 26 C17 29 16 26 18 22 Z" fill="#ffd23f"/>`,
+  /* --- gear --- */
+  helmet:()=>`<path d="M6 26 A14 14 0 0 1 34 26 Z" fill="#e8b53f" stroke="#8a6a1a" stroke-width="1.5"/>
+    <rect x="4" y="26" width="32" height="4" rx="2" fill="#f0c95a" stroke="#8a6a1a" stroke-width="1"/>
+    <rect x="18" y="12" width="4" height="14" fill="#c99a2a"/>`,
+  radio:()=>`<rect x="13" y="10" width="14" height="24" rx="2.5" fill="#2c3138" stroke="#12151a" stroke-width="1.2"/>
+    <line x1="20" y1="10" x2="20" y2="3" stroke="#12151a" stroke-width="2.4"/><circle cx="20" cy="3" r="1.6" fill="#12151a"/>
+    <rect x="16" y="14" width="8" height="5" rx="1" fill="#5aaa3a"/><circle cx="17" cy="24" r="1.4" fill="#888"/><circle cx="23" cy="24" r="1.4" fill="#888"/><circle cx="20" cy="29" r="1.4" fill="#888"/>`,
+  firstaid:()=>`<rect x="7" y="13" width="26" height="18" rx="3" fill="#e9edf0" stroke="#8a8f92" stroke-width="1.5"/>
+    <rect x="7" y="13" width="26" height="5" fill="#cf3a3a"/>
+    <rect x="18" y="20" width="4" height="10" fill="#cf3a3a"/><rect x="15" y="23" width="10" height="4" fill="#cf3a3a"/>`,
+  extinguisher:()=>`<rect x="14" y="12" width="12" height="22" rx="4" fill="#cf2f2f" stroke="#7a1a1a" stroke-width="1.5"/>
+    <rect x="17" y="6" width="6" height="7" rx="1.5" fill="#333"/><path d="M23 8 H32 V11" fill="none" stroke="#333" stroke-width="1.6"/>
+    <rect x="16" y="20" width="8" height="7" fill="#fff" opacity=".85"/>`,
+  gloves:()=>`<path d="M14 16 q-4 0 -4 5 v8 q0 4 4 4 h10 q4 0 4 -4 v-6 h2 q3 0 3 -3 t-3 -3 h-2 v-1 q0 -4 -4 -4 z" fill="#3f7fd0" stroke="#274f80" stroke-width="1.3"/>
+    <line x1="16" y1="16" x2="16" y2="12" stroke="#274f80" stroke-width="2"/><line x1="20" y1="16" x2="20" y2="11" stroke="#274f80" stroke-width="2"/><line x1="24" y1="16" x2="24" y2="12" stroke="#274f80" stroke-width="2"/>`,
+  flashlight:()=>`<rect x="10" y="18" width="18" height="8" rx="2" fill="#2c3138" stroke="#12151a" stroke-width="1.2"/>
+    <path d="M28 16 L34 14 L34 30 L28 28 Z" fill="#e8b53f" stroke="#8a6a1a" stroke-width="1"/>
+    <path d="M34 18 l5 -3 M34 22 l5 0 M34 26 l5 3" stroke="#ffe14d" stroke-width="1.4"/>`,
+  goggles:()=>`<rect x="7" y="16" width="26" height="10" rx="5" fill="#9fd0ff" stroke="#3f7fd0" stroke-width="1.5" opacity=".95"/>
+    <line x1="20" y1="16" x2="20" y2="26" stroke="#3f7fd0" stroke-width="1.2"/><path d="M7 20 q-4 0 -4 4 M33 20 q4 0 4 4" fill="none" stroke="#333" stroke-width="1.6"/>`,
+  /* --- decoys (non-target clutter) --- */
+  crate:()=>`<rect x="9" y="14" width="22" height="20" rx="1.5" fill="#a9793f" stroke="#6b4c22" stroke-width="1.4"/>
+    <line x1="9" y1="14" x2="31" y2="34" stroke="#6b4c22" stroke-width="1.2"/><line x1="31" y1="14" x2="9" y2="34" stroke="#6b4c22" stroke-width="1.2"/>`,
+  rock:()=>`<path d="M8 32 Q6 22 16 20 Q22 14 30 20 Q38 24 32 32 Z" fill="#8a8f92" stroke="#5a5f63" stroke-width="1.3"/>`,
+  bush:()=>`<circle cx="14" cy="26" r="8" fill="#3f7a34"/><circle cx="24" cy="24" r="9" fill="#4a8f3d"/><circle cx="28" cy="30" r="6" fill="#3f7a34"/>`,
+  tire:()=>`<circle cx="20" cy="24" r="12" fill="#2b2b2b" stroke="#111" stroke-width="1.5"/><circle cx="20" cy="24" r="5.5" fill="#555"/>`,
+  plainbarrel:()=>`<rect x="12" y="12" width="16" height="24" rx="3" fill="#4a6fa5" stroke="#2f4a70" stroke-width="1.4"/>
+    <ellipse cx="20" cy="12" rx="8" ry="2.4" fill="#5a7fb5" stroke="#2f4a70" stroke-width="1"/>
+    <line x1="12" y1="20" x2="28" y2="20" stroke="#2f4a70" stroke-width="1"/><line x1="12" y1="28" x2="28" y2="28" stroke="#2f4a70" stroke-width="1"/>`,
+  bucket:()=>`<path d="M12 16 H28 L26 34 H14 Z" fill="#c9cdd2" stroke="#7a7f82" stroke-width="1.4"/><path d="M12 16 Q20 10 28 16" fill="none" stroke="#7a7f82" stroke-width="1.4"/>`,
+};
+
+/* item catalog: id -> {kind,name,fact}  (draw uses ICON[id]) */
+const ITEMS={
+  powerline:{kind:'hazard',name:'Downed power line',fact:'Stay back at least 30 ft and assume every downed line is energized. Keep others away and call the utility.'},
+  gasleak:{kind:'hazard',name:'Gas leak / meter',fact:'Smell gas or hear hissing? Don’t flip switches or make sparks. Shut off the gas at the meter (¼ turn) and ventilate.'},
+  propane:{kind:'hazard',name:'Propane cylinder',fact:'Pressurized cylinders can BLEVE in heat. Keep them cool and clear the area; don’t move a leaking tank.'},
+  hazmatdrum:{kind:'hazard',name:'Hazmat drum (placard)',fact:'Read the placard from a distance with binoculars. Stay uphill/upwind and keep out of the spill.'},
+  spill:{kind:'hazard',name:'Chemical/fuel spill',fact:'Avoid contact and vapors. Keep ignition sources away and don’t track it around; note wind direction.'},
+  flames:{kind:'hazard',name:'Open flame / fire',fact:'Size up before acting: only fight a small, contained fire with PASS and an escape route at your back.'},
+  helmet:{kind:'gear',name:'Helmet / hard hat',fact:'Head protection is core PPE for search & rescue — falling debris is a leading injury on scene.'},
+  radio:{kind:'gear',name:'Two-way radio',fact:'Communication keeps the team coordinated and safe. Report hazards and your location to the IC.'},
+  firstaid:{kind:'gear',name:'First-aid kit',fact:'Gloves, dressings, and a triage kit for disaster medical operations.'},
+  extinguisher:{kind:'gear',name:'Fire extinguisher',fact:'For a small fire, remember PASS: Pull, Aim, Squeeze, Sweep — with your back to an exit.'},
+  gloves:{kind:'gear',name:'Work / exam gloves',fact:'Gloves are your first line of BSI and cut protection. Never make patient contact without them.'},
+  flashlight:{kind:'gear',name:'Flashlight',fact:'Essential for searching dark, damaged structures during light search & rescue.'},
+  goggles:{kind:'gear',name:'Safety goggles',fact:'Eye protection against dust, debris, and splashes — part of your basic PPE.'},
+};
+const DECOYS=['crate','rock','bush','tire','plainbarrel','bucket'];
+
+/* scene themes (background + which items/decoys fit) */
+const SCENES={
+  neighborhood:{ name:'Quake-Damaged Neighborhood', ic:'🏘️',
+    hazards:['powerline','gasleak','propane','spill','hazmatdrum'],
+    gear:['helmet','radio','firstaid','gloves','flashlight','goggles','extinguisher'],
+    bg:bgNeighborhood },
+  fire:{ name:'Structure-Fire Block', ic:'🔥',
+    hazards:['flames','propane','powerline','spill','gasleak'],
+    gear:['extinguisher','helmet','radio','firstaid','goggles','flashlight'],
+    bg:bgFire },
+  hazmat:{ name:'Hazmat / Industrial Yard', ic:'☣️',
+    hazards:['hazmatdrum','spill','gasleak','propane','powerline'],
+    gear:['goggles','gloves','radio','firstaid','helmet','flashlight'],
+    bg:bgHazmat },
+};
+
+/* ---------- difficulty tiers (5-rank suite ladder) ---------- */
+const TIERS=[
+  {n:1,name:'Recruit',   ic:'🔰', targets:4, decoys:8,  scale:1.05, hints:3, secs:75, desc:'4 finds, sparse scene, big items, 3 hints, generous clock.'},
+  {n:2,name:'Trainee',   ic:'🎓', targets:5, decoys:16, scale:0.95, hints:2, secs:80, desc:'5 finds, more clutter, 2 hints.'},
+  {n:3,name:'Responder', ic:'🚑', targets:6, decoys:24, scale:0.85, hints:2, secs:85, desc:'6 finds, dense clutter, smaller items, 2 hints.'},
+  {n:4,name:'Veteran',   ic:'🎖️', targets:7, decoys:34, scale:0.78, hints:1, secs:85, desc:'7 finds, heavy clutter, small items, 1 hint, tighter clock.'},
+  {n:5,name:'Specialist',ic:'⭐', targets:8, decoys:46, scale:0.7,  hints:0, secs:90, desc:'8 finds, maximum clutter, tiny items, no hints, tightest clock.'},
+];
+function tierByN(n){ return TIERS.find(t=>t.n===n)||TIERS[0]; }
+
+/* ---------- progress ---------- */
+function loadProg(){ try{ return JSON.parse(localStorage.getItem('cert_search_progress'))||{}; }catch(e){ return {}; } }
+function sumTierStars(p){ p=p||loadProg(); return p.tiers?Object.values(p.tiers).reduce((a,t)=>a+(t.stars||0),0):0; }
+function saveProgress(tierN,stars,sec){
+  const p=loadProg(); p.completed=true; p.tiers=p.tiers||{};
+  const cur=p.tiers[tierN]||{stars:0,bestSec:null,plays:0};
+  cur.stars=Math.max(cur.stars||0,stars);
+  cur.bestSec=(cur.bestSec==null)?sec:Math.min(cur.bestSec,sec);
+  cur.plays=(cur.plays||0)+1; p.tiers[tierN]=cur;
+  p.stars=sumTierStars(p); localStorage.setItem('cert_search_progress',JSON.stringify(p));
+}
+
+/* ---------- tier select ---------- */
+let TIER=null;
+function openTierSelect(){
+  const p=loadProg();
+  const cards=TIERS.map(t=>{
+    const td=(p.tiers&&p.tiers[t.n])||null, stars=td?td.stars:0;
+    const starStr=[1,2,3].map(i=>i<=stars?'★':'☆').join('');
+    const best=td&&td.bestSec!=null?`best ${fmtTime(td.bestSec)}`:'not cleared';
+    return `<button class="tier-card" onclick="startTier(${t.n})">
+      <span class="tc-ic">${t.ic}</span>
+      <span class="tc-body"><span class="tc-name">${t.name}</span><span class="tc-desc">${t.desc}</span></span>
+      <span class="tc-side"><span class="tc-stars">${starStr}</span><span class="tc-best">${best}</span></span></button>`;
+  }).join('');
+  openOv(`<h2>🔎 Scene Search</h2>
+    <p style="text-align:center;color:var(--text-muted);margin-bottom:4px">Size up a disaster scene: find every hidden <b style="color:var(--warn)">hazard</b> and piece of <b style="color:var(--info)">CERT gear</b> on the checklist before the clock runs out.</p>
+    <p style="text-align:center;color:var(--gold);font-weight:700;font-size:.82rem;margin-bottom:12px">★ ${sumTierStars(p)} / 15 mastery</p>
+    <div class="tier-list">${cards}</div>`);
+}
+function startTier(n){ SND.click(); TIER=tierByN(n); closeOv(); startRun(); }
+
+/* ============================================================
+   GAME STATE + SCENE BUILD
+   ============================================================ */
+let G=null, clockTimer=null;
+const VBW=820, VBH=520;
+
+function startRun(){
+  const T=TIER, sceneKey=pick(Object.keys(SCENES)), scene=SCENES[sceneKey];
+  // choose targets: mix hazards + gear
+  const nH=Math.ceil(T.targets/2), nG=T.targets-nH;
+  const targetIds=shuffle(shuffle(scene.hazards).slice(0,nH).concat(shuffle(scene.gear).slice(0,nG)));
+  // place items (targets + decoys) without heavy overlap
+  const placed=[]; const pad=42;
+  function placeOK(x,y,minD){ return placed.every(o=>Math.hypot(o.x-x,o.y-y)>minD); }
+  function place(id,isTarget){ const s=T.scale*rndf(0.9,1.12); let x,y,ok=false,tries=0;
+    while(!ok && tries++<300){ x=rndf(pad,VBW-pad); y=rndf(322,VBH-30); ok=placeOK(x,y,38*s); }
+    placed.push({id,isTarget,x,y,s,found:false, kind:ITEMS[id]?ITEMS[id].kind:'decoy',
+      name:ITEMS[id]?ITEMS[id].name:'', fact:ITEMS[id]?ITEMS[id].fact:''}); }
+  targetIds.forEach(id=>place(id,true));
+  for(let i=0;i<T.decoys;i++) place(pick(DECOYS),false);
+  G={ tier:T.n, sceneKey, scene, items:placed, targetIds, foundCount:0, misses:0,
+      hintsLeft:T.hints, hintsUsed:0, total:T.secs, left:T.secs, t0:Date.now(), ended:false, zoom:1 };
+  updateTierBadge(); renderGame(); startClock();
+}
+function updateTierBadge(){ const b=document.getElementById('tier-name'); if(b&&G) b.textContent=tierByN(G.tier).name; }
+
+function startClock(){ if(clockTimer) clearInterval(clockTimer); clockTimer=setInterval(tick,1000); }
+function stopClock(){ if(clockTimer){ clearInterval(clockTimer); clockTimer=null; } }
+function tick(){ if(!G||G.ended) return; G.left--; updateClock(); if(G.left<=0){ G.left=0; timeUp(); } }
+function updateClock(){ const el=document.getElementById('clock'); if(!el||!G) return;
+  el.querySelector('#clk').textContent=fmtTime(G.left); el.classList.toggle('urgent', G.left<=20); }
+
+/* ---------- render ---------- */
+function renderGame(){
+  const T=tierByN(G.tier), sc=G.scene;
+  const hintBtn = T.hints>0 ? `<button class="btn" onclick="useHint()" ${G.hintsLeft<=0?'disabled':''}>💡 Hint (${G.hintsLeft})</button>` : '';
+  document.getElementById('main').innerHTML=`
+    <div class="searchbar">
+      <div class="sb-scene">${sc.ic} ${sc.name}<small>Find the hazards &amp; gear on the checklist</small></div>
+      <div class="sb-stat" id="foundstat">Found 0 / ${G.targetIds.length}</div>
+      <div class="clock" id="clock">⏱ <span id="clk">${fmtTime(G.left)}</span></div>
+    </div>
+    <div class="play">
+      <div class="scene-wrap" id="scene-wrap">
+        <div class="zoom"><button onclick="zoomBy(-1)" title="Zoom out">−</button><button onclick="zoomBy(1)" title="Zoom in">+</button></div>
+        <div class="float-msg" id="float-msg"></div>
+        ${buildSceneSVG()}
+      </div>
+      <div>
+        <div class="checklist" id="checklist"></div>
+        <div class="actions">${hintBtn}<button class="btn" onclick="openTierSelect()">🎚️ Levels</button></div>
+        <div class="feedback info" id="fact-panel" style="margin-top:10px;display:none;font-size:0.8rem;line-height:1.45"></div>
+      </div>
+    </div>`;
+  applyZoom(); renderChecklist(); wireScene();
+  updateClock();
+}
+function buildSceneSVG(){
+  const sc=G.scene, bg=sc.bg();
+  const items=G.items.map((o,i)=>`<g class="item" data-i="${i}" transform="translate(${o.x-20*o.s},${o.y-20*o.s}) scale(${o.s})">
+    ${ICON[o.id]?ICON[o.id]():''}</g>`).join('');
+  return `<svg class="scene" id="scene" viewBox="0 0 ${VBW} ${VBH}" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="${VBW}" height="${VBH}" fill="transparent" onclick="sceneMiss(event)"/>
+    ${bg}${items}
+    <g id="marks"></g></svg>`;
+}
+function wireScene(){
+  document.querySelectorAll('#scene .item').forEach(g=>{
+    const i=+g.getAttribute('data-i'), o=G.items[i];
+    if(o.isTarget && !o.found) g.style.cursor='pointer';
+    g.addEventListener('click',ev=>{ ev.stopPropagation();
+      if(o.isTarget && !o.found) foundTarget(i); else sceneMissAt(o); });
+  });
+}
+function foundTarget(i){ const o=G.items[i]; o.found=true; G.foundCount++; SND.found();
+  addMark(o,true); renderChecklist();
+  document.getElementById('foundstat').textContent=`Found ${G.foundCount} / ${G.targetIds.length}`;
+  floatMsg(`✓ ${o.name}`, false);
+  showFact(o);
+  if(G.foundCount>=G.targetIds.length) winRun();
+}
+function showFact(o){ if(!o.fact) return; const el=document.getElementById('fact-panel'); if(!el) return;
+  el.style.display='block';
+  el.innerHTML=`<b>${o.kind==='hazard'?'⚠️':'🎒'} ${o.name}</b><br>${o.fact}`; }
+function sceneMiss(ev){ registerMiss(); }
+function sceneMissAt(o){ registerMiss(); }
+function registerMiss(){ if(G.ended) return; G.misses++; SND.miss(); floatMsg('✗ Nothing there — keep looking', true); }
+function addMark(o,found){ const marks=document.getElementById('marks'); if(!marks) return;
+  const r=22*o.s;
+  marks.insertAdjacentHTML('beforeend',`<circle cx="${o.x}" cy="${o.y}" r="${r}" fill="none" stroke="${found?'#5aaa3a':'#e8c33a'}" stroke-width="3" opacity="0"><animate attributeName="opacity" from="0" to="1" dur=".25s" fill="freeze"/>${found?'':'<animate attributeName="r" values="'+(r*1.4)+';'+r+'" dur=".5s"/>'}</circle>`);
+}
+let floatTimer=null;
+function floatMsg(text,miss){ const el=document.getElementById('float-msg'); if(!el) return;
+  el.textContent=text; el.classList.toggle('miss',!!miss); el.classList.add('show');
+  clearTimeout(floatTimer); floatTimer=setTimeout(()=>el.classList.remove('show'),1100); }
+
+function renderChecklist(){
+  const el=document.getElementById('checklist'); if(!el) return;
+  el.innerHTML=`<h3>Find these (${G.foundCount}/${G.targetIds.length})</h3>`+
+    G.targetIds.map(id=>{ const o=G.items.find(x=>x.id===id && x.isTarget); const found=o&&o.found;
+      const it=ITEMS[id];
+      return `<div class="chk ${found?'found':''}">
+        <svg class="chk-ic" viewBox="0 0 40 40">${ICON[id]?ICON[id]():''}</svg>
+        <div class="chk-name">${it.name}<div class="chk-kind kind-${it.kind}">${it.kind}</div></div>
+        <div class="chk-box">${found?'✓':''}</div></div>`; }).join('');
+}
+
+/* ---------- zoom ---------- */
+function zoomBy(d){ G.zoom=Math.max(1,Math.min(3,(G.zoom||1)+d*0.5)); applyZoom(); }
+function applyZoom(){ const svg=document.getElementById('scene'); const wrap=document.getElementById('scene-wrap'); if(!svg||!wrap) return;
+  const base=wrap.clientWidth||760; svg.style.width=(base*G.zoom)+'px'; svg.style.height='auto'; }
+
+/* ---------- hints ---------- */
+function useHint(){ if(G.hintsLeft<=0||G.ended) return;
+  const target=G.items.find(o=>o.isTarget && !o.found); if(!target) return;
+  G.hintsLeft--; G.hintsUsed++; SND.click(); addMark(target,false);
+  floatMsg(`💡 ${target.name} is near the highlighted circle`,false);
+  const hb=[...document.querySelectorAll('.actions .btn')].find(b=>/Hint/.test(b.textContent));
+  if(hb){ hb.textContent=`💡 Hint (${G.hintsLeft})`; if(G.hintsLeft<=0) hb.disabled=true; }
+}
+
+/* ---------- win / lose ---------- */
+function winRun(){ G.ended=true; stopClock(); SND.win();
+  const sec=Math.round((Date.now()-G.t0)/1000), stars=starRating();
+  saveProgress(G.tier,stars,sec);
+  const starStr=[1,2,3].map(i=>i<=stars?'★':'☆').join('');
+  openOv(`<h2>✅ Scene cleared!</h2>
+    <div style="text-align:center">
+      <div style="font-size:2.1rem;color:var(--gold);letter-spacing:5px">${starStr}</div>
+      <div style="color:var(--text-muted);font-size:.9rem;margin-top:6px">${tierByN(G.tier).ic} ${tierByN(G.tier).name} · ⏱ ${fmtTime(sec)} · ✗ ${G.misses} misses · 💡 ${G.hintsUsed} hints</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn primary" onclick="startTier(${G.tier})">🔄 New Scene</button>
+      <button class="btn" onclick="openTierSelect()">🎚️ Levels</button>
+      <a class="btn" href="index.html">🏠 Menu</a>
+    </div>`);
+}
+function timeUp(){ G.ended=true; stopClock(); SND.lose();
+  // reveal the ones they missed
+  G.items.filter(o=>o.isTarget && !o.found).forEach(o=>addMark(o,false));
+  const missed=G.items.filter(o=>o.isTarget && !o.found);
+  openOv(`<h2 style="color:var(--danger)">⏰ Time's up!</h2>
+    <p style="text-align:center;color:var(--text-muted)">You found ${G.foundCount} of ${G.targetIds.length}. The ones you missed are now circled on the scene:</p>
+    <div class="feedback info" style="margin-top:10px"><b>Still hidden:</b>
+      <ul style="margin:5px 0 0 18px">${missed.map(o=>`<li>${o.name}</li>`).join('')||'<li>—</li>'}</ul></div>
+    <div class="btn-row">
+      <button class="btn primary" onclick="startTier(${G.tier})">🔄 Try Again</button>
+      <button class="btn" onclick="closeOv()">👁️ See the scene</button>
+      <a class="btn" href="index.html">🏠 Menu</a>
+    </div>`);
+}
+function starRating(){
+  const frac=G.left/G.total; let stars=3;
+  if(G.misses>3 || G.hintsUsed>0 || frac<0.3) stars=2;
+  if(G.misses>=8 || G.hintsUsed>=3 || frac<0.1) stars=1;
+  return Math.max(1,stars);
+}
+
+/* ============================================================
+   BACKGROUNDS
+   ============================================================ */
+function bgNeighborhood(){
+  return `<rect x="0" y="0" width="${VBW}" height="${VBH}" fill="#8fb3d9"/>
+    <rect x="0" y="330" width="${VBW}" height="${VBH-330}" fill="#7c8a5a"/>
+    <rect x="0" y="300" width="${VBW}" height="34" fill="#9aa86e"/>
+    <!-- road -->
+    <rect x="0" y="430" width="${VBW}" height="60" fill="#3a3f45"/>
+    <g stroke="#e8c33a" stroke-width="4" stroke-dasharray="26 22"><line x1="0" y1="460" x2="${VBW}" y2="460"/></g>
+    <!-- houses -->
+    ${house(70,170,'#cf9b6b','#7a5a38')}${house(300,150,'#b98f7a','#6b4c3a')}${house(560,175,'#9fb08a','#5f6f4a')}
+    <!-- a few trees -->
+    ${tree(230,300)}${tree(520,310)}${tree(760,300)}
+    <!-- clouds -->
+    <g fill="#eef3f8" opacity=".85"><ellipse cx="150" cy="70" rx="46" ry="20"/><ellipse cx="190" cy="62" rx="34" ry="17"/>
+      <ellipse cx="620" cy="55" rx="50" ry="20"/><ellipse cx="660" cy="48" rx="34" ry="16"/></g>`;
+}
+function house(x,y,wall,roof){ return `<g>
+  <rect x="${x}" y="${y}" width="150" height="120" fill="${wall}" stroke="#3a2a1a" stroke-width="2"/>
+  <path d="M${x-12} ${y} L${x+75} ${y-52} L${x+162} ${y} Z" fill="${roof}" stroke="#3a2a1a" stroke-width="2"/>
+  <rect x="${x+58}" y="${y+62}" width="34" height="58" fill="#5a4632" stroke="#3a2a1a" stroke-width="1.5"/>
+  <rect x="${x+18}" y="${y+26}" width="28" height="26" fill="#a9d4f0" stroke="#3a2a1a" stroke-width="1.5"/>
+  <rect x="${x+104}" y="${y+26}" width="28" height="26" fill="#a9d4f0" stroke="#3a2a1a" stroke-width="1.5"/>
+  <path d="M${x+40} ${y+120} l14 -22 M${x+70} ${y+120} l-6 -30" stroke="#3a2a1a" stroke-width="1.5" opacity=".5"/></g>`; }
+function tree(x,y){ return `<g><rect x="${x-6}" y="${y}" width="12" height="34" fill="#6b4c22"/>
+  <circle cx="${x}" cy="${y-6}" r="24" fill="#3f7a34"/><circle cx="${x-16}" cy="${y+4}" r="16" fill="#4a8f3d"/><circle cx="${x+16}" cy="${y+4}" r="16" fill="#4a8f3d"/></g>`; }
+
+function bgFire(){
+  return `<rect x="0" y="0" width="${VBW}" height="${VBH}" fill="#5b4a44"/>
+    <rect x="0" y="330" width="${VBW}" height="${VBH-330}" fill="#43413a"/>
+    <rect x="0" y="300" width="${VBW}" height="34" fill="#54503f"/>
+    <rect x="0" y="430" width="${VBW}" height="60" fill="#33352f"/>
+    <g stroke="#c9b24a" stroke-width="4" stroke-dasharray="26 22"><line x1="0" y1="460" x2="${VBW}" y2="460"/></g>
+    <!-- burning house (glow, not a target icon) -->
+    ${house(90,160,'#6f4f3a','#3f2f22')}
+    <ellipse cx="165" cy="210" rx="95" ry="120" fill="#ff7a1a" opacity=".33"/>
+    <ellipse cx="150" cy="235" rx="55" ry="70" fill="#ffd23f" opacity=".38"/>
+    <rect x="108" y="196" width="28" height="26" fill="#ffb028"/><rect x="194" y="196" width="28" height="26" fill="#ffb028"/>
+    <!-- smoke -->
+    <g fill="#6e6a63" opacity=".82"><ellipse cx="185" cy="95" rx="62" ry="30"/><ellipse cx="250" cy="62" rx="50" ry="26"/><ellipse cx="315" cy="98" rx="44" ry="22"/><ellipse cx="120" cy="70" rx="40" ry="20"/></g>
+    ${house(470,180,'#6f6a5a','#4a4636')}${house(662,192,'#7a6a5a','#4a3f30')}
+    ${tree(400,312)}${tree(760,315)}
+    ${firetruck(300,392)}`;
+}
+function firetruck(x,y){ return `<g>
+  <rect x="${x}" y="${y-2}" width="112" height="34" rx="4" fill="#c0392b" stroke="#7a1a1a" stroke-width="2"/>
+  <rect x="${x+80}" y="${y-20}" width="32" height="20" rx="3" fill="#c0392b" stroke="#7a1a1a" stroke-width="2"/>
+  <rect x="${x+84}" y="${y-16}" width="22" height="12" fill="#a9d4f0"/>
+  <rect x="${x+6}" y="${y+4}" width="62" height="14" fill="#e8d9a0" stroke="#7a1a1a" stroke-width="1"/>
+  <line x1="${x+12}" y1="${y-4}" x2="${x+74}" y2="${y-15}" stroke="#b8bcc0" stroke-width="4"/>
+  <rect x="${x+42}" y="${y-11}" width="8" height="7" fill="#e8c33a"/>
+  <circle cx="${x+26}" cy="${y+32}" r="10" fill="#222" stroke="#000" stroke-width="1.5"/><circle cx="${x+92}" cy="${y+32}" r="10" fill="#222" stroke="#000" stroke-width="1.5"/></g>`; }
+
+function bgHazmat(){
+  return `<rect x="0" y="0" width="${VBW}" height="${VBH}" fill="#8a929c"/>
+    <rect x="0" y="330" width="${VBW}" height="${VBH-330}" fill="#6a6f74"/>
+    <rect x="0" y="300" width="${VBW}" height="34" fill="#7a808a"/>
+    <!-- warehouse -->
+    <rect x="60" y="150" width="250" height="150" fill="#9aa0a6" stroke="#4a4f54" stroke-width="2"/>
+    <path d="M50 150 L185 100 L320 150 Z" fill="#6a7076" stroke="#4a4f54" stroke-width="2"/>
+    <rect x="105" y="212" width="58" height="88" fill="#5a6066"/><rect x="205" y="196" width="44" height="40" fill="#b9d4e0" stroke="#4a4f54" stroke-width="1.5"/>
+    <g stroke="#4a4f54" stroke-width="1" opacity=".5"><line x1="60" y1="180" x2="310" y2="180"/><line x1="60" y1="240" x2="310" y2="240"/></g>
+    <!-- storage tanks -->
+    ${tank(430,178)}${tank(505,168)}${tank(700,186)}
+    <!-- pipes -->
+    <g stroke="#8a8f92" stroke-width="8" fill="none"><path d="M355 300 H${VBW}"/><path d="M355 300 V244 H565"/></g>
+    <g fill="#5a5f63"><circle cx="565" cy="244" r="7"/><circle cx="565" cy="300" r="7"/><circle cx="700" cy="300" r="7"/></g>
+    <rect x="0" y="430" width="${VBW}" height="60" fill="#4a4f54"/>
+    <g stroke="#e8c33a" stroke-width="3" stroke-dasharray="18 16" opacity=".7"><line x1="0" y1="460" x2="${VBW}" y2="460"/></g>`;
+}
+function tank(x,y){ return `<g>
+  <rect x="${x}" y="${y}" width="52" height="122" rx="14" fill="#c2c7cc" stroke="#6a6f74" stroke-width="2"/>
+  <ellipse cx="${x+26}" cy="${y}" rx="26" ry="7" fill="#d2d7dc" stroke="#6a6f74" stroke-width="1.5"/>
+  <rect x="${x+7}" y="${y+34}" width="38" height="10" fill="#e8b53f"/><rect x="${x+7}" y="${y+56}" width="38" height="5" fill="#6a6f74"/></g>`; }
+
+/* ---------- overlay ---------- */
+function openOv(html){ document.getElementById('ov-box').innerHTML=html; document.getElementById('ov').classList.add('show'); }
+function closeOv(){ document.getElementById('ov').classList.remove('show'); }
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&G&&G.ended) closeOv(); });
+
+/* ---------- boot ---------- */
+['pointerdown','keydown','touchstart'].forEach(ev=>window.addEventListener(ev,function once(){ SND.arm(); },{once:true}));
+window.addEventListener('resize',()=>{ if(G&&!G.ended) applyZoom(); });
+SND.init();
+openTierSelect();
+</script>
+</body>
+</html>
