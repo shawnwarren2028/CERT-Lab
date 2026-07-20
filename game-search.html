@@ -269,27 +269,30 @@ const DECOYS=['crate','rock','bush','tire','plainbarrel','bucket','trashcan','sa
 
 /* scene themes (background + which items/decoys fit) */
 const SCENES={
-  neighborhood:{ name:'Quake-Damaged Neighborhood', ic:'🏘️',
+  neighborhood:{ name:'Quake-Damaged Neighborhood', ic:'🏘️', densityMul:1.0,
     hazards:['powerline','gasleak','propane','spill','hazmatdrum'],
     gear:['helmet','radio','firstaid','gloves','flashlight','goggles','extinguisher'],
+    decoys:['crate','rock','bush','tire','plainbarrel','bucket','trashcan','sandbag','plank','flowerpot'],
     bg:bgNeighborhood },
-  fire:{ name:'Structure-Fire Block', ic:'🔥',
+  fire:{ name:'Structure-Fire Block', ic:'🔥', densityMul:1.15,
     hazards:['flames','propane','powerline','spill','gasleak'],
     gear:['extinguisher','helmet','radio','firstaid','goggles','flashlight'],
+    decoys:['crate','rock','tire','plainbarrel','bucket','trashcan','sandbag','plank','cinderblock'],
     bg:bgFire },
-  hazmat:{ name:'Hazmat / Industrial Yard', ic:'☣️',
+  hazmat:{ name:'Hazmat / Industrial Yard', ic:'☣️', densityMul:1.25,
     hazards:['hazmatdrum','spill','gasleak','propane','powerline'],
     gear:['goggles','gloves','radio','firstaid','helmet','flashlight'],
+    decoys:['crate','rock','tire','plainbarrel','bucket','trashcan','cinderblock','plank'],
     bg:bgHazmat },
 };
 
 /* ---------- difficulty tiers (5-rank suite ladder) ---------- */
 const TIERS=[
-  {n:1,name:'Recruit',   ic:'🔰', targets:4, decoys:18, scale:1.2,  hints:3, secs:80, desc:'4 finds, light clutter, big items, 3 hints, generous clock.'},
-  {n:2,name:'Trainee',   ic:'🎓', targets:5, decoys:28, scale:1.08, hints:2, secs:85, desc:'5 finds, more clutter, 2 hints.'},
-  {n:3,name:'Responder', ic:'🚑', targets:6, decoys:38, scale:0.98, hints:2, secs:90, desc:'6 finds, dense clutter, 2 hints.'},
-  {n:4,name:'Veteran',   ic:'🎖️', targets:7, decoys:50, scale:0.9,  hints:1, secs:90, desc:'7 finds, heavy clutter, smaller items, 1 hint, tighter clock.'},
-  {n:5,name:'Specialist',ic:'⭐', targets:8, decoys:64, scale:0.82, hints:0, secs:95, desc:'8 finds, maximum clutter, small items, no hints, tightest clock.'},
+  {n:1,name:'Recruit',   ic:'🔰', targets:4, decoys:18, scale:1.2,  hints:3, secs:80, sat:0.92, rot:7,  occ:0.0,  desc:'4 finds, light clutter, big items, items sit fairly open, 3 hints.'},
+  {n:2,name:'Trainee',   ic:'🎓', targets:5, decoys:28, scale:1.08, hints:2, secs:85, sat:0.82, rot:11, occ:0.15, desc:'5 finds, more clutter, items start to blend, 2 hints.'},
+  {n:3,name:'Responder', ic:'🚑', targets:6, decoys:38, scale:0.98, hints:2, secs:90, sat:0.72, rot:15, occ:0.3,  desc:'6 finds, dense clutter, muted & rotated items, some tucked behind objects, 2 hints.'},
+  {n:4,name:'Veteran',   ic:'🎖️', targets:7, decoys:50, scale:0.9,  hints:1, secs:90, sat:0.63, rot:19, occ:0.45, desc:'7 finds, heavy clutter, well-camouflaged items, 1 hint, tighter clock.'},
+  {n:5,name:'Specialist',ic:'⭐', targets:8, decoys:64, scale:0.82, hints:0, secs:95, sat:0.55, rot:23, occ:0.6,  desc:'8 finds, maximum clutter, heavily blended, rotated & occluded items, no hints.'},
 ];
 function tierByN(n){ return TIERS.find(t=>t.n===n)||TIERS[0]; }
 
@@ -336,15 +339,23 @@ function startRun(){
   // choose targets: mix hazards + gear
   const nH=Math.ceil(T.targets/2), nG=T.targets-nH;
   const targetIds=shuffle(shuffle(scene.hazards).slice(0,nH).concat(shuffle(scene.gear).slice(0,nG)));
-  // place items (targets + decoys) without heavy overlap
+  // per-scene themed clutter + tuned density
+  const decoySet=scene.decoys||DECOYS, decoyN=Math.round(T.decoys*(scene.densityMul||1));
   const placed=[]; const pad=42;
   function placeOK(x,y,minD){ return placed.every(o=>Math.hypot(o.x-x,o.y-y)>minD); }
+  function mk(id,isTarget,x,y,s){ const o={id,isTarget,x,y,s,rot:rndf(-T.rot,T.rot),found:false,
+    kind:ITEMS[id]?ITEMS[id].kind:'decoy', name:ITEMS[id]?ITEMS[id].name:'', fact:ITEMS[id]?ITEMS[id].fact:''};
+    placed.push(o); return o; }
   function place(id,isTarget){ const s=T.scale*rndf(0.9,1.12); let x,y,ok=false,tries=0;
     while(!ok && tries++<450){ x=rndf(pad,VBW-pad); y=rndf(338,VBH-24); ok=placeOK(x,y,30*s); }
-    placed.push({id,isTarget,x,y,s,found:false, kind:ITEMS[id]?ITEMS[id].kind:'decoy',
-      name:ITEMS[id]?ITEMS[id].name:'', fact:ITEMS[id]?ITEMS[id].fact:''}); }
-  targetIds.forEach(id=>place(id,true));
-  for(let i=0;i<T.decoys;i++) place(pick(DECOYS),false);
+    return mk(id,isTarget,x,y,s); }
+  const targets=targetIds.map(id=>place(id,true));
+  for(let i=0;i<decoyN;i++) place(pick(decoySet),false);
+  // occlusion (ramped by tier): tuck part of some targets behind a decoy drawn on top;
+  // the whole target stays clickable so the visible part still counts.
+  const nOcc=Math.round(targets.length*(T.occ||0));
+  shuffle(targets).slice(0,nOcc).forEach(t=>{ const ang=rndf(0,Math.PI*2), off=15*t.s;
+    mk(pick(decoySet),false, t.x+Math.cos(ang)*off, t.y+Math.sin(ang)*off, t.s*rndf(0.95,1.15)); });
   G={ tier:T.n, sceneKey, scene, items:placed, targetIds, foundCount:0, misses:0,
       hintsLeft:T.hints, hintsUsed:0, total:T.secs, left:T.secs, t0:Date.now(), ended:false, zoom:1 };
   updateTierBadge(); renderGame(); startClock();
@@ -383,12 +394,13 @@ function renderGame(){
   updateClock();
 }
 function buildSceneSVG(){
-  const sc=G.scene, bg=sc.bg();
-  const items=G.items.map((o,i)=>`<g class="item" data-i="${i}" transform="translate(${o.x-20*o.s},${o.y-20*o.s}) scale(${o.s})">
+  const sc=G.scene, bg=sc.bg(), T=tierByN(G.tier);
+  const items=G.items.map((o,i)=>`<g class="item" data-i="${i}" transform="translate(${o.x},${o.y}) rotate(${o.rot||0}) scale(${o.s}) translate(-20,-20)">
     ${ICON[o.id]?ICON[o.id]():''}</g>`).join('');
   return `<svg class="scene" id="scene" viewBox="0 0 ${VBW} ${VBH}" xmlns="http://www.w3.org/2000/svg">
     <rect x="0" y="0" width="${VBW}" height="${VBH}" fill="transparent" onclick="sceneMiss(event)"/>
-    ${bg}${items}
+    ${bg}
+    <g class="scene-items" style="filter:saturate(${T.sat!=null?T.sat:1})">${items}</g>
     <g id="marks"></g></svg>`;
 }
 function wireScene(){
