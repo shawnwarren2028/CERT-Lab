@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script src="theme.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wallingford CERT — Scene Recall</title>
+<style>
+  :root{
+    --bg:#0e1208; --surface:#1a2012; --surface2:#243018; --border:#3a5228;
+    --primary:#5aaa3a; --primary-dark:#4a8f2e; --primary-light:#7ac95a;
+    --text:#eef2e8; --text-muted:#8aa87a; --radius:12px; --gold:#e8c33a;
+    --danger:#ef4444; --warn:#f59e0b; --info:#56d4ff; --min:#27ae60;
+  }
+  [data-theme="light"]{
+    --bg:#eef3e7; --surface:#ffffff; --surface2:#e7eedd; --border:#c2d2af;
+    --primary:#41902e; --primary-dark:#317022; --primary-light:#5aaa3a;
+    --text:#16210d; --text-muted:#5c6e4a; --muted:#5c6e4a;
+  }
+  [data-theme="light"] header{background:#e3ecd6;}
+  [data-theme="light"] footer{background:#e3ecd6;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);
+    min-height:100vh;display:flex;flex-direction:column;-webkit-tap-highlight-color:transparent;}
+
+  header{width:100%;background:#111a09;border-bottom:3px solid var(--primary);
+    padding:10px 22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  #cert-logo{height:48px;width:auto;}
+  .logo-badge{background:var(--primary);color:#000;font-weight:900;font-size:1.05rem;letter-spacing:.1em;padding:6px 12px;border-radius:6px;}
+  header h1{font-size:1.12rem;font-weight:700;color:var(--primary);}
+  header p{font-size:0.76rem;color:var(--text-muted);}
+  .hdr-text{flex:1 1 0;min-width:0;}
+  .hdr-actions{margin-left:auto;display:flex;align-items:center;gap:9px;}
+  .home-link{color:var(--primary-light);text-decoration:none;font-size:0.85rem;font-weight:600;
+    border:1px solid var(--border);padding:8px 14px;border-radius:8px;transition:.15s;white-space:nowrap;}
+  .home-link:hover{background:var(--surface2);border-color:var(--primary);}
+  .icon-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:1rem;line-height:1;
+    padding:8px 11px;border-radius:8px;cursor:pointer;transition:.15s;}
+  .icon-btn:hover{border-color:var(--primary);}
+  .level-btn{display:inline-flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);
+    color:var(--primary-light);font-size:0.82rem;font-weight:700;padding:8px 12px;border-radius:8px;cursor:pointer;
+    transition:.15s;white-space:nowrap;font-family:inherit;}
+  .level-btn:hover{border-color:var(--primary);}
+
+  main{flex:1;width:100%;max-width:900px;margin:0 auto;padding:16px 18px 26px;display:flex;flex-direction:column;gap:14px;}
+
+  /* scene */
+  .scene-wrap{background:#0a0e07;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;position:relative;}
+  svg.scene{display:block;width:100%;height:auto;}
+  .obs-top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--border);
+    border-radius:var(--radius);padding:10px 14px;}
+  .obs-top .ot-title{font-size:1rem;font-weight:800;color:var(--primary);}
+  .obs-top .ot-sub{font-size:0.76rem;color:var(--text-muted);}
+  .timer{margin-left:auto;font-weight:800;font-size:1.1rem;color:var(--text);background:var(--bg);border:1px solid var(--border);
+    border-radius:8px;padding:5px 12px;min-width:52px;text-align:center;}
+  .timer.low{color:#fff;background:var(--danger);border-color:var(--danger);}
+  .tbar{height:8px;background:#0a0e07;border:1px solid var(--border);border-radius:6px;overflow:hidden;}
+  .tbar span{display:block;height:100%;background:linear-gradient(90deg,var(--primary),var(--primary-light));width:100%;
+    transition:width 1s linear;}
+
+  /* concealed */
+  .concealed{background:var(--surface);border:1px dashed var(--border);border-radius:var(--radius);padding:30px 18px;text-align:center;}
+  .concealed .cc-ic{font-size:2.6rem;}
+  .concealed h2{font-size:1.15rem;color:var(--primary);margin:6px 0 4px;}
+  .concealed p{font-size:0.86rem;color:var(--text-muted);}
+
+  /* card / ready */
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 18px;}
+  .card h2{font-size:1.25rem;color:var(--primary);margin-bottom:8px;text-align:center;}
+  .card p{font-size:0.9rem;color:var(--text-muted);line-height:1.55;text-align:center;max-width:560px;margin:0 auto;}
+  .card .tips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:14px 0;}
+  .card .tip{font-size:0.78rem;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:5px 12px;color:var(--text);}
+
+  /* question */
+  .qhead{display:flex;align-items:center;gap:10px;}
+  .qhead .qn{font-size:0.78rem;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;}
+  .qhead .qbar{flex:1;height:6px;background:#0a0e07;border:1px solid var(--border);border-radius:5px;overflow:hidden;}
+  .qhead .qbar span{display:block;height:100%;background:var(--primary);}
+  .qtext{font-size:1.12rem;font-weight:700;margin:12px 0 14px;}
+  .opts{display:flex;flex-direction:column;gap:9px;}
+  .opt{display:flex;align-items:center;gap:10px;text-align:left;background:var(--surface2);border:1px solid var(--border);
+    color:var(--text);font-size:0.95rem;font-weight:600;padding:12px 14px;border-radius:10px;cursor:pointer;transition:.14s;font-family:inherit;}
+  .opt:hover{border-color:var(--primary);background:var(--border);}
+  .opt .swatch{width:18px;height:18px;border-radius:4px;border:1px solid rgba(0,0,0,.3);flex-shrink:0;}
+
+  .btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.92rem;font-weight:700;
+    padding:12px 20px;border-radius:9px;cursor:pointer;transition:.15s;font-family:inherit;text-decoration:none;
+    display:inline-flex;align-items:center;gap:7px;justify-content:center;}
+  .btn:hover{border-color:var(--primary);background:var(--border);}
+  .btn.primary{background:var(--primary);color:#06210a;border-color:var(--primary);}
+  .btn.primary:hover{background:var(--primary-light);}
+  .btn-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:16px;}
+
+  /* review */
+  .review{display:flex;flex-direction:column;gap:8px;margin-top:6px;}
+  .rev{background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:10px 13px;font-size:0.86rem;}
+  .rev .rq{font-weight:700;margin-bottom:3px;}
+  .rev .ra{font-size:0.82rem;}
+  .rev.right{border-color:var(--min);} .rev.wrong{border-color:var(--danger);}
+  .rev .tag{font-weight:800;} .rev .tag.g{color:var(--min);} .rev .tag.r{color:var(--danger);}
+
+  footer{text-align:center;padding:16px;color:var(--text-muted);font-size:0.74rem;border-top:1px solid var(--border);}
+  footer span{color:var(--primary);}
+
+  .ov{position:fixed;inset:0;background:rgba(6,9,5,.86);display:none;align-items:center;justify-content:center;padding:18px;z-index:120;}
+  .ov.show{display:flex;animation:ovf .2s ease;}
+  @keyframes ovf{from{opacity:0}to{opacity:1}}
+  .ov-box{background:var(--surface);border:2px solid var(--primary);border-radius:14px;padding:24px;max-width:560px;width:100%;
+    max-height:90vh;overflow-y:auto;position:relative;}
+  .ov-box h2{font-size:1.5rem;color:var(--primary);margin-bottom:6px;text-align:center;}
+  .tier-list{display:flex;flex-direction:column;gap:9px;margin-top:6px;}
+  .tier-card{display:flex;align-items:center;gap:13px;text-align:left;background:var(--surface2);border:1px solid var(--border);
+    border-radius:11px;padding:12px 14px;cursor:pointer;transition:.14s;font-family:inherit;color:var(--text);}
+  .tier-card:hover{border-color:var(--primary);background:var(--border);transform:translateY(-1px);}
+  .tier-card .tc-ic{font-size:1.7rem;flex-shrink:0;}
+  .tier-card .tc-body{flex:1;min-width:0;}
+  .tier-card .tc-name{font-weight:800;color:var(--primary-light);font-size:1rem;}
+  .tier-card .tc-desc{display:block;font-size:0.76rem;color:var(--text-muted);line-height:1.4;margin-top:2px;}
+  .tier-card .tc-side{text-align:right;flex-shrink:0;}
+  .tier-card .tc-stars{color:var(--gold);font-size:0.95rem;letter-spacing:1px;}
+  .tier-card .tc-best{display:block;font-size:0.66rem;color:var(--text-muted);margin-top:2px;}
+
+  @media (max-width:600px){
+    header{padding:8px 14px;} .hdr-actions{margin-left:0;width:100%;justify-content:center;}
+    main{padding:12px 12px 20px;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <img id="cert-logo" src="cert-wallingford-logo.png" alt="Wallingford CERT"
+    onerror="this.style.display='none';document.getElementById('logo-fallback').style.display='flex'">
+  <div id="logo-fallback" style="display:none;align-items:center;"><div class="logo-badge">CERT</div></div>
+  <div class="hdr-text">
+    <h1>Wallingford CERT — Scene Recall</h1>
+    <p>Community Emergency Response Team</p>
+  </div>
+  <div class="hdr-actions">
+    <button class="level-btn" id="level-btn" onclick="openTierSelect()" title="Choose difficulty">🎚️ <span id="tier-name">Levels</span></button>
+    <button class="icon-btn" id="sfx-btn" onclick="SND.toggle()" title="Sound effects">🔊</button>
+    <a class="home-link" href="index.html">← Menu</a>
+    <button class="theme-btn" onclick="toggleTheme()" aria-label="Toggle light or dark mode">☀️</button>
+  </div>
+</header>
+
+<main id="main"><!-- injected --></main>
+
+<footer><span>Wallingford CERT</span> — Training Suite · Scene Recall · For educational use — follow your local CERT program guidelines.</footer>
+
+<div class="ov" id="ov" onclick="if(event.target===this)closeOv()"><div class="ov-box" id="ov-box"></div></div>
+
+<script>
+/* ============================================================
+   Wallingford CERT — Scene Recall (observation / memory game)
+   Show an emergency scene for a few seconds, hide it, then quiz
+   the player on what they observed. Single file, no deps.
+   ============================================================ */
+
+/* ---------- SFX ---------- */
+const SND=(function(){
+  let ctx,on=(localStorage.getItem('cert_observe_sfx')!=='off'),comp;
+  function ac(){ if(!ctx){ ctx=new (window.AudioContext||window.webkitAudioContext)(); comp=ctx.createDynamicsCompressor(); comp.connect(ctx.destination);} return ctx; }
+  function tone(f,t,type,g,dur){ if(!on)return; ac(); const o=ctx.createOscillator(),ga=ctx.createGain();
+    o.type=type||'sine'; o.frequency.setValueAtTime(f,ctx.currentTime+t);
+    ga.gain.setValueAtTime(0,ctx.currentTime+t); ga.gain.linearRampToValueAtTime(g||0.2,ctx.currentTime+t+0.012);
+    ga.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+t+(dur||0.16));
+    o.connect(ga); ga.connect(comp); o.start(ctx.currentTime+t); o.stop(ctx.currentTime+t+(dur||0.16)+0.03); }
+  return {
+    click(){ tone(300,0,'triangle',0.12,0.07); },
+    good(){ tone(560,0,'sine',0.2,0.1); tone(820,0.08,'sine',0.2,0.13); },
+    bad(){ tone(200,0,'sawtooth',0.14,0.14); },
+    tick(){ tone(660,0,'triangle',0.08,0.05); },
+    reveal(){ tone(420,0,'triangle',0.14,0.1); tone(300,0.08,'triangle',0.14,0.14); },
+    win(){ [523,659,784,1047,1319].forEach((f,i)=>tone(f,i*0.1,'triangle',0.2,0.22)); },
+    toggle(){ on=!on; localStorage.setItem('cert_observe_sfx',on?'on':'off'); document.getElementById('sfx-btn').textContent=on?'🔊':'🔇'; if(on){ac();this.click();} },
+    arm(){ if(!on)return; ac(); if(ctx.state==='suspended') ctx.resume(); },
+    init(){ document.getElementById('sfx-btn').textContent=on?'🔊':'🔇'; }
+  };
+})();
+
+/* ---------- helpers ---------- */
+const rnd=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const chance=p=>Math.random()<p;
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+
+/* ---------- palettes ---------- */
+const SHIRTS={red:'#d23a3a',blue:'#3f6fd0',green:'#3f9a44',yellow:'#e8c33a',orange:'#e8792e',
+  purple:'#8a5ac2',white:'#e9edf0',black:'#2c2c2c'};
+const SHIRT_NAMES=Object.keys(SHIRTS);
+const BUILDINGS={tan:'#cf9b6b','brick red':'#a85a4a',gray:'#9aa0a6','pale green':'#9fb08a','pale blue':'#8aa6c0'};
+const BUILDING_NAMES=Object.keys(BUILDINGS);
+const WEATHERS=['clear','cloudy','overcast','night','rainy'];
+const ZONES=['left','middle','right'];
+const HAZ_TYPES=['fire','propane','powerline','spill','gasleak','drum'];
+const HAZ_NAME={fire:'a fire',propane:'a propane tank',powerline:'a downed power line',
+  spill:'a chemical spill',gasleak:'a gas leak',drum:'a hazmat drum'};
+const HAZ_NOUN={fire:'fire',propane:'propane tank',powerline:'power line',spill:'chemical spill',gasleak:'gas leak',drum:'hazmat drum'};
+
+/* ---------- difficulty tiers ---------- */
+const TIERS=[
+  {n:1,name:'Recruit',   ic:'🔰', view:12, q:3, opts:3, victims:1, hazards:2, extras:0, desc:'12s look, 3 questions, 3 options, simple scene.'},
+  {n:2,name:'Trainee',   ic:'🎓', view:10, q:4, opts:3, victims:2, hazards:2, extras:1, desc:'10s look, 4 questions, a bit more to notice.'},
+  {n:3,name:'Responder', ic:'🚑', view:8,  q:5, opts:4, victims:2, hazards:3, extras:1, desc:'8s look, 5 questions, 4 options.'},
+  {n:4,name:'Veteran',   ic:'🎖️', view:6,  q:6, opts:4, victims:3, hazards:3, extras:2, desc:'6s look, 6 questions, busy scene.'},
+  {n:5,name:'Specialist',ic:'⭐', view:4,  q:8, opts:5, victims:3, hazards:4, extras:2, desc:'4s look, 8 questions, 5 options, maximum detail.'},
+];
+function tierByN(n){ return TIERS.find(t=>t.n===n)||TIERS[0]; }
+
+/* ---------- progress ---------- */
+function loadProg(){ try{ return JSON.parse(localStorage.getItem('cert_observe_progress'))||{}; }catch(e){ return {}; } }
+function sumTierStars(p){ p=p||loadProg(); return p.tiers?Object.values(p.tiers).reduce((a,t)=>a+(t.stars||0),0):0; }
+function saveProgress(tierN,stars,pct){
+  const p=loadProg(); p.completed=true; p.tiers=p.tiers||{};
+  const cur=p.tiers[tierN]||{stars:0,best:0,plays:0};
+  cur.stars=Math.max(cur.stars||0,stars); cur.best=Math.max(cur.best||0,pct); cur.plays=(cur.plays||0)+1;
+  p.tiers[tierN]=cur; p.stars=sumTierStars(p); localStorage.setItem('cert_observe_progress',JSON.stringify(p));
+}
+
+/* ---------- tier select ---------- */
+let TIER=null;
+function openTierSelect(){
+  const p=loadProg();
+  const cards=TIERS.map(t=>{
+    const td=(p.tiers&&p.tiers[t.n])||null, stars=td?td.stars:0;
+    const starStr=[1,2,3].map(i=>i<=stars?'★':'☆').join('');
+    const best=td&&td.best?`best ${td.best}%`:'not cleared';
+    return `<button class="tier-card" onclick="startTier(${t.n})">
+      <span class="tc-ic">${t.ic}</span>
+      <span class="tc-body"><span class="tc-name">${t.name}</span><span class="tc-desc">${t.desc}</span></span>
+      <span class="tc-side"><span class="tc-stars">${starStr}</span><span class="tc-best">${best}</span></span></button>`;
+  }).join('');
+  openOv(`<h2>👁️ Scene Recall</h2>
+    <p style="text-align:center;color:var(--text-muted);margin-bottom:4px">Study an emergency scene, then it disappears — answer from memory. Sharp observation is a core CERT skill for sizing up a scene and reporting to the IC.</p>
+    <p style="text-align:center;color:var(--gold);font-weight:700;font-size:.82rem;margin-bottom:12px">★ ${sumTierStars(p)} / 15 mastery</p>
+    <div class="tier-list">${cards}</div>`);
+}
+function startTier(n){ SND.click(); TIER=tierByN(n); closeOv(); startRound(); }
+
+/* ============================================================
+   SCENE GENERATION (tracked facts)
+   ============================================================ */
+let G=null, timerH=null;
+const VBW=820, VBH=470;
+const BACK_SLOTS=[170,410,650];            // victims row (one per zone)
+const FRONT_SLOTS=[110,255,400,545,690];   // hazards + vehicle row
+function zoneOf(x){ return x<300?'left':(x<540?'middle':'right'); }
+
+function genScene(T){
+  const s={};
+  s.weather=pick(WEATHERS);
+  s.buildingColor=pick(BUILDING_NAMES);
+  // exits: 3 doors, one (or more at high tier) blocked
+  s.exits=ZONES.map(z=>({pos:z,blocked:false}));
+  let nBlocked = (T.n>=4 && chance(0.4))?2:1;
+  shuffle(s.exits).slice(0,nBlocked).forEach(e=>e.blocked=true);
+  // victims: distinct shirts + zones
+  const shirts=shuffle(SHIRT_NAMES).slice(0,T.victims);
+  s.victims=shirts.map((c,i)=>({shirt:c}));
+  // hazards: distinct types
+  const htypes=shuffle(HAZ_TYPES).slice(0,T.hazards);
+  s.hazards=htypes.map(t=>({type:t}));
+  // extras: vehicle + placard
+  const extraOpts=shuffle(['vehicle','placard']).slice(0,T.extras);
+  s.vehicle = extraOpts.includes('vehicle') ? {type:pick(['firetruck','ambulance'])} : null;
+  s.placard = extraOpts.includes('placard') ? {number:rnd(1,9)} : null;
+  // victims -> back row (unique slots); hazards + vehicle -> front row (unique slots)
+  const bs=shuffle(BACK_SLOTS);
+  s.victims.forEach((v,i)=>{ v.x=bs[i]; v.zone=zoneOf(v.x); });
+  const front=s.hazards.slice(); if(s.vehicle) front.push(s.vehicle);
+  const fs=shuffle(FRONT_SLOTS);
+  front.forEach((e,i)=>{ e.x=fs[i]; e.zone=zoneOf(e.x); });
+  return s;
+}
+
+/* ============================================================
+   QUESTION GENERATION from facts
+   ============================================================ */
+function numberOpts(correct,n){ const set=new Set([correct]); let d=1;
+  while(set.size<n){ const cand=correct + (chance(0.5)?d:-d); if(cand>=0) set.add(cand); d++; if(d>12)break; }
+  while(set.size<n) set.add(rnd(0,8));
+  return shuffle([...set]).map(String); }
+function setOpts(correct,pool,n){ const set=new Set([correct]); const rest=shuffle(pool.filter(x=>x!==correct));
+  for(const r of rest){ if(set.size>=n)break; set.add(r); } return shuffle([...set]); }
+
+function buildQuestionPool(s,T){
+  const P=[], nOpt=T.opts;
+  const hazTypes=s.hazards.map(h=>h.type);
+  /* ---- counting ---- */
+  P.push({type:'count',cat:'counting',text:'How many hazards were in the scene?',correct:String(s.hazards.length),
+    options:numberOpts(s.hazards.length,nOpt)});
+  P.push({type:'count',cat:'counting',text:'How many people (victims) were in the scene?',correct:String(s.victims.length),
+    options:numberOpts(s.victims.length,nOpt)});
+  const nBlocked=s.exits.filter(e=>e.blocked).length;
+  P.push({type:'count',cat:'counting',text:'How many exits were blocked?',correct:String(nBlocked),
+    options:numberOpts(nBlocked,Math.min(nOpt,3))});
+  /* ---- presence (mix present + absent) ---- */
+  const presMix=shuffle(HAZ_TYPES).slice(0,4);
+  presMix.forEach(t=>{ const has=hazTypes.includes(t);
+    P.push({type:'yesno',cat:'presence',text:`Was there ${HAZ_NAME[t]} in the scene?`,correct:has?'Yes':'No',options:['Yes','No']}); });
+  P.push({type:'yesno',cat:'presence',text:'Was there a fire truck or ambulance in the scene?',
+    correct:s.vehicle?'Yes':'No',options:['Yes','No']});
+  P.push({type:'yesno',cat:'presence',text:'Was there a hazmat placard in the scene?',
+    correct:s.placard?'Yes':'No',options:['Yes','No']});
+  /* ---- attributes / color ---- */
+  s.victims.forEach((v)=>{ P.push({type:'color',cat:'attribute',
+    text:`What color shirt was the victim ${s.victims.length>1?'near the '+v.zone+' side':'wearing'}?`,
+    correct:cap(v.shirt),options:setOpts(cap(v.shirt),SHIRT_NAMES.map(cap),T.opts),swatch:'shirt'}); });
+  P.push({type:'color',cat:'attribute',text:'What color was the main building?',
+    correct:cap(s.buildingColor),options:setOpts(cap(s.buildingColor),BUILDING_NAMES.map(cap),Math.min(T.opts,BUILDING_NAMES.length))});
+  P.push({type:'set',cat:'attribute',text:'What was the weather / lighting like?',
+    correct:cap(s.weather),options:setOpts(cap(s.weather),WEATHERS.map(cap),T.opts)});
+  if(s.placard) P.push({type:'count',cat:'attribute',text:'What hazard-class number was on the placard?',
+    correct:String(s.placard.number),options:numberOpts(s.placard.number,T.opts)});
+  /* ---- spatial ---- */
+  if(nBlocked===1){ const b=s.exits.find(e=>e.blocked);
+    P.push({type:'set',cat:'spatial',text:'Which exit was blocked?',correct:cap(b.pos),options:['Left','Middle','Right']}); }
+  s.hazards.forEach(h=>{ P.push({type:'set',cat:'spatial',text:`Which side was ${HAZ_NAME[h.type]} on?`,
+    correct:cap(h.zone),options:['Left','Middle','Right']}); });
+  if(s.vehicle) P.push({type:'set',cat:'spatial',text:`Which side was the ${s.vehicle.type==='firetruck'?'fire truck':'ambulance'} on?`,
+    correct:cap(s.vehicle.zone),options:['Left','Middle','Right']});
+  s.victims.forEach(v=>{ if(s.victims.length>1) P.push({type:'set',cat:'spatial',
+    text:`Which side was the ${v.shirt}-shirt victim on?`,correct:cap(v.zone),options:['Left','Middle','Right']}); });
+  return P;
+}
+function pickQuestions(pool,n){
+  // ensure variety across categories, then fill
+  const byCat={}; pool.forEach(q=>{ (byCat[q.cat]=byCat[q.cat]||[]).push(q); });
+  const cats=shuffle(Object.keys(byCat)); const chosen=[]; const seen=new Set();
+  // round-robin one from each category first
+  let ci=0;
+  while(chosen.length<n && cats.some(c=>byCat[c].length)){
+    const c=cats[ci%cats.length]; ci++;
+    if(byCat[c].length){ const q=byCat[c].shift(); if(!seen.has(q.text)){ chosen.push(q); seen.add(q.text); } }
+    if(ci>cats.length*40) break;
+  }
+  return chosen.slice(0,n);
+}
+
+/* ============================================================
+   ROUND FLOW  (ready -> observe -> recall -> debrief)
+   ============================================================ */
+function startRound(){
+  const T=TIER, scene=genScene(T);
+  const pool=buildQuestionPool(scene,T);
+  const questions=pickQuestions(pool,T.q);
+  G={ tier:T.n, scene, questions, qIdx:0, answers:[], phase:'ready', viewLeft:T.view };
+  updateTierBadge(); renderReady();
+}
+function updateTierBadge(){ const b=document.getElementById('tier-name'); if(b&&G) b.textContent=tierByN(G.tier).name; }
+
+function renderReady(){
+  const T=tierByN(G.tier);
+  document.getElementById('main').innerHTML=`
+    <div class="card">
+      <h2>${T.ic} ${T.name} — Get ready</h2>
+      <p>You'll see an emergency scene for <b>${T.view} seconds</b>, then it disappears and you'll answer
+         <b>${T.q} questions</b> about what you saw. Take in the whole picture — don't fixate on one spot.</p>
+      <div class="tips">
+        <span class="tip">🔥 Count the hazards</span><span class="tip">🧍 Note the people &amp; shirt colors</span>
+        <span class="tip">🚪 Check the exits</span><span class="tip">🌤️ Notice the surroundings</span>
+      </div>
+      <div class="btn-row"><button class="btn primary" onclick="beginObserve()">👁️ Show the scene</button>
+        <button class="btn" onclick="openTierSelect()">🎚️ Levels</button></div>
+    </div>`;
+}
+function beginObserve(){
+  G.phase='observe'; G.viewLeft=tierByN(G.tier).view; SND.click();
+  renderObserve();
+  clearInterval(timerH);
+  timerH=setInterval(()=>{ G.viewLeft--; if(G.viewLeft<=3&&G.viewLeft>0) SND.tick();
+    updateTimer(); if(G.viewLeft<=0){ clearInterval(timerH); beginRecall(); } }, 1000);
+}
+function renderObserve(){
+  const T=tierByN(G.tier);
+  document.getElementById('main').innerHTML=`
+    <div class="obs-top">
+      <div><div class="ot-title">👁️ Observe the scene</div><div class="ot-sub">Memorize everything — it hides when the timer ends</div></div>
+      <div class="timer" id="timer">${G.viewLeft}s</div>
+    </div>
+    <div class="tbar"><span id="tbar" style="width:100%"></span></div>
+    <div class="scene-wrap">${renderSceneSVG(G.scene,true)}</div>
+    <div class="btn-row"><button class="btn" onclick="hideNow()">🙈 Hide &amp; answer now</button></div>`;
+  requestAnimationFrame(()=>{ const b=document.getElementById('tbar'); if(b) b.style.width='0%'; b.style.transition='width '+T.view+'s linear'; });
+}
+function updateTimer(){ const el=document.getElementById('timer'); if(el){ el.textContent=G.viewLeft+'s'; el.classList.toggle('low',G.viewLeft<=3); } }
+function hideNow(){ clearInterval(timerH); SND.click(); beginRecall(); }
+
+function beginRecall(){ G.phase='recall'; G.qIdx=0; SND.reveal(); renderQuestion(); }
+function renderQuestion(){
+  const q=G.questions[G.qIdx], n=G.questions.length, T=tierByN(G.tier);
+  const opts=q.options.map(o=>{
+    const sw = q.swatch==='shirt' && SHIRTS[o.toLowerCase()] ? `<span class="swatch" style="background:${SHIRTS[o.toLowerCase()]}"></span>` : '';
+    return `<button class="opt" onclick="answer('${String(o).replace(/'/g,"\\'")}')">${sw}${o}</button>`;
+  }).join('');
+  document.getElementById('main').innerHTML=`
+    <div class="concealed"><div class="cc-ic">🙈</div><h2>Scene concealed</h2><p>Answer from memory.</p></div>
+    <div class="card">
+      <div class="qhead"><span class="qn">Question ${G.qIdx+1} / ${n}</span>
+        <span class="qbar"><span style="width:${Math.round((G.qIdx)/n*100)}%"></span></span></div>
+      <div class="qtext">${q.text}</div>
+      <div class="opts">${opts}</div>
+    </div>`;
+}
+function answer(val){
+  const q=G.questions[G.qIdx]; const correct = (val===q.correct);
+  G.answers.push({q, val, correct}); correct?SND.good():SND.bad();
+  G.qIdx++;
+  if(G.qIdx>=G.questions.length) debrief(); else renderQuestion();
+}
+
+function debrief(){
+  G.phase='debrief'; clearInterval(timerH);
+  const n=G.questions.length, got=G.answers.filter(a=>a.correct).length, pct=Math.round(got/n*100);
+  const stars = pct>=90?3 : pct>=65?2 : 1;
+  saveProgress(G.tier,stars,pct); SND.win();
+  const starStr=[1,2,3].map(i=>i<=stars?'★':'☆').join('');
+  const review=G.answers.map(a=>`<div class="rev ${a.correct?'right':'wrong'}">
+    <div class="rq">${a.q.text}</div>
+    <div class="ra">Your answer: <span class="tag ${a.correct?'g':'r'}">${a.val}</span>${a.correct?'':` · Correct: <span class="tag g">${a.q.correct}</span>`}</div></div>`).join('');
+  document.getElementById('main').innerHTML=`
+    <div class="card">
+      <h2>👁️ Debrief</h2>
+      <div style="text-align:center">
+        <div style="font-size:2.1rem;color:var(--gold);letter-spacing:5px">${starStr}</div>
+        <div style="font-weight:800;color:var(--primary-light);font-size:1.05rem">${got} / ${n} correct · ${pct}%</div>
+        <div style="font-size:.8rem;color:var(--text-muted);margin-top:3px">${tierByN(G.tier).ic} ${tierByN(G.tier).name}</div>
+      </div>
+    </div>
+    <div class="obs-top"><div><div class="ot-title">🔎 The scene revealed</div>
+      <div class="ot-sub">Here's what was actually there</div></div></div>
+    <div class="scene-wrap">${renderSceneSVG(G.scene,true)}</div>
+    <div class="card"><div class="qn" style="font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;font-size:.76rem;margin-bottom:8px">Your answers</div>
+      <div class="review">${review}</div>
+      <div class="btn-row">
+        <button class="btn primary" onclick="startTier(${G.tier})">🔄 New Scene</button>
+        <button class="btn" onclick="openTierSelect()">🎚️ Levels</button>
+        <a class="btn" href="index.html">🏠 Menu</a>
+      </div></div>`;
+}
+
+/* ============================================================
+   SCENE RENDER (fresh minimalist SVG)
+   ============================================================ */
+function renderSceneSVG(s,reveal){
+  return `<svg class="scene" viewBox="0 0 ${VBW} ${VBH}" xmlns="http://www.w3.org/2000/svg">
+    ${sky(s.weather)}
+    ${building(s)}
+    ${ground(s.weather)}
+    ${s.victims.map(v=>elem(v.x,person(v.shirt),360)).join('')}
+    ${s.hazards.map(h=>elem(h.x,haz(h.type),404)).join('')}
+    ${s.vehicle?elem(s.vehicle.x,vehicle(s.vehicle.type),406):''}
+    ${s.placard?placardOnPost(s.placard.number):''}
+    ${weatherFX(s.weather)}
+  </svg>`;
+}
+function elem(x,inner,y){ return `<g transform="translate(${x-30},${y-60}) scale(1.5)">${inner}</g>`; }
+
+function sky(w){
+  const c={clear:'#8fb3d9',cloudy:'#a7b7c6',overcast:'#8f97a0',night:'#1e2740',rainy:'#7a828c'}[w];
+  let extra='';
+  if(w==='clear'||w==='cloudy') extra=`<g fill="#eef3f8" opacity=".9"><ellipse cx="160" cy="70" rx="52" ry="22"/><ellipse cx="205" cy="60" rx="38" ry="18"/><ellipse cx="640" cy="58" rx="54" ry="22"/><ellipse cx="688" cy="50" rx="38" ry="17"/></g>`;
+  if(w==='cloudy') extra+=`<g fill="#c7d0d9" opacity=".8"><ellipse cx="400" cy="90" rx="60" ry="24"/><ellipse cx="452" cy="80" rx="42" ry="20"/></g>`;
+  if(w==='night') extra=`<circle cx="690" cy="70" r="26" fill="#f2efc9"/><circle cx="700" cy="64" r="24" fill="#1e2740"/><g fill="#eef3f8"><circle cx="120" cy="60" r="1.6"/><circle cx="220" cy="100" r="1.4"/><circle cx="330" cy="50" r="1.6"/><circle cx="470" cy="90" r="1.4"/><circle cx="560" cy="55" r="1.6"/></g>`;
+  if(w==='overcast') extra=`<g fill="#a7aeb5" opacity=".7"><ellipse cx="250" cy="80" rx="80" ry="26"/><ellipse cx="560" cy="70" rx="90" ry="28"/></g>`;
+  return `<rect x="0" y="0" width="${VBW}" height="${VBH}" fill="${c}"/>${extra}`;
+}
+function ground(w){ const g = w==='night'?'#2e3a26':(w==='rainy'?'#5f6a4c':'#7c8a5a');
+  const road = w==='night'?'#22262b':'#3a3f45';
+  return `<rect x="0" y="300" width="${VBW}" height="${VBH-300}" fill="${g}"/>
+    <rect x="0" y="425" width="${VBW}" height="45" fill="${road}"/>
+    <g stroke="#e8c33a" stroke-width="3" stroke-dasharray="24 20" opacity=".8"><line x1="0" y1="447" x2="${VBW}" y2="447"/></g>`;
+}
+function building(s){
+  const col=BUILDINGS[s.buildingColor], roof='#5a4636';
+  const bx=210, bw=400, by=110, bh=190;
+  const doorFor=(e,i)=>{ const dx=bx+40+i*130; const boarded=e.blocked;
+    return `<rect x="${dx}" y="${by+bh-70}" width="52" height="70" fill="#4a3a28" stroke="#2a2016" stroke-width="2"/>
+      ${boarded?`<g stroke="#8a6a3a" stroke-width="7"><line x1="${dx-4}" y1="${by+bh-58}" x2="${dx+56}" y2="${by+bh-40}"/><line x1="${dx-4}" y1="${by+bh-30}" x2="${dx+56}" y2="${by+bh-12}"/><line x1="${dx+56}" y1="${by+bh-58}" x2="${dx-4}" y2="${by+bh-40}"/></g>`:''}`;
+  };
+  return `<g>
+    <rect x="${bx}" y="${by}" width="${bw}" height="${bh}" fill="${col}" stroke="#2a2016" stroke-width="2.5"/>
+    <path d="M${bx-18} ${by} L${bx+bw/2} ${by-48} L${bx+bw+18} ${by} Z" fill="${roof}" stroke="#2a2016" stroke-width="2.5"/>
+    <rect x="${bx+30}" y="${by+26}" width="46" height="34" fill="#a9d4f0" stroke="#2a2016" stroke-width="2"/>
+    <rect x="${bx+bw-76}" y="${by+26}" width="46" height="34" fill="#a9d4f0" stroke="#2a2016" stroke-width="2"/>
+    ${s.exits.map((e,i)=>doorFor(e,i)).join('')}
+  </g>`;
+}
+
+/* ---- element icons (drawn ~40x40, scaled up by elem()) ---- */
+function person(shirt){ const c=SHIRTS[shirt];
+  return `<circle cx="20" cy="9" r="7" fill="#e8b88e" stroke="#b07f56" stroke-width="1"/>
+    <path d="M11 40 V24 q0-8 9-8 t9 8 V40 Z" fill="${c}" stroke="rgba(0,0,0,.3)" stroke-width="1"/>
+    <rect x="14" y="40" width="5" height="10" fill="#3a4a63"/><rect x="21" y="40" width="5" height="10" fill="#3a4a63"/>`;
+}
+function haz(t){
+  if(t==='fire') return `<path d="M20 4 C26 12 30 15 27 23 C33 21 31 32 22 37 C26 31 20 30 20 24 C16 31 12 28 15 22 C11 25 12 16 20 4 Z" fill="#ef6a1a"/><path d="M20 15 C23 20 24 22 22 27 C26 25 24 32 20 34 Z" fill="#ffd23f"/>`;
+  if(t==='propane') return `<rect x="6" y="18" width="28" height="13" rx="6.5" fill="#e6e6e6" stroke="#8a8f92" stroke-width="1.5"/><rect x="30" y="20" width="6" height="9" rx="2" fill="#cf5a2e"/><text x="13" y="29" font-size="7" font-weight="800" fill="#cf5a2e">LPG</text>`;
+  if(t==='powerline') return `<line x1="9" y1="4" x2="9" y2="40" stroke="#6b5333" stroke-width="3"/><line x1="2" y1="11" x2="17" y2="11" stroke="#6b5333" stroke-width="2.5"/><path d="M15 11 Q27 30 39 17" fill="none" stroke="#111" stroke-width="1.8"/><path d="M31 21 l3 5 l-4 0 l3 5" fill="none" stroke="#ffe14d" stroke-width="2"/>`;
+  if(t==='spill') return `<path d="M4 32 Q9 21 20 25 Q31 18 37 29 Q33 38 20 37 Q7 39 4 32 Z" fill="#6a8a2a" stroke="#48611c" stroke-width="1.3"/><ellipse cx="16" cy="30" rx="3" ry="1.6" fill="#9ecb3f" opacity=".8"/>`;
+  if(t==='gasleak') return `<rect x="10" y="12" width="20" height="22" rx="2" fill="#c9cdd2" stroke="#5a5f63" stroke-width="1.5"/><circle cx="20" cy="21" r="5" fill="#eef1f4" stroke="#5a5f63" stroke-width="1"/><g stroke="#9fe870" stroke-width="1.8"><path d="M30 8 q5 3 0 7" fill="none"/><path d="M34 6 q6 4 0 9" fill="none"/></g>`;
+  if(t==='drum') return `<rect x="11" y="8" width="18" height="30" rx="3" fill="#d8a12e" stroke="#7a5b18" stroke-width="1.5"/><rect x="15" y="18" width="10" height="10" transform="rotate(45 20 23)" fill="#e5484d" stroke="#111" stroke-width="1"/><text x="20" y="26" font-size="7" text-anchor="middle" font-weight="800" fill="#fff">3</text>`;
+  return '';
+}
+function vehicle(t){
+  if(t==='firetruck') return `<rect x="2" y="20" width="30" height="14" rx="2" fill="#c0392b" stroke="#7a1a1a" stroke-width="1.5"/><rect x="26" y="12" width="12" height="10" rx="2" fill="#c0392b" stroke="#7a1a1a" stroke-width="1.5"/><rect x="28" y="14" width="8" height="6" fill="#a9d4f0"/><circle cx="10" cy="35" r="4" fill="#222"/><circle cx="30" cy="35" r="4" fill="#222"/><rect x="16" y="14" width="4" height="4" fill="#e8c33a"/>`;
+  return `<rect x="2" y="18" width="36" height="16" rx="2" fill="#eef1f4" stroke="#8a8f92" stroke-width="1.5"/><rect x="28" y="20" width="10" height="8" fill="#a9d4f0"/><rect x="16" y="22" width="4" height="10" fill="#cf3a3a"/><rect x="12" y="25" width="12" height="4" fill="#cf3a3a"/><circle cx="11" cy="35" r="4" fill="#222"/><circle cx="30" cy="35" r="4" fill="#222"/>`;
+}
+function placardOnPost(num){ const x=770,y=300;
+  return `<g><rect x="${x-2}" y="${y}" width="5" height="70" fill="#6b5333"/>
+    <g transform="translate(${x-24},${y-30})"><rect x="8" y="8" width="30" height="30" transform="rotate(45 23 23)" fill="#e5484d" stroke="#111" stroke-width="2"/>
+    <text x="23" y="29" font-size="15" text-anchor="middle" font-weight="800" fill="#fff">${num}</text></g></g>`;
+}
+function weatherFX(w){ if(w!=='rainy') return '';
+  let r=''; for(let i=0;i<40;i++){ const x=rnd(0,VBW), y=rnd(60,300); r+=`<line x1="${x}" y1="${y}" x2="${x-4}" y2="${y+12}" stroke="#c7d0d9" stroke-width="1" opacity=".5"/>`; }
+  return r;
+}
+
+/* ---------- overlay ---------- */
+function openOv(html){ document.getElementById('ov-box').innerHTML=html; document.getElementById('ov').classList.add('show'); }
+function closeOv(){ document.getElementById('ov').classList.remove('show'); }
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&G&&G.phase==='debrief') closeOv(); });
+
+/* ---------- boot ---------- */
+['pointerdown','keydown','touchstart'].forEach(ev=>window.addEventListener(ev,function once(){ SND.arm(); },{once:true}));
+SND.init();
+openTierSelect();
+</script>
+</body>
+</html>
