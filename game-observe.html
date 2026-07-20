@@ -198,6 +198,15 @@ const HAZ_TYPES=['fire','propane','powerline','spill','gasleak','drum'];
 const HAZ_NAME={fire:'a fire',propane:'a propane tank',powerline:'a downed power line',
   spill:'a chemical spill',gasleak:'a gas leak',drum:'a hazmat drum'};
 const HAZ_NOUN={fire:'fire',propane:'propane tank',powerline:'power line',spill:'chemical spill',gasleak:'gas leak',drum:'hazmat drum'};
+const FURN_TYPES=['couch','table','shelf','cabinet'];
+const FURN_LABEL={couch:'a couch',table:'a table',shelf:'a shelf',cabinet:'a cabinet'};
+const FURN_NOUN={couch:'couch',table:'table',shelf:'shelf',cabinet:'cabinet'};
+const LIGHT_LABEL={flashlight:'a flashlight',beacon:'an emergency beacon',streetlight:'a streetlight',lantern:'a lantern'};
+const LIGHT_NOUN={flashlight:'flashlight',beacon:'emergency beacon',streetlight:'streetlight',lantern:'lantern'};
+const VEH_LABEL={firetruck:'the fire truck',ambulance:'the ambulance',car:'the car'};
+const EXIT_X={left:276,middle:406,right:536};
+let MODE=(localStorage.getItem('cert_observe_mode')||'day');
+function setMode(m){ SND.click(); MODE=m; localStorage.setItem('cert_observe_mode',m); openTierSelect(); }
 
 /* ---------- difficulty tiers ---------- */
 const TIERS=[
@@ -234,7 +243,11 @@ function openTierSelect(){
   }).join('');
   openOv(`<h2>👁️ Scene Recall</h2>
     <p style="text-align:center;color:var(--text-muted);margin-bottom:4px">Study an emergency scene, then it disappears — answer from memory. Sharp observation is a core CERT skill for sizing up a scene and reporting to the IC.</p>
-    <p style="text-align:center;color:var(--gold);font-weight:700;font-size:.82rem;margin-bottom:12px">★ ${sumTierStars(p)} / 15 mastery</p>
+    <p style="text-align:center;color:var(--gold);font-weight:700;font-size:.82rem;margin-bottom:10px">★ ${sumTierStars(p)} / 15 mastery · scenes are random indoor or outdoor</p>
+    <div style="display:flex;gap:8px;justify-content:center;margin-bottom:12px">
+      <button class="btn ${MODE==='day'?'primary':''}" style="flex:0;padding:8px 16px" onclick="setMode('day')">☀️ Day</button>
+      <button class="btn ${MODE==='night'?'primary':''}" style="flex:0;padding:8px 16px" onclick="setMode('night')">🌙 Night Ops</button>
+    </div>
     <div class="tier-list">${cards}</div>`);
 }
 function startTier(n){ SND.click(); TIER=tierByN(n); closeOv(); startRound(); }
@@ -250,28 +263,53 @@ function zoneOf(x){ return x<300?'left':(x<540?'middle':'right'); }
 
 function genScene(T){
   const s={};
-  s.weather=pick(WEATHERS);
-  s.buildingColor=pick(BUILDING_NAMES);
-  // exits: 3 doors, one (or more at high tier) blocked
-  s.exits=ZONES.map(z=>({pos:z,blocked:false}));
+  s.setting = pick(['exterior','interior']);
+  s.night = (MODE==='night');
+  s.weather = s.night ? 'night' : pick(['clear','cloudy','overcast','rainy']);
+  s.buildingColor = pick(BUILDING_NAMES);
+  s.interiorColor = pick(['#c9c0ad','#b7c3b0','#c6bcc4','#c0c6cc']);
+  // exits / doorways: 3, one (or two at high tier) blocked
+  s.exits = ZONES.map(z=>({pos:z,blocked:false}));
   let nBlocked = (T.n>=4 && chance(0.4))?2:1;
   shuffle(s.exits).slice(0,nBlocked).forEach(e=>e.blocked=true);
-  // victims: distinct shirts + zones
-  const shirts=shuffle(SHIRT_NAMES).slice(0,T.victims);
-  s.victims=shirts.map((c,i)=>({shirt:c}));
+  s.exits.forEach(e=>{ e.x = s.setting==='interior' ? ({left:145,middle:415,right:685}[e.pos]) : EXIT_X[e.pos]; });
+  // victims: distinct shirts
+  s.victims = shuffle(SHIRT_NAMES).slice(0,T.victims).map(c=>({shirt:c}));
   // hazards: distinct types
-  const htypes=shuffle(HAZ_TYPES).slice(0,T.hazards);
-  s.hazards=htypes.map(t=>({type:t}));
-  // extras: vehicle + placard
-  const extraOpts=shuffle(['vehicle','placard']).slice(0,T.extras);
-  s.vehicle = extraOpts.includes('vehicle') ? {type:pick(['firetruck','ambulance'])} : null;
+  const htypes = shuffle(HAZ_TYPES).slice(0,T.hazards);
+  s.hazards = htypes.map(t=>({type:t}));
+  // interior furniture (2-3 pieces)
+  s.furniture = s.setting==='interior' ? shuffle(FURN_TYPES).slice(0,rnd(2,3)).map(t=>({type:t})) : [];
+  // extras: vehicle (exterior only) + placard
+  const extraOpts = shuffle(['vehicle','placard']).slice(0,T.extras);
+  s.vehicle = (s.setting==='exterior' && extraOpts.includes('vehicle')) ? {type:pick(['firetruck','ambulance','car'])} : null;
   s.placard = extraOpts.includes('placard') ? {number:rnd(1,9)} : null;
-  // victims -> back row (unique slots); hazards + vehicle -> front row (unique slots)
-  const bs=shuffle(BACK_SLOTS);
-  s.victims.forEach((v,i)=>{ v.x=bs[i]; v.zone=zoneOf(v.x); });
-  const front=s.hazards.slice(); if(s.vehicle) front.push(s.vehicle);
-  const fs=shuffle(FRONT_SLOTS);
-  front.forEach((e,i)=>{ e.x=fs[i]; e.zone=zoneOf(e.x); });
+  // ---- placement ----
+  const bs=shuffle(BACK_SLOTS); s.victims.forEach((v,i)=>{ v.x=bs[i]; v.zone=zoneOf(v.x); });
+  if(s.setting==='interior'){ const furnSlots=shuffle([150,410,670]);
+    s.furniture.forEach((f,i)=>{ f.x=furnSlots[i]; f.zone=zoneOf(f.x); }); }
+  const frontHaz = s.hazards.filter(h=>h.type!=='fire');
+  const front = frontHaz.slice(); if(s.vehicle) front.push(s.vehicle);
+  const fs=shuffle(FRONT_SLOTS); front.forEach((e,i)=>{ e.x=fs[i]; e.zone=zoneOf(e.x); });
+  // ---- fire attaches to a subject (for "what was on fire") ----
+  const fireHaz = s.hazards.find(h=>h.type==='fire');
+  if(fireHaz){
+    const subj=[{kind:'building',label:s.setting==='interior'?'the room':'the building',x:410,zone:'middle'}];
+    if(s.vehicle) subj.push({kind:'vehicle',label:VEH_LABEL[s.vehicle.type],x:s.vehicle.x,zone:s.vehicle.zone});
+    if(s.furniture.length){ const f=pick(s.furniture); subj.push({kind:'furniture',label:FURN_LABEL[f.type],x:f.x,zone:f.zone}); }
+    const po=s.hazards.find(h=>h.type==='propane'||h.type==='drum');
+    if(po) subj.push({kind:'hazobj',label:po.type==='propane'?'a propane tank':'a hazmat drum',x:po.x,zone:po.zone});
+    s.fireOn = pick(subj);
+    fireHaz.x=s.fireOn.x; fireHaz.zone=s.fireOn.zone; fireHaz.on=s.fireOn;
+  }
+  // ---- night light sources ----
+  s.lights=[];
+  if(s.night){
+    const pool = s.setting==='interior' ? ['flashlight','lantern','flashlight'] : ['flashlight','beacon','streetlight'];
+    const ln = T.n<=2?1:rnd(1,2);
+    const lslots=shuffle([120,410,700]);
+    s.lights = shuffle(pool).slice(0,ln).map((t,i)=>({type:t,x:lslots[i],zone:zoneOf(lslots[i])}));
+  }
   return s;
 }
 
@@ -288,9 +326,11 @@ function setOpts(correct,pool,n){ const set=new Set([correct]); const rest=shuff
 function buildQuestionPool(s,T){
   const P=[], nOpt=T.opts;
   const hazTypes=s.hazards.map(h=>h.type);
+  /* fire on a drum/propane is that object burning, not an extra hazard — don't double-count it */
+  const hazCount=s.hazards.length-((s.fireOn&&s.fireOn.kind==='hazobj')?1:0);
   /* ---- counting ---- */
-  P.push({type:'count',cat:'counting',text:'How many hazards were in the scene?',correct:String(s.hazards.length),
-    options:numberOpts(s.hazards.length,nOpt)});
+  P.push({type:'count',cat:'counting',text:'How many hazards were in the scene?',correct:String(hazCount),
+    options:numberOpts(hazCount,nOpt)});
   P.push({type:'count',cat:'counting',text:'How many people (victims) were in the scene?',correct:String(s.victims.length),
     options:numberOpts(s.victims.length,nOpt)});
   const nBlocked=s.exits.filter(e=>e.blocked).length;
@@ -300,7 +340,7 @@ function buildQuestionPool(s,T){
   const presMix=shuffle(HAZ_TYPES).slice(0,4);
   presMix.forEach(t=>{ const has=hazTypes.includes(t);
     P.push({type:'yesno',cat:'presence',text:`Was there ${HAZ_NAME[t]} in the scene?`,correct:has?'Yes':'No',options:['Yes','No']}); });
-  P.push({type:'yesno',cat:'presence',text:'Was there a fire truck or ambulance in the scene?',
+  P.push({type:'yesno',cat:'presence',text:'Was there a vehicle (car, truck, or ambulance) in the scene?',
     correct:s.vehicle?'Yes':'No',options:['Yes','No']});
   P.push({type:'yesno',cat:'presence',text:'Was there a hazmat placard in the scene?',
     correct:s.placard?'Yes':'No',options:['Yes','No']});
@@ -308,7 +348,7 @@ function buildQuestionPool(s,T){
   s.victims.forEach((v)=>{ P.push({type:'color',cat:'attribute',
     text:`What color shirt was the victim ${s.victims.length>1?'near the '+v.zone+' side':'wearing'}?`,
     correct:cap(v.shirt),options:setOpts(cap(v.shirt),SHIRT_NAMES.map(cap),T.opts),swatch:'shirt'}); });
-  P.push({type:'color',cat:'attribute',text:'What color was the main building?',
+  if(s.setting==='exterior') P.push({type:'color',cat:'attribute',text:'What color was the main building?',
     correct:cap(s.buildingColor),options:setOpts(cap(s.buildingColor),BUILDING_NAMES.map(cap),Math.min(T.opts,BUILDING_NAMES.length))});
   P.push({type:'set',cat:'attribute',text:'What was the weather / lighting like?',
     correct:cap(s.weather),options:setOpts(cap(s.weather),WEATHERS.map(cap),T.opts)});
@@ -323,6 +363,63 @@ function buildQuestionPool(s,T){
     correct:cap(s.vehicle.zone),options:['Left','Middle','Right']});
   s.victims.forEach(v=>{ if(s.victims.length>1) P.push({type:'set',cat:'spatial',
     text:`Which side was the ${v.shirt}-shirt victim on?`,correct:cap(v.zone),options:['Left','Middle','Right']}); });
+  /* ---- setting / time ---- */
+  P.push({type:'set',cat:'setting',text:'Was the scene indoors or outdoors?',
+    correct:s.setting==='interior'?'Indoors':'Outdoors',options:['Indoors','Outdoors']});
+  P.push({type:'set',cat:'setting',text:'Was it day or night?',correct:s.night?'Night':'Day',options:['Day','Night']});
+  /* ---- identity: what was on fire ---- */
+  if(s.fireOn){
+    const subs=['the '+(s.setting==='interior'?'room':'building'),
+      (s.vehicle?VEH_LABEL[s.vehicle.type]:'a car'),'a couch','a propane tank','a hazmat drum','a shelf','a dumpster'];
+    const d=[...new Set(subs)].filter(x=>x!==s.fireOn.label);
+    P.push({type:'set',cat:'identity',text:'What was on fire?',correct:s.fireOn.label,
+      options:shuffle([s.fireOn.label,...shuffle(d).slice(0,Math.max(nOpt,3)-1)])});
+  }
+  if(s.vehicle){ const vt=s.vehicle.type==='firetruck'?'Fire truck':(s.vehicle.type==='ambulance'?'Ambulance':'Car');
+    P.push({type:'set',cat:'identity',text:'What kind of vehicle was in the scene?',correct:vt,
+      options:setOpts(vt,['Fire truck','Ambulance','Car','Police car','Van'],nOpt)}); }
+  /* ---- relative position ---- */
+  const fhaz=s.hazards.filter(h=>h.type!=='fire');
+  const vlab=v=>cap(v.shirt)+'-shirt victim', hlab=h=>cap(HAZ_NOUN[h.type]);
+  const relOpts=(cands,labeler)=>{ const o=[...new Set(cands.map(labeler))]; return o.length>nOpt?shuffle(o).slice(0,Math.max(nOpt,2)):shuffle(o); };
+  function closest(cands,refX,labeler,refName){ if(cands.length<2) return;
+    const sorted=cands.slice().sort((a,b)=>Math.abs(a.x-refX)-Math.abs(b.x-refX));
+    let opts=relOpts(cands,labeler); if(!opts.includes(labeler(sorted[0]))) opts[0]=labeler(sorted[0]);
+    P.push({type:'set',cat:'relative',text:`Who or what was closest to ${refName}?`,correct:labeler(sorted[0]),options:opts}); }
+  if(s.vehicle) closest(s.victims,s.vehicle.x,vlab,VEH_LABEL[s.vehicle.type]);
+  if(s.fireOn){ closest(s.victims,s.fireOn.x,vlab,'the fire'); closest(fhaz,s.fireOn.x,hlab,'the fire'); }
+  const be=s.exits.find(e=>e.blocked); if(be) closest(s.victims,be.x,vlab,'the blocked exit');
+  function extreme(cands,dir,labeler,noun){ if(cands.length<2) return;
+    const sorted=cands.slice().sort((a,b)=>a.x-b.x); const el=dir==='left'?sorted[0]:sorted[sorted.length-1];
+    let opts=relOpts(cands,labeler); if(!opts.includes(labeler(el))) opts[0]=labeler(el);
+    P.push({type:'set',cat:'relative',text:`Which ${noun} was farthest ${dir}?`,correct:labeler(el),options:opts}); }
+  extreme(s.victims,chance(0.5)?'left':'right',vlab,'victim');
+  extreme(fhaz,chance(0.5)?'left':'right',hlab,'hazard');
+  function between(cands,labeler,noun){ if(cands.length<3) return;
+    const sorted=cands.slice().sort((a,b)=>a.x-b.x);
+    P.push({type:'set',cat:'relative',text:`Which ${noun} was between the other two?`,correct:labeler(sorted[1]),options:shuffle(cands.map(labeler))}); }
+  between(s.victims,vlab,'victim'); between(fhaz,hlab,'hazard');
+  function ordering(cands,labeler,noun){ if(cands.length<2) return;
+    const sorted=cands.slice().sort((a,b)=>a.x-b.x); const idx=rnd(0,sorted.length-1), ord=['1st','2nd','3rd','4th','5th'][idx];
+    let opts=relOpts(cands,labeler); if(!opts.includes(labeler(sorted[idx]))) opts[0]=labeler(sorted[idx]);
+    P.push({type:'set',cat:'relative',text:`Which ${noun} was ${ord} from the left?`,correct:labeler(sorted[idx]),options:opts}); }
+  ordering(s.victims,vlab,'victim'); ordering(fhaz,hlab,'hazard');
+  /* ---- interior furniture ---- */
+  if(s.setting==='interior'){
+    P.push({type:'count',cat:'counting',text:'How many pieces of furniture were in the room?',
+      correct:String(s.furniture.length),options:numberOpts(s.furniture.length,Math.min(nOpt,4))});
+    shuffle(FURN_TYPES).slice(0,2).forEach(t=>{ const has=s.furniture.some(f=>f.type===t);
+      P.push({type:'yesno',cat:'presence',text:`Was there ${FURN_LABEL[t]} in the room?`,correct:has?'Yes':'No',options:['Yes','No']}); });
+  }
+  /* ---- night light sources ---- */
+  if(s.night){
+    P.push({type:'count',cat:'counting',text:'How many light sources were visible?',
+      correct:String(s.lights.length),options:numberOpts(s.lights.length,Math.min(nOpt,4))});
+    shuffle(['flashlight','beacon','streetlight','lantern']).slice(0,3).forEach(t=>{ const has=s.lights.some(L=>L.type===t);
+      P.push({type:'yesno',cat:'presence',text:`Was ${LIGHT_LABEL[t]} visible in the scene?`,correct:has?'Yes':'No',options:['Yes','No']}); });
+    s.lights.forEach(L=>P.push({type:'set',cat:'spatial',text:`Which side was ${LIGHT_LABEL[L.type]} on?`,
+      correct:cap(L.zone),options:['Left','Middle','Right']}));
+  }
   return P;
 }
 function pickQuestions(pool,n){
@@ -445,18 +542,69 @@ function debrief(){
    SCENE RENDER (fresh minimalist SVG)
    ============================================================ */
 function renderSceneSVG(s,reveal){
+  const body = s.setting==='interior' ? interiorBody(s) : exteriorBody(s);
   return `<svg class="scene" viewBox="0 0 ${VBW} ${VBH}" xmlns="http://www.w3.org/2000/svg">
-    ${sky(s.weather)}
-    ${building(s)}
-    ${ground(s.weather)}
-    ${s.victims.map(v=>elem(v.x,person(v.shirt),360)).join('')}
-    ${s.hazards.map(h=>elem(h.x,haz(h.type),404)).join('')}
-    ${s.vehicle?elem(s.vehicle.x,vehicle(s.vehicle.type),406):''}
-    ${s.placard?placardOnPost(s.placard.number):''}
-    ${weatherFX(s.weather)}
+    ${body}
+    ${s.night?nightOverlay(s):''}
   </svg>`;
 }
+function exteriorBody(s){
+  return `${sky(s.weather)}${building(s)}${ground(s.weather)}
+    ${s.victims.map(v=>elem(v.x,person(v.shirt),360)).join('')}
+    ${s.hazards.filter(h=>h.type!=='fire').map(h=>elem(h.x,haz(h.type),404)).join('')}
+    ${s.vehicle?elem(s.vehicle.x,vehicle(s.vehicle.type),406):''}
+    ${s.placard?placardOnPost(s.placard.number):''}
+    ${fireRender(s)}
+    ${weatherFX(s.weather)}`;
+}
+function interiorBody(s){
+  return `${interiorBg(s)}
+    ${s.furniture.map(f=>elem(f.x,furn(f.type),330)).join('')}
+    ${s.victims.map(v=>elem(v.x,person(v.shirt),366)).join('')}
+    ${s.hazards.filter(h=>h.type!=='fire').map(h=>elem(h.x,haz(h.type),408)).join('')}
+    ${s.placard?placardOnWall(s.placard.number):''}
+    ${fireRender(s)}`;
+}
 function elem(x,inner,y){ return `<g transform="translate(${x-30},${y-60}) scale(1.5)">${inner}</g>`; }
+function fireY(s){ if(!s.fireOn) return 0; const k=s.fireOn.kind;
+  return k==='building'?(s.setting==='interior'?205:215):(k==='furniture'?330:404); }
+function fireRender(s){ if(!s.fireOn) return ''; const y=fireY(s);
+  return `<circle cx="${s.fireOn.x}" cy="${y+6}" r="42" fill="#ff7a1a" opacity=".26"/>
+    ${elem(s.fireOn.x-14,haz('fire'),y+8)}${elem(s.fireOn.x+8,haz('fire'),y)}`; }
+function nightOverlay(s){
+  const lights=(s.lights||[]).map(L=>lightSrc(L)).join('');
+  const fireGlow = s.fireOn ? `<circle cx="${s.fireOn.x}" cy="${fireY(s)+6}" r="66" fill="#ff8a3a" opacity=".26"/>` : '';
+  return `<rect x="0" y="0" width="${VBW}" height="${VBH}" fill="#0a1430" opacity=".30"/>${fireGlow}${lights}`;
+}
+function lightSrc(L){ const x=L.x;
+  if(L.type==='streetlight') return `<g><rect x="${x-3}" y="120" width="6" height="230" fill="#3a3f45"/><rect x="${x-3}" y="118" width="42" height="6" fill="#3a3f45"/><circle cx="${x+38}" cy="130" r="30" fill="#ffe89a" opacity=".4"/><circle cx="${x+38}" cy="130" r="7" fill="#fff4c0"/><path d="M${x+38} 132 L${x+6} 320 L${x+70} 320 Z" fill="#ffe89a" opacity=".14"/></g>`;
+  if(L.type==='beacon') return `<g><rect x="${x-3}" y="258" width="6" height="112" fill="#3a3f45"/><rect x="${x-13}" y="250" width="26" height="12" rx="3" fill="#2c3138" stroke="#1a1d20" stroke-width="1"/><circle cx="${x-6}" cy="250" r="24" fill="#e5484d" opacity=".4"/><circle cx="${x-6}" cy="250" r="6.5" fill="#ff5a5f"/><circle cx="${x+6}" cy="250" r="22" fill="#3f6fd0" opacity=".36"/><circle cx="${x+6}" cy="250" r="6" fill="#6fa0ff"/></g>`;
+  if(L.type==='flashlight') return `<g><path d="M${x+6} 350 L${x+90} 330 L${x+90} 392 L${x+6} 372 Z" fill="#fff4c0" opacity=".26"/><circle cx="${x}" cy="361" r="30" fill="#fff4c0" opacity=".32"/><rect x="${x-10}" y="356" width="18" height="9" rx="2" fill="#2c3138"/><circle cx="${x+8}" cy="361" r="5" fill="#fff4c0"/></g>`;
+  if(L.type==='lantern') return `<g><circle cx="${x}" cy="366" r="34" fill="#ffe89a" opacity=".36"/><rect x="${x-8}" y="356" width="16" height="20" rx="2" fill="#c9a24a" stroke="#7a5b18" stroke-width="1.5"/><rect x="${x-5}" y="360" width="10" height="13" fill="#fff4c0"/><path d="M${x-6} 356 Q${x} 349 ${x+6} 356" fill="none" stroke="#7a5b18" stroke-width="1.5"/></g>`;
+  return ''; }
+function furn(t){
+  if(t==='couch') return `<rect x="4" y="24" width="32" height="14" rx="3" fill="#7a6a8a" stroke="#4a3f5a" stroke-width="1.3"/><rect x="3" y="18" width="8" height="20" rx="3" fill="#8a7a9a" stroke="#4a3f5a" stroke-width="1"/><rect x="29" y="18" width="8" height="20" rx="3" fill="#8a7a9a" stroke="#4a3f5a" stroke-width="1"/><rect x="9" y="20" width="22" height="8" rx="2" fill="#8a7a9a"/>`;
+  if(t==='table') return `<rect x="5" y="21" width="30" height="5" rx="1" fill="#a9793f" stroke="#6b4c22" stroke-width="1.2"/><rect x="9" y="26" width="3" height="13" fill="#6b4c22"/><rect x="28" y="26" width="3" height="13" fill="#6b4c22"/>`;
+  if(t==='shelf') return `<rect x="9" y="6" width="22" height="34" fill="#a9793f" stroke="#6b4c22" stroke-width="1.3"/><line x1="9" y1="17" x2="31" y2="17" stroke="#6b4c22" stroke-width="1.2"/><line x1="9" y1="28" x2="31" y2="28" stroke="#6b4c22" stroke-width="1.2"/><rect x="12" y="9" width="5" height="6" fill="#cf5a2e"/><rect x="21" y="20" width="5" height="6" fill="#3f6fd0"/>`;
+  if(t==='cabinet') return `<rect x="10" y="10" width="20" height="30" fill="#8a6a4a" stroke="#5a4230" stroke-width="1.3"/><line x1="20" y1="10" x2="20" y2="40" stroke="#5a4230" stroke-width="1.2"/><circle cx="17" cy="25" r="1.4" fill="#2a2016"/><circle cx="23" cy="25" r="1.4" fill="#2a2016"/>`;
+  return ''; }
+function interiorBg(s){
+  const wall=s.interiorColor, floor='#8a6a4a';
+  const win=`<rect x="60" y="60" width="90" height="66" fill="${s.night?'#12203f':'#a9d4f0'}" stroke="#211a12" stroke-width="3"/><line x1="105" y1="60" x2="105" y2="126" stroke="#211a12" stroke-width="2"/><line x1="60" y1="93" x2="150" y2="93" stroke="#211a12" stroke-width="2"/>`;
+  const doors=s.exits.map((e,i)=>{ const dx=110+i*270;
+    return `<rect x="${dx}" y="150" width="70" height="150" fill="#3a2f22" stroke="#211a12" stroke-width="2"/>
+      <rect x="${dx+6}" y="156" width="58" height="140" fill="#5a4a34"/>
+      ${e.blocked?`<g stroke="#8a6a3a" stroke-width="8"><line x1="${dx-2}" y1="184" x2="${dx+72}" y2="214"/><line x1="${dx-2}" y1="240" x2="${dx+72}" y2="270"/><line x1="${dx+72}" y1="184" x2="${dx-2}" y2="214"/></g>`:''}`;
+  }).join('');
+  return `<rect x="0" y="0" width="${VBW}" height="300" fill="${wall}"/>
+    <rect x="0" y="300" width="${VBW}" height="${VBH-300}" fill="${floor}"/>
+    <rect x="0" y="294" width="${VBW}" height="8" fill="#6b4c22"/>
+    ${win}${doors}`;
+}
+function placardOnWall(num){ const x=350,y=64;
+  return `<g transform="translate(${x-22},${y})"><rect x="8" y="8" width="30" height="30" transform="rotate(45 23 23)" fill="#e5484d" stroke="#111" stroke-width="2"/>
+    <text x="23" y="29" font-size="15" text-anchor="middle" font-weight="800" fill="#fff">${num}</text></g>`;
+}
 
 function sky(w){
   const c={clear:'#8fb3d9',cloudy:'#a7b7c6',overcast:'#8f97a0',night:'#1e2740',rainy:'#7a828c'}[w];
@@ -506,6 +654,7 @@ function haz(t){
 }
 function vehicle(t){
   if(t==='firetruck') return `<rect x="2" y="20" width="30" height="14" rx="2" fill="#c0392b" stroke="#7a1a1a" stroke-width="1.5"/><rect x="26" y="12" width="12" height="10" rx="2" fill="#c0392b" stroke="#7a1a1a" stroke-width="1.5"/><rect x="28" y="14" width="8" height="6" fill="#a9d4f0"/><circle cx="10" cy="35" r="4" fill="#222"/><circle cx="30" cy="35" r="4" fill="#222"/><rect x="16" y="14" width="4" height="4" fill="#e8c33a"/>`;
+  if(t==='car') return `<rect x="4" y="24" width="34" height="10" rx="3" fill="#3f6fd0" stroke="#254a80" stroke-width="1.5"/><path d="M10 24 Q14 15 21 15 H27 Q32 15 34 24 Z" fill="#3f6fd0" stroke="#254a80" stroke-width="1.5"/><rect x="16" y="17" width="12" height="6" fill="#a9d4f0"/><circle cx="12" cy="35" r="4" fill="#222"/><circle cx="30" cy="35" r="4" fill="#222"/>`;
   return `<rect x="2" y="18" width="36" height="16" rx="2" fill="#eef1f4" stroke="#8a8f92" stroke-width="1.5"/><rect x="28" y="20" width="10" height="8" fill="#a9d4f0"/><rect x="16" y="22" width="4" height="10" fill="#cf3a3a"/><rect x="12" y="25" width="12" height="4" fill="#cf3a3a"/><circle cx="11" cy="35" r="4" fill="#222"/><circle cx="30" cy="35" r="4" fill="#222"/>`;
 }
 function placardOnPost(num){ const x=770,y=300;
