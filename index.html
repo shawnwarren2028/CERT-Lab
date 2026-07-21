@@ -239,6 +239,17 @@
       <span class="cta">Test your recall</span>
     </a>
 
+    <a class="card" href="game-aidstation.html">
+      <span class="tag">5 shifts</span>
+      <span class="card-icon">🏥</span>
+      <span class="card-kicker">Game 9</span>
+      <h3>Treatment Aid Station</h3>
+      <p>A disaster-medicine management sim. As Medical Unit Leader, START-triage, treat, and
+         discharge a live flow of patients while managing supplies, volunteers, funding, and a
+         growing aid station through escalating shifts.</p>
+      <span class="cta">Open the station</span>
+    </a>
+
     <a class="card" href="glossary.html">
       <span class="tag">80 terms</span>
       <span class="card-icon">📖</span>
@@ -332,6 +343,14 @@ function buildRecord(){
   const obsBest=Object.values(obsTiers).reduce((a,t)=>Math.max(a,t.best||0),0);
   const obsMastered=Object.values(obsTiers).some(t=>(t.stars||0)>=3);
   const obsStat=(obs&&obs.completed)?`${obsDone}/5 tiers played · best ${obsBest}%`:'Not completed yet';
+  // Game 9 — Treatment Aid Station (per-tier stars, 5 shifts × 3)
+  const aid=jget('cert_aid_progress',null);
+  const aidTiers=(aid&&aid.tiers)?aid.tiers:{};
+  const aidStars=Object.values(aidTiers).reduce((a,t)=>a+(t.stars||0),0);
+  const aidDone=Object.keys(aidTiers).length;
+  const aidBest=Object.values(aidTiers).reduce((a,t)=>Math.max(a,t.best||0),0);
+  const aidMastered=Object.values(aidTiers).some(t=>(t.stars||0)>=3);
+  const aidStat=(aid&&aid.completed)?`${aidDone}/5 shifts played · best ${aidBest}%`:'Not completed yet';
 
   const rows=[
     {ic:'🎯',name:'Training Scenarios',stat:`${g1done}/${g1total} modules attempted`,stars:g1stars,max:g1max},
@@ -340,6 +359,7 @@ function buildRecord(){
     {ic:'🔓',name:'CERT Escape Room',stat:escStat,stars:escStars,max:15},
     {ic:'🔎',name:'Scene Search',stat:srchStat,stars:srchStars,max:15},
     {ic:'👁️',name:'Scene Recall',stat:obsStat,stars:obsStars,max:15},
+    {ic:'🏥',name:'Treatment Aid Station',stat:aidStat,stars:aidStars,max:15},
     {ic:'🧩',name:'Hazmat Placard Match',stat:`${placDone}/5 levels played`,stars:placStars,max:15},
     {ic:'✏️',name:'CERT Crossword',stat:`${xDone}/5 levels · 🔥 ${streak}-day streak · ${dailyDone} daily solved`,stars:xStars,max:15},
   ];
@@ -369,6 +389,7 @@ function buildRecord(){
     {ic:'🔓',name:'Escape Artist',earned:escMastered,           desc:'Earn 3 stars on any Escape Room tier.'},
     {ic:'🔎',name:'Eagle Eye',    earned:srchMastered,          desc:'Earn 3 stars on any Scene Search tier.'},
     {ic:'👁️',name:'Total Recall', earned:obsMastered,           desc:'Earn 3 stars on any Scene Recall tier.'},
+    {ic:'🏥',name:'Unit Leader',  earned:aidMastered,           desc:'Earn 3 stars on any Treatment Aid Station shift.'},
     {ic:'🧩',name:'Placard Pro',  earned:placStars>=15,         desc:'Earn 3 stars on all 5 Placard levels.'},
     {ic:'✏️',name:'Wordsmith',    earned:xStars>=15,            desc:'Earn 3 stars on all 5 Crossword levels.'},
     {ic:'📚',name:'Scholar',      earned:g1done>=g1total,       desc:'Attempt all 9 Scenario modules.'},
@@ -389,7 +410,7 @@ let resetConfirm=false;
 function resetProgress(){
   const b=document.getElementById('rec-reset');
   if(!resetConfirm){ resetConfirm=true; b.textContent='Click again to confirm — this erases all scores'; b.classList.add('confirm'); return; }
-  ['cert_g1_progress','cert_rpg_progress','cert_assess_progress','cert_escape_progress','cert_search_progress','cert_observe_progress','cert_placard_stars','cert_xword_stars','cert_xword_best','cert_xword_daily','cert_xword_streak','cert_xword_themes'].forEach(k=>localStorage.removeItem(k));
+  ['cert_g1_progress','cert_rpg_progress','cert_assess_progress','cert_escape_progress','cert_search_progress','cert_observe_progress','cert_aid_progress','cert_placard_stars','cert_xword_stars','cert_xword_best','cert_xword_daily','cert_xword_streak','cert_xword_themes'].forEach(k=>localStorage.removeItem(k));
   resetConfirm=false; b.textContent='Reset all progress'; b.classList.remove('confirm');
   buildRecord();
 }

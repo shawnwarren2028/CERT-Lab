@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script src="theme.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wallingford CERT — Treatment Aid Station</title>
+<style>
+  :root{
+    --bg:#0e1208; --surface:#1a2012; --surface2:#243018; --border:#3a5228;
+    --primary:#5aaa3a; --primary-dark:#4a8f2e; --primary-light:#7ac95a;
+    --text:#eef2e8; --text-muted:#8aa87a; --radius:12px; --gold:#e8c33a;
+    --danger:#ef4444; --warn:#f59e0b; --info:#56d4ff;
+    --t-min:#27ae60; --t-del:#e8c33a; --t-imm:#ef4444; --t-exp:#6b7280;
+  }
+  [data-theme="light"]{
+    --bg:#eef3e7; --surface:#ffffff; --surface2:#e7eedd; --border:#c2d2af;
+    --primary:#41902e; --primary-dark:#317022; --primary-light:#5aaa3a;
+    --text:#16210d; --text-muted:#5c6e4a;
+  }
+  [data-theme="light"] header{background:#e3ecd6;}
+  [data-theme="light"] footer{background:#e3ecd6;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);
+    min-height:100vh;display:flex;flex-direction:column;-webkit-tap-highlight-color:transparent;}
+
+  header{width:100%;background:#111a09;border-bottom:3px solid var(--primary);
+    padding:10px 22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  #cert-logo{height:48px;width:auto;}
+  .logo-badge{background:var(--primary);color:#000;font-weight:900;font-size:1.05rem;letter-spacing:.1em;padding:6px 12px;border-radius:6px;}
+  header h1{font-size:1.12rem;font-weight:700;color:var(--primary);}
+  header p{font-size:0.76rem;color:var(--text-muted);}
+  .hdr-text{flex:1 1 0;min-width:0;}
+  .hdr-actions{margin-left:auto;display:flex;align-items:center;gap:9px;}
+  .home-link{color:var(--primary-light);text-decoration:none;font-size:0.85rem;font-weight:600;
+    border:1px solid var(--border);padding:8px 14px;border-radius:8px;transition:.15s;white-space:nowrap;}
+  .home-link:hover{background:var(--surface2);border-color:var(--primary);}
+  .icon-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:1rem;line-height:1;
+    padding:8px 11px;border-radius:8px;cursor:pointer;transition:.15s;}
+  .icon-btn:hover{border-color:var(--primary);}
+  .level-btn{display:inline-flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);
+    color:var(--primary-light);font-size:0.82rem;font-weight:700;padding:8px 12px;border-radius:8px;cursor:pointer;
+    transition:.15s;white-space:nowrap;font-family:inherit;}
+  .level-btn:hover{border-color:var(--primary);}
+
+  main{flex:1;width:100%;max-width:1080px;margin:0 auto;padding:12px 14px 24px;display:flex;flex-direction:column;gap:11px;}
+
+  /* ---- top stat bar ---- */
+  .top{display:flex;gap:8px;flex-wrap:wrap;align-items:stretch;}
+  .chip{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px 12px;
+    display:flex;flex-direction:column;gap:1px;min-width:74px;}
+  .chip .ck{font-size:0.62rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;}
+  .chip .cv{font-size:1.02rem;font-weight:800;line-height:1.1;}
+  .chip.wide{flex:1;min-width:150px;}
+  .chip.clock .cv.low{color:var(--danger);}
+  .sat-bar{height:8px;background:#0a0e07;border:1px solid var(--border);border-radius:5px;overflow:hidden;margin-top:3px;}
+  .sat-bar span{display:block;height:100%;transition:width .4s,background .4s;}
+  .ctrl{margin-left:auto;display:flex;gap:7px;align-items:center;}
+
+  .btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.9rem;font-weight:700;
+    padding:10px 16px;border-radius:9px;cursor:pointer;transition:.15s;font-family:inherit;text-decoration:none;
+    display:inline-flex;align-items:center;gap:7px;justify-content:center;}
+  .btn:hover{border-color:var(--primary);background:var(--border);}
+  .btn.primary{background:var(--primary);color:#06210a;border-color:var(--primary);}
+  .btn.primary:hover{background:var(--primary-light);}
+  .btn.sm{padding:7px 11px;font-size:0.8rem;}
+  .btn.danger{border-color:var(--danger);color:#ffd7d7;}
+  .btn.danger:hover{background:#3a1414;}
+  .btn:disabled{opacity:.42;cursor:not-allowed;}
+  .btn-row{display:flex;gap:9px;flex-wrap:wrap;justify-content:center;margin-top:14px;}
+
+  /* ---- board ---- */
+  .board{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1.55fr) minmax(0,1fr);gap:11px;align-items:start;}
+  .zone{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px;min-height:80px;}
+  .zone > h3{font-size:0.8rem;font-weight:800;color:var(--primary-light);margin-bottom:8px;display:flex;align-items:center;gap:6px;justify-content:space-between;}
+  .zone > h3 .zc{font-size:0.68rem;color:var(--text-muted);font-weight:700;}
+  .qlist{display:flex;flex-direction:column;gap:7px;max-height:430px;overflow-y:auto;}
+  .qlist.empty::after,.bedgrid.empty::after{content:attr(data-empty);display:block;color:var(--text-muted);font-size:0.76rem;text-align:center;padding:14px 4px;font-style:italic;}
+
+  /* patient card */
+  .pcard{background:var(--surface2);border:1px solid var(--border);border-left-width:5px;border-radius:9px;padding:8px 10px;
+    cursor:pointer;transition:.12s;position:relative;}
+  .pcard:hover{border-color:var(--primary);}
+  .pcard.sel{outline:2px solid var(--info);}
+  .pcard.drag{opacity:.5;}
+  .pcard .pn{font-size:0.86rem;font-weight:800;display:flex;align-items:center;gap:5px;}
+  .pcard .pa{color:var(--text-muted);font-weight:600;font-size:0.74rem;}
+  .pcard .pd{font-size:0.74rem;color:var(--text-muted);margin-top:2px;line-height:1.3;}
+  .pcard .prow{display:flex;align-items:center;gap:6px;margin-top:5px;flex-wrap:wrap;}
+  .tag{font-size:0.63rem;font-weight:800;padding:2px 7px;border-radius:20px;text-transform:uppercase;letter-spacing:.03em;}
+  .t-min{background:var(--t-min);color:#04210f;} .t-del{background:var(--t-del);color:#2e2606;}
+  .t-imm{background:var(--t-imm);color:#2e0606;} .t-exp{background:var(--t-exp);color:#0d0f14;}
+  .pcard.b-min{border-left-color:var(--t-min);} .pcard.b-del{border-left-color:var(--t-del);}
+  .pcard.b-imm{border-left-color:var(--t-imm);} .pcard.b-exp{border-left-color:var(--t-exp);}
+  .pcard.b-new{border-left-color:var(--info);}
+  .untag{font-size:0.63rem;font-weight:800;padding:2px 7px;border-radius:20px;background:var(--info);color:#042430;}
+  .pat{height:5px;background:#0a0e07;border-radius:4px;overflow:hidden;flex:1;min-width:40px;}
+  .pat span{display:block;height:100%;background:var(--warn);}
+  .care{height:5px;background:#0a0e07;border-radius:4px;overflow:hidden;flex:1;min-width:40px;}
+  .care span{display:block;height:100%;background:var(--primary);}
+  .mini{font-size:0.66rem;color:var(--text-muted);}
+
+  /* beds */
+  .bedgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;}
+  .bed{background:#0f150a;border:1px dashed var(--border);border-radius:9px;padding:7px;min-height:84px;
+    display:flex;flex-direction:column;gap:4px;transition:.12s;}
+  .bed.filled{border-style:solid;background:var(--surface2);}
+  .bed.drop{border-color:var(--info);background:#12232b;}
+  .bed.offline{opacity:.5;}
+  .bed .bh{font-size:0.64rem;color:var(--text-muted);font-weight:700;display:flex;justify-content:space-between;}
+  .bed .empty-l{flex:1;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:0.72rem;font-style:italic;}
+
+  /* side panels */
+  .side{display:flex;flex-direction:column;gap:11px;}
+  .panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px;}
+  .panel h3{font-size:0.8rem;font-weight:800;color:var(--primary-light);margin-bottom:7px;display:flex;justify-content:space-between;align-items:center;}
+  .invgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:5px;}
+  .invcell{background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:4px 6px;font-size:0.72rem;text-align:center;}
+  .invcell .iv{font-weight:800;font-size:0.9rem;} .invcell.low{border-color:var(--danger);}
+  .invcell .il{color:var(--text-muted);font-size:0.62rem;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .vrow{display:flex;flex-wrap:wrap;gap:5px;}
+  .vchip{background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:4px 9px;font-size:0.7rem;display:flex;align-items:center;gap:4px;}
+  .vchip.busy{border-color:var(--warn);} .vchip .vf{width:26px;height:4px;background:#0a0e07;border-radius:3px;overflow:hidden;}
+  .vchip .vf span{display:block;height:100%;background:var(--info);}
+  .logbox{max-height:150px;overflow-y:auto;display:flex;flex-direction:column;gap:3px;font-size:0.73rem;}
+  .logbox .lg{color:var(--text-muted);border-left:2px solid var(--border);padding:1px 0 1px 7px;}
+  .logbox .lg.good{border-color:var(--t-min);color:#bfe6c8;} .logbox .lg.bad{border-color:var(--danger);color:#f0c4c4;}
+  .logbox .lg.evt{border-color:var(--warn);color:#f0dcae;}
+
+  /* dock (selected patient) */
+  .dock{position:sticky;bottom:0;background:var(--surface);border:2px solid var(--info);border-radius:var(--radius);
+    padding:11px 13px;box-shadow:0 -4px 18px rgba(0,0,0,.4);z-index:30;}
+  .dock .dh{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:8px;}
+  .dock .dh .dn{font-size:1rem;font-weight:800;}
+  .dock .dh .dclose{margin-left:auto;background:none;border:none;color:var(--text-muted);font-size:1.3rem;cursor:pointer;line-height:1;}
+  .vitals{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:9px;}
+  .vit{background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:3px 8px;font-size:0.72rem;}
+  .vit b{color:var(--text);} .vit.warn{border-color:var(--warn);color:#f0dcae;} .vit.crit{border-color:var(--danger);color:#f0c4c4;}
+  .acts{display:flex;flex-wrap:wrap;gap:7px;}
+  .triage-row{display:flex;gap:7px;flex-wrap:wrap;}
+  .tri{flex:1;min-width:100px;border:none;color:#fff;font-weight:800;font-size:0.82rem;padding:11px 8px;border-radius:9px;cursor:pointer;font-family:inherit;}
+  .tri.g{background:var(--t-min);color:#04210f;} .tri.y{background:var(--t-del);color:#2e2606;}
+  .tri.r{background:var(--t-imm);} .tri.k{background:var(--t-exp);}
+
+  footer{text-align:center;padding:16px;color:var(--text-muted);font-size:0.74rem;border-top:1px solid var(--border);}
+  footer span{color:var(--primary);}
+
+  /* overlay */
+  .ov{position:fixed;inset:0;background:rgba(6,9,5,.86);display:none;align-items:center;justify-content:center;padding:18px;z-index:120;}
+  .ov.show{display:flex;animation:ovf .2s ease;}
+  @keyframes ovf{from{opacity:0}to{opacity:1}}
+  .ov-box{background:var(--surface);border:2px solid var(--primary);border-radius:14px;padding:22px;max-width:620px;width:100%;
+    max-height:92vh;overflow-y:auto;position:relative;}
+  .ov-box h2{font-size:1.4rem;color:var(--primary);margin-bottom:6px;text-align:center;}
+  .ov-box p.sub{text-align:center;color:var(--text-muted);font-size:0.86rem;line-height:1.5;margin-bottom:12px;}
+  .tier-list{display:flex;flex-direction:column;gap:9px;margin-top:6px;}
+  .tier-card{display:flex;align-items:center;gap:13px;text-align:left;background:var(--surface2);border:1px solid var(--border);
+    border-radius:11px;padding:12px 14px;cursor:pointer;transition:.14s;font-family:inherit;color:var(--text);width:100%;}
+  .tier-card:hover{border-color:var(--primary);background:var(--border);transform:translateY(-1px);}
+  .tier-card .tc-ic{font-size:1.7rem;flex-shrink:0;}
+  .tier-card .tc-body{flex:1;min-width:0;}
+  .tier-card .tc-name{font-weight:800;color:var(--primary-light);font-size:1rem;}
+  .tier-card .tc-desc{display:block;font-size:0.76rem;color:var(--text-muted);line-height:1.4;margin-top:2px;}
+  .tier-card .tc-side{text-align:right;flex-shrink:0;}
+  .tier-card .tc-stars{color:var(--gold);font-size:0.95rem;letter-spacing:1px;}
+  .tier-card .tc-best{display:block;font-size:0.66rem;color:var(--text-muted);margin-top:2px;}
+
+  /* shop */
+  .shop-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;justify-content:center;}
+  .shop-tab{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.78rem;font-weight:700;
+    padding:7px 12px;border-radius:8px;cursor:pointer;font-family:inherit;}
+  .shop-tab.on{background:var(--primary);color:#06210a;border-color:var(--primary);}
+  .shop-grid{display:grid;grid-template-columns:1fr;gap:8px;}
+  .shop-item{display:flex;align-items:center;gap:11px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;}
+  .shop-item .si-ic{font-size:1.5rem;flex-shrink:0;}
+  .shop-item .si-b{flex:1;min-width:0;} .shop-item .si-n{font-weight:800;font-size:0.9rem;}
+  .shop-item .si-d{font-size:0.74rem;color:var(--text-muted);line-height:1.35;margin-top:1px;}
+  .shop-item .si-buy{flex-shrink:0;}
+  .owned{color:var(--t-min);font-weight:800;font-size:0.78rem;}
+
+  /* stars / debrief */
+  .stars-big{text-align:center;font-size:2.4rem;color:var(--gold);letter-spacing:6px;margin:4px 0;}
+  .score-line{text-align:center;font-size:1.05rem;font-weight:800;color:var(--primary-light);margin-bottom:4px;}
+  .db-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0;}
+  .db-cell{background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:9px 11px;}
+  .db-cell .dbk{font-size:0.68rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;}
+  .db-cell .dbv{font-size:1.15rem;font-weight:800;}
+  .teach{background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:10px 12px;font-size:0.8rem;color:var(--text-muted);line-height:1.5;margin-top:6px;}
+  .teach b{color:var(--primary-light);}
+
+  .toast-wrap{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:200;display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none;}
+  .toast{background:var(--surface);border:1px solid var(--primary);border-radius:9px;padding:8px 15px;font-size:0.82rem;font-weight:700;
+    box-shadow:0 4px 14px rgba(0,0,0,.4);animation:tst 3s ease forwards;max-width:90vw;text-align:center;}
+  .toast.bad{border-color:var(--danger);} .toast.evt{border-color:var(--warn);}
+  @keyframes tst{0%{opacity:0;transform:translateY(-8px)}10%{opacity:1;transform:none}85%{opacity:1}100%{opacity:0}}
+
+  @media (max-width:860px){
+    .board{grid-template-columns:1fr;}
+    .qlist{max-height:none;}
+  }
+  @media (max-width:600px){
+    header{padding:8px 14px;} .hdr-actions{margin-left:0;width:100%;justify-content:center;}
+    main{padding:10px 10px 20px;} .ctrl{margin-left:0;}
+    .chip{min-width:64px;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <img id="cert-logo" src="cert-wallingford-logo.png" alt="Wallingford CERT"
+    onerror="this.style.display='none';document.getElementById('logo-fallback').style.display='flex'">
+  <div id="logo-fallback" style="display:none;align-items:center;"><div class="logo-badge">CERT</div></div>
+  <div class="hdr-text">
+    <h1>Wallingford CERT — Treatment Aid Station</h1>
+    <p>Community Emergency Response Team</p>
+  </div>
+  <div class="hdr-actions">
+    <button class="level-btn" id="level-btn" onclick="openTierSelect()" title="Choose difficulty">🎚️ <span id="tier-name">Shifts</span></button>
+    <button class="icon-btn" id="sfx-btn" onclick="SND.toggle()" title="Sound effects">🔊</button>
+    <a class="home-link" href="index.html">← Menu</a>
+    <button class="theme-btn" onclick="toggleTheme()" aria-label="Toggle light or dark mode">☀️</button>
+  </div>
+</header>
+
+<main id="main"><!-- injected --></main>
+
+<footer><span>Wallingford CERT</span> — Training Suite · Treatment Aid Station · For educational use — follow your local CERT program guidelines.</footer>
+
+<div class="toast-wrap" id="toast-wrap"></div>
+<div class="ov" id="ov" onclick="if(event.target===this)closeOv()"><div class="ov-box" id="ov-box"></div></div>
+
+<script>
+/* ============================================================
+   Wallingford CERT — Treatment Aid Station (Game 9)
+   A CERT disaster-medicine MANAGEMENT SIM. As Medical Unit
+   Leader you assess, START-triage, treat (CERT scope: stabilize
+   then hand off), and discharge/evacuate a live flow of patients
+   while managing supplies, volunteers, funding, facility
+   expansion, and random disaster events. Single file, no deps.
+   ============================================================ */
+
+/* ---------- SFX ---------- */
+const SND=(function(){
+  let ctx,on=(localStorage.getItem('cert_aid_sfx')!=='off'),comp;
+  function ac(){ if(!ctx){ ctx=new (window.AudioContext||window.webkitAudioContext)(); comp=ctx.createDynamicsCompressor(); comp.connect(ctx.destination);} return ctx; }
+  function tone(f,t,type,g,dur){ if(!on)return; ac(); const o=ctx.createOscillator(),ga=ctx.createGain();
+    o.type=type||'sine'; o.frequency.setValueAtTime(f,ctx.currentTime+t);
+    ga.gain.setValueAtTime(0,ctx.currentTime+t); ga.gain.linearRampToValueAtTime(g||0.2,ctx.currentTime+t+0.012);
+    ga.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+t+(dur||0.16));
+    o.connect(ga); ga.connect(comp); o.start(ctx.currentTime+t); o.stop(ctx.currentTime+t+(dur||0.16)+0.03); }
+  return {
+    click(){ tone(300,0,'triangle',0.1,0.06); },
+    good(){ tone(560,0,'sine',0.18,0.1); tone(820,0.08,'sine',0.18,0.13); },
+    bad(){ tone(200,0,'sawtooth',0.14,0.14); },
+    cash(){ tone(880,0,'triangle',0.14,0.08); tone(1180,0.07,'triangle',0.14,0.1); },
+    tag(){ tone(500,0,'square',0.1,0.07); },
+    arrive(){ tone(420,0,'sine',0.12,0.09); tone(560,0.06,'sine',0.1,0.1); },
+    evt(){ tone(320,0,'sawtooth',0.12,0.18); tone(240,0.1,'sawtooth',0.12,0.2); },
+    win(){ [523,659,784,1047,1319].forEach((f,i)=>tone(f,i*0.1,'triangle',0.2,0.22)); },
+    lose(){ [400,320,240,160].forEach((f,i)=>tone(f,i*0.12,'sawtooth',0.18,0.26)); },
+    toggle(){ on=!on; localStorage.setItem('cert_aid_sfx',on?'on':'off'); const b=document.getElementById('sfx-btn'); if(b)b.textContent=on?'🔊':'🔇'; if(on){ac();this.click();} },
+    arm(){ if(!on)return; ac(); if(ctx.state==='suspended') ctx.resume(); },
+    init(){ const b=document.getElementById('sfx-btn'); if(b)b.textContent=on?'🔊':'🔇'; }
+  };
+})();
+
+/* ---------- helpers ---------- */
+const rnd=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const chance=p=>Math.random()<p;
+const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function fmtClock(s){ s=Math.max(0,Math.round(s)); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
+
+const FIRST=['Ava','Liam','Noah','Mia','Ethan','Sofia','Jack','Emma','Lucas','Zoe','Owen','Ruby','Leo','Nora','Kai','Ivy','Max','Elena','Sam','Priya','Diego','Aisha','Omar','Grace','Hana','Marcus','Lena','Tariq','Yuki','Cole'];
+const LAST=['Reyes','Kim','Patel','Nguyen','Cohen','Brooks','Silva','Osei','Haddad','Larsen','Moreno','Walsh','Tran','Ali','Bauer','Ito','Flores','Novak','Dubois','Park','Mensah','Rossi','Khan','Ford','Serrano'];
+
+/* ---------- supplies ---------- */
+const SUP={
+  gloves:{lb:'Gloves',em:'🧤',adv:false}, gauze:{lb:'Gauze',em:'🩹',adv:false},
+  roller:{lb:'Roller bd.',em:'🎗️',adv:false}, triangular:{lb:'Triangular',em:'🔺',adv:false},
+  elastic:{lb:'Elastic wrap',em:'➰',adv:false}, tape:{lb:'Tape',em:'🩹',adv:false},
+  saline:{lb:'Saline',em:'💦',adv:false}, water:{lb:'Water',em:'💧',adv:false},
+  blanket:{lb:'Blankets',em:'🟫',adv:false}, ice:{lb:'Ice packs',em:'🧊',adv:false},
+  oxygen:{lb:'Oxygen',em:'🅾️',adv:true}, burndress:{lb:'Burn dress.',em:'🧯',adv:true}, advsplint:{lb:'Adv. splint',em:'🦿',adv:true},
+};
+const SUP_IDS=Object.keys(SUP);
+
+/* ---------- treatments (CERT scope; needs use BASIC supplies only) ---------- */
+const TREAT={
+  bandage:{lb:'Bandage wound',em:'🩹',cost:{gloves:1,gauze:1,tape:1}},
+  bleed:{lb:'Control bleeding',em:'🩸',cost:{gloves:1,gauze:2,roller:1}},
+  splint:{lb:'Splint / immobilize',em:'🦴',cost:{triangular:1,elastic:1}},
+  cool:{lb:'Cool the patient',em:'❄️',cost:{ice:1,water:1}},
+  warm:{lb:'Warm the patient',em:'🔥',cost:{blanket:1}},
+  airway:{lb:'Position airway',em:'💨',cost:{gloves:1}},
+  shock:{lb:'Treat for shock',em:'🛌',cost:{blanket:1}},
+  hydrate:{lb:'Give oral fluids',em:'🥤',cost:{water:1}},
+  observe:{lb:'Monitor / observe',em:'👀',cost:{}},
+  support:{lb:'Reassure & support',em:'🫶',cost:{}},
+};
+
+/* ---------- patient types ----------
+   Each gen() sets vitals so the correct START tag falls out of startTag().
+   band = spawn-weighting bucket. exceeds = beyond CERT scope -> must EVACUATE. */
+function vit(o){ return Object.assign({pain:3,rr:16,mental:'follows',bleeding:'none',mobility:'walking'},o); }
+const TYPES=[
+  {id:'cut',label:'Laceration (minor)',em:'🩹',band:'minor',age:[8,80],
+   gen:()=>({...vit({pain:rnd(2,4),rr:rnd(14,18),bleeding:'minor',mobility:'walking'}),
+     desc:pick(['Cut to the forearm','Cut to the hand','Scalp laceration']),needs:['bandage'],harmful:[]}),
+   teach:'Minor, walking wounded → GREEN. Clean and bandage; conserve supplies.'},
+  {id:'sprain',label:'Sprain',em:'🦶',band:'minor',age:[10,75],
+   gen:()=>({...vit({pain:rnd(3,5),rr:rnd(14,18),mobility:'walking'}),
+     desc:pick(['Sprained ankle','Sprained wrist']),needs:['splint'],harmful:[]}),
+   teach:'Sprains: RICE (rest, ice, compression, elevation). Walking → GREEN.'},
+  {id:'anxiety',label:'Acute anxiety',em:'😰',band:'minor',age:[12,80],
+   gen:()=>({...vit({pain:rnd(1,3),rr:rnd(20,28),mobility:'walking'}),
+     desc:'Panicked, hyperventilating',needs:['support'],harmful:[]}),
+   teach:'Fast breathing but WALKING = GREEN. Don’t over-triage the anxious — reassure them.'},
+  {id:'illness',label:'Minor illness',em:'🤒',band:'minor',age:[5,85],
+   gen:()=>({...vit({pain:rnd(2,4),rr:rnd(14,18),mobility:'walking'}),
+     desc:pick(['Nausea and headache','Feeling faint','Stomach upset']),needs:['observe'],harmful:[]}),
+   teach:'Minor illness → GREEN. Monitor; escalate only if it worsens.'},
+  {id:'dehydration',label:'Dehydration',em:'🥵',band:'minor',age:[6,85],
+   gen:()=>({...vit({pain:rnd(1,3),rr:rnd(16,22),mobility:'walking'}),
+     desc:'Dizzy, dry mouth, weak',needs:['hydrate','observe'],harmful:[]}),
+   teach:'Oral fluids and rest. Ambulatory → GREEN.'},
+  {id:'laceration',label:'Deep laceration',em:'🩸',band:'delayed',age:[10,80],
+   gen:()=>({...vit({pain:rnd(4,6),rr:rnd(16,20),bleeding:'moderate',mobility:'limited'}),
+     desc:pick(['Deep cut to the leg, steady bleeding','Deep forearm laceration']),needs:['bleed','bandage'],harmful:[]}),
+   teach:'Control bleeding first (direct pressure), then dress. Not walking → YELLOW.'},
+  {id:'fracture',label:'Fracture',em:'🦴',band:'delayed',age:[8,85],
+   gen:()=>({...vit({pain:rnd(5,7),rr:rnd(14,20),bleeding:chance(.3)?'minor':'none',mobility:'immobile'}),
+     desc:pick(['Suspected fractured lower leg','Fractured wrist','Fractured ankle']),needs:['splint','observe'],harmful:[]}),
+   teach:'Immobilize/splint and check CSM (circulation, sensation, movement). YELLOW.'},
+  {id:'burn',label:'Burns',em:'🔥',band:'delayed',age:[6,80],
+   gen:()=>({...vit({pain:rnd(5,8),rr:rnd(16,22),mobility:'limited'}),
+     desc:pick(['Burns to the hand and forearm','Burns to the back']),needs:['cool','bandage'],harmful:['warm']}),
+   teach:'Cool the burn with water, cover loosely. Don’t apply heat. YELLOW.'},
+  {id:'heat_exh',label:'Heat exhaustion',em:'🌡️',band:'delayed',age:[12,80],
+   gen:()=>({...vit({pain:rnd(2,4),rr:rnd(18,26),mobility:'limited'}),
+     desc:'Heavy sweating, weak, dizzy',needs:['cool','hydrate','observe'],harmful:['warm']}),
+   teach:'Move to shade, cool, and rehydrate. Watch for progression to heat STROKE.'},
+  {id:'hypothermia',label:'Hypothermia',em:'🥶',band:'delayed',age:[10,88],
+   gen:()=>({...vit({pain:rnd(1,3),rr:rnd(10,16),mobility:'limited'}),
+     desc:'Shivering, cold, sluggish',needs:['warm','observe'],harmful:['cool']}),
+   teach:'Warm gradually, dry blankets, shelter. Handle gently. YELLOW.'},
+  {id:'shock',label:'Shock',em:'💤',band:'immediate',age:[10,85],
+   gen:()=>({...vit({pain:rnd(4,6),rr:rnd(24,34),mental:'altered',bleeding:chance(.5)?'moderate':'minor',mobility:'immobile'}),
+     desc:'Pale, cold, clammy — signs of shock',needs:['shock','observe'],harmful:['cool']}),
+   teach:'Lay flat, keep warm, control any bleeding. Altered/RR>30 → RED.'},
+  {id:'smoke',label:'Smoke inhalation',em:'🌫️',band:'immediate',age:[8,80],exceeds:true,
+   gen:()=>({...vit({pain:rnd(3,5),rr:rnd(26,36),mental:chance(.4)?'altered':'follows',mobility:'limited'}),
+     desc:'Coughing, sooty, short of breath',needs:['airway','observe'],harmful:[]}),
+   teach:'Airway is the threat. Position, give O₂ if available — then EVACUATE. Beyond CERT scope.'},
+  {id:'heat_stroke',label:'Heat stroke',em:'☀️',band:'immediate',age:[14,82],exceeds:true,
+   gen:()=>({...vit({pain:rnd(3,5),rr:rnd(26,36),mental:'altered',mobility:'immobile'}),
+     desc:'Hot skin, confused — heat STROKE',needs:['cool','airway'],harmful:['warm']}),
+   teach:'True emergency: rapid cooling + protect airway, then EVACUATE. Never warm.'},
+  {id:'crush',label:'Crush injury',em:'🧱',band:'immediate',age:[16,70],exceeds:true,
+   gen:()=>({...vit({pain:rnd(6,9),rr:rnd(22,32),mental:chance(.4)?'altered':'follows',bleeding:chance(.5)?'severe':'moderate',mobility:'immobile'}),
+     desc:'Crush injury, trapped under debris',needs:['bleed','splint','shock'],harmful:[]}),
+   teach:'Control bleeding, immobilize, treat for shock — crush syndrome needs EMS. EVACUATE.'},
+  {id:'head',label:'Head injury',em:'🤕',band:'immediate',age:[8,85],exceeds:true,
+   gen:()=>{const un=chance(.25); return {...vit({pain:rnd(4,7),rr:un?rnd(8,12):rnd(12,24),mental:un?'unresponsive':'altered',bleeding:chance(.5)?'moderate':'minor',mobility:'immobile'}),
+     desc:'Head injury, confused / unequal pupils',needs:['airway','bleed','observe'],harmful:['hydrate'],apnea:false};},
+   teach:'Protect airway with spinal precautions, control bleeding, do NOT give fluids. EVACUATE.'},
+  {id:'critical',label:'Critical / not breathing',em:'⚫',band:'expectant',age:[20,80],exceeds:true,expectant:true,
+   gen:()=>({...vit({pain:0,rr:0,mental:'unresponsive',bleeding:'severe',mobility:'immobile'}),
+     desc:'No breathing after airway repositioning',needs:[],harmful:[],apnea:true}),
+   teach:'In a mass-casualty setting, a non-breathing patient after airway repositioning is EXPECTANT (⚫). Provide comfort; commit scarce resources to the salvageable.'},
+];
+const TYPE_BY={}; TYPES.forEach(t=>TYPE_BY[t.id]=t);
+
+/* START triage — order matters (CERT START/RPM) */
+function startTag(p){
+  if(p.mobility==='walking') return 'minor';                 // walking wounded
+  if(p.rr===0) return p.apnea?'expectant':'immediate';       // reposition airway; still apneic -> expectant
+  if(p.rr>30) return 'immediate';                            // respirations > 30
+  if(p.bleeding==='severe') return 'immediate';             // perfusion: no radial / major bleed
+  if(p.mental!=='follows') return 'immediate';              // mental: can't follow commands
+  return 'delayed';
+}
+const TAG_LB={minor:'Minor',delayed:'Delayed',immediate:'Immediate',expectant:'Expectant'};
+const TAG_CLS={minor:'t-min',delayed:'t-del',immediate:'t-imm',expectant:'t-exp'};
+const BAND_CLS={minor:'b-min',delayed:'b-del',immediate:'b-imm',expectant:'b-exp'};
+
+/* ---------- shop catalog ---------- */
+const SHOP=[
+  // rooms
+  {id:'bed1',cat:'room',n:'Small Treatment Room',em:'🛏️',cost:240,once:true,d:'Adds 1 treatment bed.',eff:g=>addBed(g,1)},
+  {id:'bed2',cat:'room',n:'Large Treatment Room',em:'🏥',cost:430,once:true,d:'Adds 2 treatment beds.',eff:g=>addBed(g,2)},
+  {id:'recovery',cat:'room',n:'Recovery Room',em:'🛋️',cost:300,once:true,d:'+3 recovery slots. Recovered patients auto-move here, freeing beds.',eff:g=>{g.recoveryCap+=3;}},
+  {id:'obs',cat:'room',n:'Observation Area',em:'👁️',cost:250,once:true,d:'+3 observation slots for low-acuity patients (frees beds).',eff:g=>{g.obsCap+=3;}},
+  {id:'storage',cat:'room',n:'Supply Storage',em:'📦',cost:200,once:true,d:'+30 stock cap per item and 15% cheaper restocks.',eff:g=>{g.invCap+=30;g.supplyDisc=0.85;}},
+  {id:'iso',cat:'room',n:'Isolation Room',em:'☣️',cost:300,once:true,d:'Safely handle hazmat/contaminated patients (no forced-evac penalty).',eff:g=>{g.iso=true;}},
+  {id:'break',cat:'room',n:'Volunteer Break Room',em:'☕',cost:200,once:true,d:'+2 volunteer capacity; volunteers rest faster.',eff:g=>{g.volCap+=2;g.restFast=true;}},
+  {id:'ambbay',cat:'room',n:'Ambulance Loading Zone',em:'🚑',cost:340,once:true,d:'+1 ambulance and faster evac turnaround.',eff:g=>{g.ambMax+=1;g.ambReady+=1;g.ambEta=Math.max(6,g.ambEta-3);}},
+  {id:'helipad',cat:'room',n:'Helipad',em:'🚁',cost:680,once:true,d:'Air evac: fast lane for critical patients, higher reimbursement.',eff:g=>{g.helipad=true;}},
+  {id:'parking',cat:'room',n:'Expanded Parking',em:'🅿️',cost:180,once:true,d:'+3 waiting capacity — fewer patients walk away.',eff:g=>{g.waitCap+=3;}},
+  // equipment / upgrades
+  {id:'generator',cat:'equip',n:'Backup Generator',em:'🔋',cost:240,once:true,d:'Immune to power-outage events.',eff:g=>{g.generator=true;}},
+  {id:'hvac',cat:'equip',n:'HVAC System',em:'🌬️',cost:240,once:true,d:'Heat/cold events are milder and cause fewer heat/hypothermia arrivals.',eff:g=>{g.hvac=true;}},
+  {id:'pharmacy',cat:'equip',n:'Larger Pharmacy',em:'💊',cost:300,once:true,d:'Unlocks advanced supplies (O₂, burn dressings, splints) and +20 stock cap.',eff:g=>{g.pharmacy=true;g.invCap+=20;}},
+  {id:'radio',cat:'equip',n:'Radio Room',em:'📻',cost:250,once:true,d:'+1 ambulance readiness and faster evac dispatch.',eff:g=>{g.ambReady+=1;g.ambMax+=1;g.ambEta=Math.max(6,g.ambEta-2);}},
+  {id:'trauma',cat:'equip',n:'Trauma Bay',em:'⚕️',cost:400,once:true,d:'+35% treatment/recovery speed and steadier critical patients.',eff:g=>{g.trauma=true;}},
+  {id:'training',cat:'equip',n:'Training Room',em:'🎓',cost:280,once:true,d:'Volunteers gain experience over the shift; new recruits start trained.',eff:g=>{g.training=true;}},
+  {id:'lighting',cat:'equip',n:'Better Lighting',em:'💡',cost:150,once:true,d:'+10% treatment speed across the station.',eff:g=>{g.lighting=true;}},
+  // supplies (repeatable)
+  {id:'pk_basic',cat:'supply',n:'Basic Supply Pack',em:'📦',cost:120,d:'Gloves, gauze, tape, water restock.',eff:g=>restock(g,{gloves:12,gauze:8,tape:6,water:8})},
+  {id:'pk_trauma',cat:'supply',n:'Trauma Pack',em:'🩹',cost:140,d:'Gauze, roller, triangular, elastic.',eff:g=>restock(g,{gauze:8,roller:5,triangular:5,elastic:5})},
+  {id:'pk_cold',cat:'supply',n:'Comfort Pack',em:'🧊',cost:100,d:'Ice packs, blankets, water.',eff:g=>restock(g,{ice:6,blanket:5,water:6})},
+  {id:'pk_adv',cat:'supply',n:'Advanced Pack',em:'🅾️',cost:190,d:'Oxygen, burn dressings, adv. splints (needs Pharmacy).',need:'pharmacy',eff:g=>restock(g,{oxygen:4,burndress:4,advsplint:3})},
+  // volunteers (repeatable, capped)
+  {id:'v_med',cat:'vol',n:'Recruit: Medical',em:'🩺',cost:180,d:'Speeds treatment when assigned to a bed.',vol:'Medical',eff:g=>recruit(g,'Medical')},
+  {id:'v_log',cat:'vol',n:'Recruit: Logistics',em:'📦',cost:150,d:'Cheaper restocks, larger supply deliveries.',vol:'Logistics',eff:g=>recruit(g,'Logistics')},
+  {id:'v_com',cat:'vol',n:'Recruit: Communications',em:'📻',cost:150,d:'Faster ambulances and evac dispatch.',vol:'Communications',eff:g=>recruit(g,'Communications')},
+  {id:'v_adm',cat:'vol',n:'Recruit: Administration',em:'🗂️',cost:150,d:'More funding per good outcome; faster intake.',vol:'Administration',eff:g=>recruit(g,'Administration')},
+  {id:'v_sar',cat:'vol',n:'Recruit: Search & Rescue',em:'⛑️',cost:150,d:'Faster triage assist and patient handling.',vol:'Search & Rescue',eff:g=>recruit(g,'Search & Rescue')},
+];
+const SKILL_EM={Medical:'🩺',Logistics:'📦',Communications:'📻',Administration:'🗂️','Search & Rescue':'⛑️'};
+
+/* ---------- events ---------- */
+const EVENTS=[
+  {id:'aftershock',w:3,bad:true,msg:'Aftershock! New casualties incoming.',fn:g=>{for(let i=0;i<rnd(2,3);i++)spawn(g,true);g.sat=clamp(g.sat-4,0,100);}},
+  {id:'mci',w:2,bad:true,minSev:3,msg:'⚠️ Mass-casualty incident — patient surge!',fn:g=>{for(let i=0;i<rnd(3,5);i++)spawn(g,true);}},
+  {id:'power',w:2,bad:true,msg:'Power outage — treatment slowed.',fn:g=>{ if(g.generator){toast('Backup generator held the power steady.',''); return;} g.mods.power=18; }},
+  {id:'equip',w:2,bad:true,msg:'Equipment failure — a bed is offline.',fn:g=>{const b=g.beds.find(x=>!x.pid&&!x.offline); if(b){b.offline=20;}else{const b2=g.beds.find(x=>!x.offline); if(b2)b2.offline=20;}}},
+  {id:'volhurt',w:2,bad:true,msg:'A volunteer was injured and needs a break.',fn:g=>{const v=pick(g.vols.filter(x=>!x.hurt)); if(v){v.hurt=16;v.bed=null;v.fatigue=clamp(v.fatigue+30,0,100);}}},
+  {id:'heat',w:2,bad:true,msg:'Extreme heat — more heat casualties.',fn:g=>{g.mods.heat=g.hvac?10:24;}},
+  {id:'rain',w:2,bad:false,msg:'Heavy rain — arrivals slow for a while.',fn:g=>{g.mods.rain=16;}},
+  {id:'hazmat',w:2,bad:true,minSev:3,msg:'☣️ Hazmat patient arrived — needs isolation or evac.',fn:g=>{spawn(g,true,'smoke',{hazmat:true});}},
+  {id:'reunite',w:2,bad:false,msg:'Family reunification surge — worried minor cases.',fn:g=>{for(let i=0;i<rnd(2,3);i++)spawn(g,true,pick(['anxiety','illness','cut']));}},
+  {id:'truck',w:3,bad:false,msg:'🚚 Supply truck arrived — free supplies!',fn:g=>{restock(g,{gloves:10,gauze:8,water:8,blanket:4,ice:4,roller:4});}},
+  {id:'donation',w:3,bad:false,msg:'💵 Community donation received!',fn:g=>{const m=rnd(80,160);g.money+=m;g.stats.donated+=m;}},
+  {id:'grant',w:2,bad:false,msg:'🏛️ CERT grant awarded!',fn:g=>{const m=rnd(150,260);g.money+=m;g.stats.grant+=m;}},
+];
+
+/* ---------- tiers ---------- */
+const TIERS=[
+  {n:1,name:'Recruit',   ic:'🔰', shift:150, money:600, spawn:[10,7],  sev:1, amb:2, vols:3, ev:0.05, thr:[80,60], desc:'Calm neighborhood incident. Learn the patient flow.'},
+  {n:2,name:'Trainee',   ic:'🎓', shift:180, money:560, spawn:[9,6],   sev:2, amb:2, vols:3, ev:0.07, thr:[82,62], desc:'Steady arrivals; your first serious cases.'},
+  {n:3,name:'Responder', ic:'🚑', shift:210, money:520, spawn:[8,5],   sev:3, amb:3, vols:4, ev:0.09, thr:[84,64], desc:'Busy station, tighter supplies, more events.'},
+  {n:4,name:'Veteran',   ic:'🎖️', shift:240, money:470, spawn:[7,4],   sev:4, amb:3, vols:4, ev:0.11, thr:[86,66], desc:'Heavy volume, severe injuries, frequent events.'},
+  {n:5,name:'Specialist',ic:'⭐', shift:300, money:430, spawn:[6,3.5], sev:5, amb:4, vols:5, ev:0.13, thr:[88,70], desc:'Mass-casualty scale. Manage everything at once.'},
+];
+function tierByN(n){ return TIERS.find(t=>t.n===n)||TIERS[0]; }
+
+/* ---------- progress ---------- */
+function loadProg(){ try{ return JSON.parse(localStorage.getItem('cert_aid_progress'))||{}; }catch(e){ return {}; } }
+function sumTierStars(p){ p=p||loadProg(); return p.tiers?Object.values(p.tiers).reduce((a,t)=>a+(t.stars||0),0):0; }
+function saveProgress(tierN,stars,pct){
+  const p=loadProg(); p.completed=true; p.tiers=p.tiers||{};
+  const cur=p.tiers[tierN]||{stars:0,best:0,plays:0};
+  cur.stars=Math.max(cur.stars||0,stars); cur.best=Math.max(cur.best||0,pct); cur.plays=(cur.plays||0)+1;
+  p.tiers[tierN]=cur; p.stars=sumTierStars(p); localStorage.setItem('cert_aid_progress',JSON.stringify(p));
+}
+
+/* ============================================================
+   GAME STATE
+   ============================================================ */
+let G=null, LOOP=null, TIER=null;
+const TICK=1000;
+
+function newGame(tier){
+  TIER=tier;
+  G={
+    tier, t:0, shift:tier.shift, running:true, over:false, speed:1,
+    money:tier.money, sat:80, nextPid:1, sel:null, dragging:false, shopTab:'room',
+    waiting:[], patients:{}, beds:[], recovery:[], obs:[],
+    recoveryCap:0, obsCap:0, waitCap:6,
+    inv:{gloves:24,gauze:16,roller:8,triangular:8,elastic:8,tape:12,saline:6,water:16,blanket:8,ice:8,oxygen:0,burndress:0,advsplint:0},
+    invCap:40, supplyDisc:1,
+    vols:[], volCap:5,
+    ambMax:tier.amb, ambReady:tier.amb, ambEta:12, ambPending:[],
+    bought:{}, mods:{}, log:[],
+    generator:false,hvac:false,pharmacy:false,trauma:false,training:false,lighting:false,iso:false,restFast:false,helipad:false,
+    spawnTimer:tier.spawn[0], evTimer:24,
+    stats:{arrived:0,discharged:0,evac:0,lost:0,walkaway:0,triaged:0,triageRight:0,expOk:0,donated:0,grant:0,satSum:0,satN:0},
+  };
+  addBed(G,2);
+  const skills=['Medical','Medical','Logistics','Communications','Administration','Search & Rescue'];
+  for(let i=0;i<tier.vols;i++) recruit(G,skills[i]||'Medical');
+  logMsg(G,'Aid station open. Two beds, '+tier.vols+' volunteers on shift.','');
+  render(); startLoop();
+}
+function addBed(g,n){ for(let i=0;i<n;i++) g.beds.push({id:'b'+g.beds.length,pid:null,offline:0}); }
+function recruit(g,skill){ if(g.vols.length>=g.volCap) return false;
+  const exp=g.training?rnd(2,3):rnd(1,3);
+  g.vols.push({id:'v'+(g.vols.length)+'_'+Date.now()%1000,name:pick(FIRST),skill,exp,fatigue:0,bed:null,hurt:0}); return true; }
+function restock(g,obj){ for(const k in obj){ g.inv[k]=clamp((g.inv[k]||0)+obj[k],0,g.invCap); } }
+
+function logMsg(g,txt,cls){ g.log.unshift({txt,cls:cls||''}); if(g.log.length>40)g.log.pop(); }
+
+/* ---------- patient spawning ---------- */
+function bandForTier(sev){
+  // weight bands by tier severity
+  const w={minor:0,delayed:0,immediate:0,expectant:0};
+  w.minor=Math.max(2,7-sev);
+  w.delayed=3+Math.min(3,sev);
+  w.immediate=Math.max(0,sev-1);
+  w.expectant=sev>=4?1:0;
+  const pool=[]; for(const b in w) for(let i=0;i<w[b];i++) pool.push(b);
+  return pick(pool);
+}
+function spawn(g,force,forceType,extra){
+  if(!force && (g.waiting.length>=g.waitCap)){ // overflow -> walk away
+    return;
+  }
+  let type;
+  if(forceType){ type=TYPE_BY[forceType]; }
+  else{
+    let band=bandForTier(g.tier.sev);
+    if(g.mods.heat && chance(.5)) band='delayed';
+    const cands=TYPES.filter(t=>t.band===band);
+    type=pick(cands.length?cands:TYPES.filter(t=>t.band==='minor'));
+    if(g.mods.heat && chance(.5)) type=pick([TYPE_BY.heat_exh,TYPE_BY.heat_stroke]);
+  }
+  const data=type.gen();
+  const p={id:g.nextPid++, type:type.id, name:pick(FIRST)+' '+pick(LAST), age:rnd(type.age[0],type.age[1]),
+    em:type.em, label:type.label, desc:data.desc, pain:data.pain, rr:data.rr, mental:data.mental,
+    bleeding:data.bleeding, mobility:data.mobility, apnea:!!data.apnea, needs:data.needs.slice(), harmful:(data.harmful||[]).slice(),
+    exceeds:!!type.exceeds, expectant:!!type.expectant, hazmat:extra&&extra.hazmat,
+    done:[], stage:'triage', playerTag:null, bed:null, care:0, patience:100, wait:0, mistreat:0 };
+  p.trueTag=startTag(p);
+  p.deadline = p.trueTag==='immediate'?20:(p.trueTag==='delayed'?34:(p.trueTag==='expectant'?14:46));
+  g.patients[p.id]=p; g.waiting.push(p.id); g.stats.arrived++;
+  SND.arrive();
+}
+
+/* ---------- interactions ---------- */
+function selPatient(id){ const p=G.patients[id]; if(!p) return; SND.click();
+  if(p.stage==='triage'){ G.sel=id; openAssess(id); return; }
+  G.sel=(G.sel===id?null:id); render();
+}
+function openAssess(id){
+  const p=G.patients[id]; if(!p) return;
+  const bleedTxt={none:'none',minor:'minor',moderate:'moderate',severe:'severe (no radial pulse)'}[p.bleeding];
+  const mob={walking:'Walking',limited:'Limited / weak',immobile:'Cannot walk'}[p.mobility];
+  const men={follows:'Follows commands',altered:'Altered / confused',unresponsive:'Unresponsive'}[p.mental];
+  openOv(`<h2>${p.em} Patient Assessment</h2>
+    <p class="sub"><b>${p.name}</b>, age ${p.age} — ${p.desc}${p.hazmat?' <span class="tag t-imm">HAZMAT</span>':''}</p>
+    <div class="vitals" style="justify-content:center">
+      <span class="vit">Resp rate: <b>${p.rr}/min</b></span>
+      <span class="vit">Mental: <b>${men}</b></span>
+      <span class="vit">Bleeding: <b>${bleedTxt}</b></span>
+      <span class="vit">Mobility: <b>${mob}</b></span>
+      <span class="vit">Pain: <b>${p.pain}/10</b></span>
+    </div>
+    <p class="sub" style="margin:4px 0 10px">Assign a START triage category:</p>
+    <div class="triage-row">
+      <button class="tri g" onclick="doTriage(${id},'minor')">🟢 Minor</button>
+      <button class="tri y" onclick="doTriage(${id},'delayed')">🟡 Delayed</button>
+      <button class="tri r" onclick="doTriage(${id},'immediate')">🔴 Immediate</button>
+      <button class="tri k" onclick="doTriage(${id},'expectant')">⚫ Expectant</button>
+    </div>
+    <p class="sub" style="font-size:.72rem;margin-top:10px;color:var(--text-muted)">START: <b>walk</b> → Minor · <b>RR&gt;30</b> or no radial pulse or can't follow commands → Immediate · not breathing → Expectant · otherwise Delayed.</p>`);
+}
+function doTriage(id,tag){
+  const p=G.patients[id]; if(!p||p.stage!=='triage') return;
+  p.playerTag=tag; p.stage='triaged'; G.stats.triaged++;
+  const right=(tag===p.trueTag);
+  if(right){ G.stats.triageRight++; G.money+=8; G.sat=clamp(G.sat+2,0,100); SND.tag();
+    logMsg(G,`Triaged ${p.name} → ${TAG_LB[tag]} ✓`,'good'); }
+  else{ G.money=Math.max(0,G.money-12); G.sat=clamp(G.sat-6,0,100); SND.bad();
+    logMsg(G,`Mis-triaged ${p.name}: called ${TAG_LB[tag]}, correct was ${TAG_LB[p.trueTag]}.`,'bad');
+    toast(`Triage: ${p.name} was ${TAG_LB[p.trueTag]}, not ${TAG_LB[tag]}.`,'bad'); }
+  // expectant: comfort care — resolved out of the active flow regardless of tag (they pass in a MCI)
+  if(p.trueTag==='expectant'){
+    if(tag==='expectant'){ G.stats.expOk++; G.sat=clamp(G.sat+1,0,100); logMsg(G,`${p.name}: expectant (⚫) — comfort care given.`,''); }
+    else { logMsg(G,`${p.name} was expectant (⚫) — beyond saving in a mass-casualty triage.`,'bad'); }
+    const wi=G.waiting.indexOf(p.id); if(wi>=0)G.waiting.splice(wi,1);
+    delete G.patients[p.id]; G.sel=null; closeOv(); render(); return;
+  }
+  closeOv(); G.sel=id; render();
+}
+function freeBed(){ return G.beds.find(b=>!b.pid && !b.offline); }
+function sendToBed(id){
+  const p=G.patients[id]; if(!p) return;
+  if(p.stage!=='triaged'){ return; }
+  const b=freeBed();
+  if(!b){ toast('No free bed — discharge someone or build more.','bad'); SND.bad(); return; }
+  placeInBed(p,b); SND.click(); render();
+}
+function dequeueWaiting(id){ const i=G.waiting.indexOf(id); if(i>=0)G.waiting.splice(i,1); }
+function placeInBed(p,b){ b.pid=p.id; p.bed=b.id; p.stage='bed'; p.patience=100; dequeueWaiting(p.id); logMsg(G,`${p.name} moved to a treatment bed.`,''); }
+function assignToBedById(pid,bid){
+  const p=G.patients[pid], b=G.beds.find(x=>x.id===bid);
+  if(!p||!b) return;
+  if(b.pid||b.offline){ toast('That bed is occupied.','bad'); return; }
+  if(p.stage!=='triaged'){ if(p.stage==='triage'){ toast('Assess & triage this patient first.','bad'); } return; }
+  placeInBed(p,b); SND.click(); G.sel=pid; render();
+}
+
+/* apply a treatment to the selected bed patient */
+function applyTx(id,tx){
+  const p=G.patients[id]; if(!p||(p.stage!=='bed')) return;
+  const t=TREAT[tx]; if(!t) return;
+  // supply check
+  for(const s in t.cost){ if((G.inv[s]||0)<t.cost[s]){ toast('Out of '+SUP[s].lb+' — restock in the shop.','bad'); SND.bad(); return; } }
+  for(const s in t.cost){ G.inv[s]-=t.cost[s]; }
+  const needed=p.needs.includes(tx), harmful=p.harmful.includes(tx);
+  if(harmful){ p.mistreat++; G.sat=clamp(G.sat-7,0,100); G.money=Math.max(0,G.money-10); SND.bad();
+    logMsg(G,`${p.name}: ${t.lb} was HARMFUL for this patient.`,'bad');
+    toast(`${t.lb} harmed ${p.name.split(' ')[0]} — wrong for this condition.`,'bad'); render(); return; }
+  if(!needed){ p.mistreat++; G.sat=clamp(G.sat-2,0,100); SND.bad();
+    logMsg(G,`${p.name}: ${t.lb} wasn't needed — supplies wasted.`,'bad'); render(); return; }
+  if(p.done.includes(tx)){ render(); return; }
+  p.done.push(tx); SND.good();
+  if(p.done.length>=p.needs.length){ p.cared=true; logMsg(G,`${p.name} stabilized — care plan complete.`,'good'); }
+  render();
+}
+function assignVol(id){
+  const p=G.patients[id]; if(!p||p.stage!=='bed') return;
+  const bed=G.beds.find(b=>b.id===p.bed); if(!bed) return;
+  // best free, rested medical volunteer
+  const avail=G.vols.filter(v=>!v.bed&&!v.hurt).sort((a,b)=>((b.skill==='Medical')-(a.skill==='Medical'))||(b.exp-a.exp)||(a.fatigue-b.fatigue));
+  if(bed.vol){ const v=G.vols.find(x=>x.id===bed.vol); if(v)v.bed=null; bed.vol=null; SND.click(); render(); return; }
+  if(!avail.length){ toast('No volunteers free — recruit or free one up.','bad'); SND.bad(); return; }
+  const v=avail[0]; v.bed=bed.id; bed.vol=v.id; SND.click();
+  logMsg(G,`${v.name} (${v.skill}) assigned to a bed.`,''); render();
+}
+function discharge(id){
+  const p=G.patients[id]; if(!p) return;
+  if(p.stage!=='bed'&&p.stage!=='recovery'){ return; }
+  if(p.exceeds){ toast('This patient exceeds CERT scope — request an ambulance instead.','bad'); return; }
+  if(p.care<100){ toast('Not fully recovered yet — keep treating.','bad'); return; }
+  finishPatient(p,'discharged');
+}
+function requestEvac(id){
+  const p=G.patients[id]; if(!p) return;
+  if(!p.cared){ toast('Stabilize the patient (complete the care plan) before evac.','bad'); SND.bad(); return; }
+  if(G.ambReady<=0){ toast('No ambulance available — treat longer or wait for one to return.','bad'); SND.bad(); return; }
+  G.ambReady--; let eta=G.ambEta;
+  if(G.helipad && (p.type==='head'||p.type==='crush'||p.type==='heat_stroke')) eta=Math.max(4,Math.round(eta*0.5));
+  p.stage='evac'; p.evacEta=eta;
+  G.ambPending.push(p.id);
+  // free the bed now (loaded for transport)
+  const b=G.beds.find(x=>x.id===p.bed); if(b){b.pid=null; if(b.vol){const v=G.vols.find(z=>z.id===b.vol); if(v)v.bed=null; b.vol=null;}}
+  p.bed=null; SND.click(); logMsg(G,`Ambulance requested for ${p.name} (ETA ${eta}s).`,''); G.sel=null; render();
+}
+function finishPatient(p,how){
+  let pay=0;
+  const adminBonus=1+0.06*G.vols.filter(v=>v.skill==='Administration').length;
+  if(how==='discharged'){ pay=(p.trueTag==='minor'?18:p.trueTag==='delayed'?34:26); G.stats.discharged++;
+    G.sat=clamp(G.sat+ (p.mistreat?2:5),0,100); logMsg(G,`${p.name} discharged — recovered. +$${Math.round(pay*adminBonus)}`,'good'); }
+  else if(how==='evac'){ pay=(G.helipad?70:55); G.stats.evac++;
+    G.sat=clamp(G.sat+5,0,100); logMsg(G,`${p.name} evacuated by ambulance. Reimbursed +$${Math.round(pay*adminBonus)}`,'good'); }
+  pay=Math.round(pay*adminBonus); if(p.mistreat) pay=Math.round(pay*0.7);
+  G.money+=pay; SND.cash();
+  releasePatient(p);
+}
+function losePatient(p,how){
+  // how: 'lost' (died) or 'walkaway'
+  const b=G.beds.find(x=>x.id===p.bed); if(b){b.pid=null; if(b.vol){const v=G.vols.find(z=>z.id===b.vol); if(v)v.bed=null; b.vol=null;}}
+  const r=G.recovery.find(x=>x.pid===p.id); if(r)r.pid=null;
+  const o=G.obs.find(x=>x.pid===p.id); if(o)o.pid=null;
+  if(how==='lost'){ G.stats.lost++; G.sat=clamp(G.sat-16,0,100); G.money=Math.max(0,G.money-20); SND.lose();
+    logMsg(G,`${p.name} was lost — critical needs went untreated.`,'bad'); toast(`${p.name} was lost.`,'bad'); }
+  else{ G.stats.walkaway++; G.sat=clamp(G.sat-8,0,100); logMsg(G,`${p.name} left without being seen.`,'bad'); }
+  delete G.patients[p.id];
+  const wi=G.waiting.indexOf(p.id); if(wi>=0)G.waiting.splice(wi,1);
+  if(G.sel===p.id)G.sel=null;
+}
+function releasePatient(p){
+  const b=G.beds.find(x=>x.id===p.bed); if(b){b.pid=null; if(b.vol){const v=G.vols.find(z=>z.id===b.vol); if(v)v.bed=null; b.vol=null;}}
+  const r=G.recovery.find(x=>x.pid===p.id); if(r)r.pid=null;
+  const o=G.obs.find(x=>x.pid===p.id); if(o)o.pid=null;
+  delete G.patients[p.id];
+  const wi=G.waiting.indexOf(p.id); if(wi>=0)G.waiting.splice(wi,1);
+  if(G.sel===p.id)G.sel=null;
+  render();
+}
+
+/* ---------- main loop ---------- */
+function startLoop(){ if(LOOP)clearInterval(LOOP); LOOP=setInterval(()=>{ if(G&&G.running&&!G.over) tick(); }, TICK/ (G?G.speed:1)); }
+function setSpeed(s){ if(!G)return; G.speed=s; startLoop(); render(); }
+function togglePause(){ if(!G||G.over)return; G.running=!G.running; SND.click(); render(); }
+
+function tick(){
+  G.t++;
+  // clock
+  const left=G.shift-G.t;
+  // spawn interpolation
+  const frac=G.t/G.shift;
+  let interval=G.tier.spawn[0]+(G.tier.spawn[1]-G.tier.spawn[0])*frac;
+  if(G.mods.rain) interval*=1.7;
+  if(G.t<G.shift){ G.spawnTimer-=1;
+    if(G.spawnTimer<=0){ spawn(G,false); G.spawnTimer=Math.max(2,Math.round(interval)); } }
+  // patience of waiting patients
+  for(const id of G.waiting.slice()){
+    const p=G.patients[id]; if(!p) continue;
+    if(p.stage==='triage'||p.stage==='triaged'){
+      p.wait++;
+      const rate = (p.trueTag==='immediate'?2.6:p.trueTag==='delayed'?1.5:1.0);
+      p.patience-=rate*(100/ (p.deadline*6));
+      if(p.patience<=0){
+        if(p.trueTag==='immediate'||p.exceeds){ losePatient(p,'lost'); }
+        else if(p.trueTag==='delayed'){ p.trueTag='immediate'; p.patience=60; p.deadline=18; G.sat=clamp(G.sat-3,0,100);
+          logMsg(G,`${p.name} deteriorated to Immediate while waiting.`,'bad'); }
+        else { losePatient(p,'walkaway'); }
+      }
+    }
+  }
+  // waiting overflow walkaways
+  const untri=G.waiting.filter(id=>{const p=G.patients[id]; return p&&(p.stage==='triage');});
+  while(G.waiting.filter(id=>{const p=G.patients[id];return p&&p.stage!=='bed'&&p.stage!=='recovery'&&p.stage!=='obs'&&p.stage!=='evac';}).length>G.waitCap){
+    const id=untri.shift(); if(id==null)break; const p=G.patients[id]; if(p) losePatient(p,'walkaway');
+  }
+  // beds: recovery / deterioration
+  const spd=recoveryRate();
+  for(const b of G.beds){
+    if(b.offline>0){ b.offline--; continue; }
+    if(!b.pid) continue;
+    const p=G.patients[b.pid]; if(!p){b.pid=null;continue;}
+    if(p.cared){
+      if(!p.exceeds){
+        p.care=clamp(p.care+spd*bedMult(b),0,100);
+        if(p.care>=100){ // recovered
+          if(tryMoveRecovery(p)){ /* moved */ }
+        }
+      } else {
+        p.care=clamp(p.care+spd*bedMult(b),0,100); // stabilization meter -> ready for evac at 100 not required; cared enough
+      }
+    } else {
+      // untreated critical needs -> deteriorate
+      p.patience-=critical(p)?2.4:0.7;
+      if(p.patience<=0){
+        if(critical(p)||p.exceeds){ losePatient(p,'lost'); }
+        else { p.patience=30; G.sat=clamp(G.sat-2,0,100); }
+      }
+    }
+    // fatigue for assigned volunteer
+    if(b.vol){ const v=G.vols.find(x=>x.id===b.vol); if(v){ v.fatigue=clamp(v.fatigue+1.4,0,100);} }
+  }
+  // recovery room: finish + auto-discharge
+  for(const r of G.recovery){ if(!r.pid)continue; const p=G.patients[r.pid]; if(!p){r.pid=null;continue;}
+    p.care=clamp(p.care+spd*1.3,0,100); r.hold=(r.hold||0)+1;
+    if(p.care>=100 && r.hold>3){ finishPatient(p,'discharged'); }
+  }
+  // observation slots: low-acuity finish
+  for(const o of G.obs){ if(!o.pid)continue; const p=G.patients[o.pid]; if(!p){o.pid=null;continue;}
+    if(p.cared){ p.care=clamp(p.care+spd*1.1,0,100); if(p.care>=100) finishPatient(p,'discharged'); }
+    else { p.patience-=0.5; if(p.patience<=0){ p.patience=30; } }
+  }
+  // volunteers rest
+  for(const v of G.vols){ if(v.hurt>0){v.hurt--; if(v.hurt===0)logMsg(G,`${v.name} is back on shift.`,'');}
+    if(!v.bed && !v.hurt){ v.fatigue=clamp(v.fatigue-(G.restFast?2.2:1.3),0,100); } }
+  // ambulances
+  for(const pid of G.ambPending.slice()){ const p=G.patients[pid]; if(!p){G.ambPending.splice(G.ambPending.indexOf(pid),1);continue;}
+    p.evacEta--; if(p.evacEta<=0){ G.ambPending.splice(G.ambPending.indexOf(pid),1); G.ambReady=Math.min(G.ambMax,G.ambReady+1); finishPatient(p,'evac'); } }
+  // mods countdown
+  for(const k in G.mods){ G.mods[k]--; if(G.mods[k]<=0) delete G.mods[k]; }
+  // training exp
+  if(G.training && G.t%15===0){ const v=pick(G.vols.filter(x=>x.exp<3)); if(v)v.exp++; }
+  // donations & municipal funding
+  if(G.sat>55 && G.t%4===0){ const d=Math.round((G.sat-50)/12); if(d>0){G.money+=d; G.stats.donated+=d;} }
+  if(G.t%30===0){ G.money+=25; }
+  // satisfaction slow drift toward 60 baseline pressure from queue size
+  const q=G.waiting.filter(id=>{const p=G.patients[id];return p&&(p.stage==='triage'||p.stage==='triaged');}).length;
+  if(q>G.waitCap-1) G.sat=clamp(G.sat-0.6,0,100);
+  G.stats.satSum+=G.sat; G.stats.satN++;
+  // events
+  G.evTimer--;
+  if(G.evTimer<=0){ if(chance(G.tier.ev*2)) fireEvent(); G.evTimer=rnd(14,26); }
+  // heat mod adds heat arrivals faster (handled in spawn weighting)
+  // fail / end
+  if(G.sat<=0){ return endShift(false); }
+  if(G.t>=G.shift && activeCount()===0){ return endShift(true); }
+  if(G.t>=G.shift+40){ return endShift(true); } // hard stop; unresolved patients resolved in scoring
+  if(!G.dragging) render();
+}
+function activeCount(){ return Object.values(G.patients).filter(p=>p.stage!=='done').length; }
+function critical(p){ return p.needs.includes('bleed')&&(p.bleeding==='severe')||p.needs.includes('airway')||p.trueTag==='immediate'; }
+function bedMult(b){ let m=1; if(b.vol){ const v=G.vols.find(x=>x.id===b.vol); if(v){ m*=(1+0.28*v.exp*(v.skill==='Medical'?1:0.5)); m*= (1-0.3*(v.fatigue/100)); } } return m; }
+function recoveryRate(){ let r=9; if(G.trauma)r*=1.35; if(G.lighting)r*=1.1; if(G.mods.power)r*=0.6; return r; }
+
+function fireEvent(){
+  const pool=EVENTS.filter(e=>!e.minSev||G.tier.sev>=e.minSev);
+  const bag=[]; pool.forEach(e=>{ for(let i=0;i<e.w;i++) bag.push(e); });
+  const e=pick(bag); e.fn(G); SND.evt(); logMsg(G,e.msg,'evt'); toast(e.msg,'evt'); render();
+}
+function tryMoveRecovery(p){
+  const slot=G.recovery.find(r=>!r.pid); if(!slot) return false;
+  const b=G.beds.find(x=>x.id===p.bed); if(b){b.pid=null; if(b.vol){const v=G.vols.find(z=>z.id===b.vol); if(v)v.bed=null; b.vol=null;}}
+  p.bed=null; p.stage='recovery'; slot.pid=p.id; slot.hold=0; logMsg(G,`${p.name} moved to recovery.`,''); return true;
+}
+
+/* ============================================================
+   RENDER
+   ============================================================ */
+function render(){
+  if(!G) return;
+  const m=document.getElementById('main');
+  const left=Math.max(0,G.shift-G.t);
+  const satC=G.sat>60?'var(--t-min)':G.sat>30?'var(--warn)':'var(--danger)';
+  const satFace=G.sat>70?'😊':G.sat>45?'🙂':G.sat>22?'😟':'😣';
+  const q=G.waiting.filter(id=>{const p=G.patients[id];return p&&(p.stage==='triage'||p.stage==='triaged');}).length;
+  m.innerHTML=`
+   <div class="top">
+     <div class="chip"><span class="ck">💵 Funding</span><span class="cv">$${G.money}</span></div>
+     <div class="chip wide"><span class="ck">${satFace} Satisfaction</span><span class="cv">${Math.round(G.sat)}%</span>
+       <div class="sat-bar"><span style="width:${G.sat}%;background:${satC}"></span></div></div>
+     <div class="chip clock"><span class="ck">⏱️ Shift</span><span class="cv ${left<30?'low':''}">${fmtClock(left)}</span></div>
+     <div class="chip"><span class="ck">🚑 Ambulances</span><span class="cv">${G.ambReady}/${G.ambMax}</span></div>
+     <div class="chip"><span class="ck">⏳ Waiting</span><span class="cv">${q}/${G.waitCap}</span></div>
+     <div class="ctrl">
+       <button class="btn sm" onclick="togglePause()">${G.running?'⏸ Pause':'▶ Resume'}</button>
+       <button class="btn sm ${G.speed===2?'primary':''}" onclick="setSpeed(${G.speed===2?1:2})">${G.speed===2?'2× fast':'1× speed'}</button>
+       <button class="btn sm primary" onclick="openShop()">🏗️ Build / Buy</button>
+     </div>
+   </div>
+   <div class="board">
+     ${renderWaiting()}
+     ${renderBeds()}
+     ${renderSide()}
+   </div>
+   ${renderDock()}
+  `;
+}
+function renderWaiting(){
+  const ids=G.waiting.filter(id=>{const p=G.patients[id];return p&&(p.stage==='triage'||p.stage==='triaged');});
+  const cards=ids.map(id=>pcard(id,'wait')).join('');
+  return `<div class="zone"><h3>🚶 Waiting Room <span class="zc">${ids.length} waiting</span></h3>
+    <div class="qlist ${ids.length?'':'empty'}" data-empty="No patients waiting.">${cards}</div></div>`;
+}
+function renderBeds(){
+  const beds=G.beds.map(b=>{
+    if(b.offline>0) return `<div class="bed offline"><div class="bh"><span>Bed</span><span>⚠️ offline ${b.offline}s</span></div><div class="empty-l">Repairing…</div></div>`;
+    if(!b.pid) return `<div class="bed" ondragover="event.preventDefault();this.classList.add('drop')" ondragleave="this.classList.remove('drop')" ondrop="onDrop(event,'${b.id}')"><div class="bh"><span>Bed</span><span>empty</span></div><div class="empty-l">Drop or send a patient</div></div>`;
+    const p=G.patients[b.pid]; if(!p) return '';
+    const vol=b.vol?G.vols.find(v=>v.id===b.vol):null;
+    const status = p.exceeds ? (p.cared?'🚑 Ready to evac':'Stabilizing…') : (p.care>=100?'✅ Ready to discharge':(p.cared?'Recovering…':'Needs treatment'));
+    const meter = p.cared?`<div class="care"><span style="width:${p.care}%"></span></div>`:`<div class="pat"><span style="width:${clamp(p.patience,0,100)}%"></span></div>`;
+    return `<div class="bed filled ${G.sel===p.id?'':''}"><div class="bh"><span>${p.em} Bed</span><span>${vol?vol.name.split(' ')[0]+' 🩺':''}</span></div>
+      ${pcard(p.id,'bed')}
+      <div class="mini">${status}</div>${meter}</div>`;
+  }).join('');
+  return `<div class="zone"><h3>🛏️ Treatment Beds <span class="zc">${G.beds.filter(b=>b.pid).length}/${G.beds.length} in use</span></h3>
+    <div class="bedgrid">${beds}</div>
+    ${renderRecovery()}</div>`;
+}
+function renderRecovery(){
+  let html='';
+  if(G.recoveryCap>0){ const cells=G.recovery.map(r=>{ if(!r.pid) return `<div class="bed"><div class="bh"><span>Recovery</span></div><div class="empty-l">open</div></div>`;
+      const p=G.patients[r.pid]; if(!p)return''; return `<div class="bed filled"><div class="bh"><span>🛋️ Recovery</span></div>${pcard(p.id,'rec')}<div class="care"><span style="width:${p.care}%"></span></div></div>`; }).join('');
+    html+=`<h3 style="margin-top:10px">🛋️ Recovery <span class="zc">auto-discharge</span></h3><div class="bedgrid">${cells}</div>`; }
+  if(G.obsCap>0){ const cells=G.obs.map(o=>{ if(!o.pid) return `<div class="bed" ondragover="event.preventDefault();this.classList.add('drop')" ondragleave="this.classList.remove('drop')" ondrop="onDropObs(event)"><div class="bh"><span>Observation</span></div><div class="empty-l">low-acuity</div></div>`;
+      const p=G.patients[o.pid]; if(!p)return''; return `<div class="bed filled"><div class="bh"><span>👁️ Observe</span></div>${pcard(p.id,'obs')}<div class="care"><span style="width:${p.care}%"></span></div></div>`; }).join('');
+    html+=`<h3 style="margin-top:10px">👁️ Observation Area</h3><div class="bedgrid">${cells}</div>`; }
+  return html;
+}
+function pcard(id,ctx){
+  const p=G.patients[id]; if(!p) return '';
+  const bandCls = p.stage==='triage' ? 'b-new' : BAND_CLS[p.playerTag||p.trueTag];
+  const tagEl = p.stage==='triage' ? `<span class="untag">TRIAGE ME</span>` : `<span class="tag ${TAG_CLS[p.playerTag||p.trueTag]}">${TAG_LB[p.playerTag||p.trueTag]}</span>`;
+  const drag = (p.stage==='triaged')?`draggable="true" ondragstart="onDragStart(event,${id})" ondragend="G.dragging=false"`:'';
+  const wait = (p.stage==='triage'||p.stage==='triaged')?`<div class="pat" title="patience"><span style="width:${clamp(p.patience,0,100)}%"></span></div>`:'';
+  return `<div class="pcard ${bandCls} ${G.sel===id?'sel':''}" ${drag} onclick="selPatient(${id})">
+     <div class="pn">${p.em} ${p.name} <span class="pa">· ${p.age}${p.hazmat?' ☣️':''}${p.exceeds?' · beyond CERT':''}</span></div>
+     <div class="pd">${p.desc}</div>
+     <div class="prow">${tagEl}${wait}</div>
+   </div>`;
+}
+function renderSide(){
+  // inventory
+  const inv=SUP_IDS.filter(s=>!SUP[s].adv||G.pharmacy).map(s=>{
+    const c=G.inv[s]||0, low=c<=2;
+    return `<div class="invcell ${low?'low':''}"><span class="iv">${c}</span><span class="il">${SUP[s].em} ${SUP[s].lb}</span></div>`;
+  }).join('');
+  // volunteers
+  const vols=G.vols.map(v=>`<div class="vchip ${v.bed?'busy':''} ${v.hurt?'busy':''}" title="${v.skill} · exp ${v.exp} · fatigue ${Math.round(v.fatigue)}%">
+     ${SKILL_EM[v.skill]} ${v.name.split(' ')[0]}${v.hurt?' 🤕':''}${'★'.repeat(v.exp)}
+     <span class="vf"><span style="width:${100-v.fatigue}%"></span></span></div>`).join('');
+  const log=G.log.slice(0,12).map(l=>`<div class="lg ${l.cls}">${l.txt}</div>`).join('');
+  return `<div class="side">
+    <div class="panel"><h3>📦 Supplies <button class="btn sm" onclick="openShop('supply')">Restock</button></h3><div class="invgrid">${inv}</div></div>
+    <div class="panel"><h3>🧑‍🚒 Volunteers <span class="zc">${G.vols.length}/${G.volCap}</span></h3><div class="vrow">${vols||'<span class="mini">None</span>'}</div></div>
+    <div class="panel"><h3>📋 Activity Log</h3><div class="logbox">${log}</div></div>
+  </div>`;
+}
+function renderDock(){
+  if(!G.sel) return '';
+  const p=G.patients[G.sel]; if(!p) return '';
+  if(p.stage==='triage') return '';
+  let acts='';
+  if(p.stage==='triaged'){
+    const lowAcuity = p.needs.every(n=>['observe','support','hydrate'].includes(n));
+    acts=`<button class="btn primary" onclick="sendToBed(${p.id})">🛏️ Send to bed</button>`;
+    if(G.obsCap>0 && lowAcuity && G.obs.some(o=>!o.pid)) acts+=`<button class="btn" onclick="sendToObs(${p.id})">👁️ Send to observation</button>`;
+    acts+=`<span class="mini">…or drag the card onto a bed.</span>`;
+  } else if(p.stage==='bed'){
+    // treatment actions: needs + harmful/distractors, shuffled once
+    if(!p._acts){ const set=new Set([...p.needs]); (p.harmful||[]).forEach(h=>set.add(h));
+      // add a plausible distractor
+      const extra=['observe','hydrate','warm','cool','support'].find(x=>!set.has(x)); if(extra&&set.size<5)set.add(extra);
+      p._acts=[...set].sort(()=>Math.random()-0.5); }
+    acts=p._acts.map(tx=>{ const t=TREAT[tx]; const done=p.done.includes(tx);
+      const afford=Object.keys(t.cost).every(s=>(G.inv[s]||0)>=t.cost[s]);
+      const costTxt=Object.keys(t.cost).map(s=>t.cost[s]+SUP[s].em).join(' ')||'time';
+      return `<button class="btn sm ${done?'primary':''}" ${done?'disabled':''} onclick="applyTx(${p.id},'${tx}')" title="${costTxt}">${t.em} ${t.lb}${done?' ✓':''}</button>`;
+    }).join('');
+    acts+=`<button class="btn sm" onclick="assignVol(${p.id})">🩺 Volunteer</button>`;
+    if(p.exceeds) acts+=`<button class="btn ${p.cared?'primary':''}" ${p.cared&&G.ambReady>0?'':'disabled'} onclick="requestEvac(${p.id})">🚑 Request ambulance</button>`;
+    else acts+=`<button class="btn ${p.care>=100?'primary':''}" ${p.care>=100?'':'disabled'} onclick="discharge(${p.id})">✅ Discharge</button>`;
+  } else if(p.stage==='evac'){ acts=`<span class="mini">🚑 Loaded — ambulance ETA ${p.evacEta}s.</span>`; }
+  else if(p.stage==='recovery'){ acts=`<button class="btn primary" ${p.care>=100?'':'disabled'} onclick="discharge(${p.id})">✅ Discharge</button><span class="mini">Recovering…</span>`; }
+  const bleedTxt={none:'none',minor:'minor',moderate:'moderate',severe:'severe'}[p.bleeding];
+  return `<div class="dock">
+    <div class="dh"><span class="dn">${p.em} ${p.name}</span>
+      <span class="tag ${TAG_CLS[p.playerTag||p.trueTag]}">${TAG_LB[p.playerTag||p.trueTag]}</span>
+      ${p.exceeds?'<span class="tag t-imm">Beyond CERT → evac</span>':''}
+      <button class="dclose" onclick="G.sel=null;render()">×</button></div>
+    <div class="vitals">
+      <span class="vit ${p.rr>30?'crit':''}">RR <b>${p.rr}</b></span>
+      <span class="vit ${p.mental!=='follows'?'warn':''}">Mental <b>${p.mental}</b></span>
+      <span class="vit ${p.bleeding==='severe'?'crit':''}">Bleed <b>${bleedTxt}</b></span>
+      <span class="vit">Mobility <b>${p.mobility}</b></span>
+      <span class="vit">Care plan <b>${p.done.length}/${p.needs.length}</b></span>
+    </div>
+    <div class="acts">${acts}</div>
+  </div>`;
+}
+
+/* drag & drop */
+function onDragStart(e,id){ G.dragging=true; G.sel=id; e.dataTransfer.setData('text/plain',String(id)); e.dataTransfer.effectAllowed='move'; }
+function onDrop(e,bid){ e.preventDefault(); G.dragging=false; const id=+e.dataTransfer.getData('text/plain'); assignToBedById(id,bid); }
+function onDropObs(e){ e.preventDefault(); G.dragging=false; const id=+e.dataTransfer.getData('text/plain'); sendToObs(id); }
+function sendToObs(id){ const p=G.patients[id]; if(!p||p.stage!=='triaged')return;
+  const lowAcuity=p.needs.every(n=>['observe','support','hydrate'].includes(n));
+  if(!lowAcuity){ toast('Observation is for low-acuity patients only.','bad'); return; }
+  const slot=G.obs.find(o=>!o.pid); if(!slot){ toast('No observation slot free.','bad'); return; }
+  slot.pid=p.id; p.stage='obs'; p.cared=true; p.done=p.needs.slice(); dequeueWaiting(p.id); logMsg(G,`${p.name} placed under observation.`,''); SND.click(); G.sel=null; render();
+}
+
+/* ============================================================
+   SHOP
+   ============================================================ */
+function openShop(tab){ if(tab)G.shopTab=tab; if(G&&G.running){ G._wasRunning=true; } drawShop(); document.getElementById('ov').classList.add('show'); }
+function drawShop(){
+  const cats=[['room','🏗️ Rooms'],['equip','⚙️ Upgrades'],['supply','📦 Supplies'],['vol','🧑‍🚒 Volunteers']];
+  const tabs=cats.map(c=>`<button class="shop-tab ${G.shopTab===c[0]?'on':''}" onclick="G.shopTab='${c[0]}';drawShop()">${c[1]}</button>`).join('');
+  const items=SHOP.filter(s=>s.cat===G.shopTab).map(s=>{
+    const owned=s.once&&G.bought[s.id];
+    const locked=s.need&&!G[s.need];
+    const capV=s.cat==='vol'&&G.vols.length>=G.volCap;
+    const afford=G.money>=Math.round(s.cost*(s.cat==='supply'?G.supplyDisc:1));
+    const cost=Math.round(s.cost*(s.cat==='supply'?G.supplyDisc:1));
+    let btn;
+    if(owned) btn=`<span class="owned">✓ Owned</span>`;
+    else if(locked) btn=`<button class="btn sm" disabled>needs Pharmacy</button>`;
+    else if(capV) btn=`<button class="btn sm" disabled>at capacity</button>`;
+    else btn=`<button class="btn sm ${afford?'primary':''}" ${afford?'':'disabled'} onclick="buy('${s.id}')">$${cost}</button>`;
+    return `<div class="shop-item"><span class="si-ic">${s.em}</span>
+      <div class="si-b"><div class="si-n">${s.n}</div><div class="si-d">${s.d}</div></div>
+      <div class="si-buy">${btn}</div></div>`;
+  }).join('');
+  document.getElementById('ov-box').innerHTML=`<h2>🏗️ Build &amp; Buy</h2>
+    <p class="sub">Funding: <b style="color:var(--gold)">$${G.money}</b> · Invest in capacity, capability, or efficiency.</p>
+    <div class="shop-tabs">${tabs}</div>
+    <div class="shop-grid">${items}</div>
+    <div class="btn-row"><button class="btn primary" onclick="closeOv()">Back to the station</button></div>`;
+}
+function buy(id){
+  const s=SHOP.find(x=>x.id===id); if(!s) return;
+  const cost=Math.round(s.cost*(s.cat==='supply'?G.supplyDisc:1));
+  if(G.money<cost) return;
+  if(s.once&&G.bought[s.id]) return;
+  if(s.need&&!G[s.need]) return;
+  if(s.cat==='vol'&&G.vols.length>=G.volCap){ return; }
+  G.money-=cost; s.eff(G); if(s.once)G.bought[s.id]=true;
+  SND.cash(); logMsg(G,`Purchased: ${s.n}.`,'good');
+  drawShop(); render();
+}
+
+/* ============================================================
+   END OF SHIFT / SCORING
+   ============================================================ */
+function endShift(finished){
+  if(G.over) return; G.over=true; G.running=false; if(LOOP)clearInterval(LOOP);
+  // resolve anyone mid-care generously-ish: count saved if cared, else lost
+  Object.values(G.patients).forEach(p=>{
+    if(p.stage==='done')return;
+    if(p.stage==='evac'){ G.stats.evac++; }
+    else if(p.cared || p.care>=100){ if(p.exceeds)G.stats.evac++; else G.stats.discharged++; }
+    else if(p.trueTag==='expectant'){ /* neither */ }
+    else { G.stats.walkaway++; }
+  });
+  const s=G.stats;
+  const saved=s.discharged+s.evac;
+  const lost=s.lost+s.walkaway;
+  const handled=Math.max(1,saved+lost);
+  const outcomePct=Math.round(saved/handled*100);
+  const triageAcc=s.triaged?Math.round(s.triageRight/s.triaged*100):0;
+  const avgSat=s.satN?Math.round(s.satSum/s.satN):Math.round(G.sat);
+  let score;
+  if(!finished && G.sat<=0){ score=Math.round(outcomePct*0.3+triageAcc*0.2); } // overwhelmed
+  else { score=Math.round(outcomePct*0.42+triageAcc*0.30+avgSat*0.28); }
+  score=clamp(score,0,100);
+  let stars;
+  if(!finished && G.sat<=0) stars=0;
+  else stars = score>=G.tier.thr[0]?3 : score>=G.tier.thr[1]?2 : 1;
+  if(stars>0) saveProgress(G.tier.n,stars,score);
+  if(stars>=2)SND.win(); else if(stars===0)SND.lose(); else SND.good();
+
+  const starStr=[1,2,3].map(i=>i<=stars?'★':'☆').join('');
+  const title = (!finished&&G.sat<=0)?'⚠️ Station Overwhelmed':(stars>=3?'🏅 Outstanding Shift':stars>=2?'✅ Shift Complete':'Shift Complete');
+  const teach = pick([
+    '<b>START triage</b> sorts patients by need: walking → Minor, then breathing, perfusion, and mental status decide the rest. Re-triage patients whose condition changes.',
+    '<b>CERT scope is stabilize-and-transfer.</b> Control bleeding, position airways, treat for shock — then evacuate anything beyond CERT training to EMS.',
+    '<b>Resource conservation matters.</b> Every glove and bandage counts in a disaster — treat the right patients with the right supplies and avoid over-treating.',
+    '<b>Patient flow is throughput.</b> Recovery and observation areas free up treatment beds so criticals never wait. Capacity, capability, and efficiency are all investments.'
+  ]);
+  openOv(`<h2>${title}</h2>
+    <div class="stars-big">${starStr}</div>
+    <div class="score-line">Performance score: ${score}%</div>
+    <p class="sub">${G.tier.ic} ${G.tier.name} shift · ${finished?'You made it through the incident.':'The community lost confidence in the station.'}</p>
+    <div class="db-grid">
+      <div class="db-cell"><div class="dbk">Patients arrived</div><div class="dbv">${s.arrived}</div></div>
+      <div class="db-cell"><div class="dbk">Saved (discharged + evac)</div><div class="dbv" style="color:var(--t-min)">${saved}</div></div>
+      <div class="db-cell"><div class="dbk">Lost / walked away</div><div class="dbv" style="color:var(--danger)">${lost}</div></div>
+      <div class="db-cell"><div class="dbk">Triage accuracy</div><div class="dbv">${triageAcc}%</div></div>
+      <div class="db-cell"><div class="dbk">Avg. satisfaction</div><div class="dbv">${avgSat}%</div></div>
+      <div class="db-cell"><div class="dbk">Funding + donations</div><div class="dbv">$${G.money}</div></div>
+    </div>
+    <div class="teach">${teach}</div>
+    <div class="btn-row">
+      <button class="btn primary" onclick="closeOv();newGame(TIER)">🔁 Run this shift again</button>
+      <button class="btn" onclick="closeOv();openTierSelect()">🎚️ Choose shift</button>
+      <a class="btn" href="index.html">🏠 Menu</a>
+    </div>`);
+}
+
+/* ============================================================
+   TIER SELECT / BRIEFING
+   ============================================================ */
+function openTierSelect(){
+  if(LOOP)clearInterval(LOOP); if(G)G.running=false;
+  const p=loadProg();
+  const cards=TIERS.map(t=>{
+    const td=(p.tiers&&p.tiers[t.n])||null, stars=td?td.stars:0;
+    const starStr=[1,2,3].map(i=>i<=stars?'★':'☆').join('');
+    const best=td&&td.best?`best ${td.best}%`:'not cleared';
+    return `<button class="tier-card" onclick="briefing(${t.n})">
+       <span class="tc-ic">${t.ic}</span>
+       <div class="tc-body"><span class="tc-name">${t.name}</span>
+         <span class="tc-desc">${t.desc} · ${fmtClock(t.shift)} shift · $${t.money} start</span></div>
+       <div class="tc-side"><span class="tc-stars">${starStr}</span><span class="tc-best">${best}</span></div>
+     </button>`;
+  }).join('');
+  openOv(`<h2>🏥 Treatment Aid Station</h2>
+    <p class="sub">You are the CERT <b>Medical Unit Leader</b>. Assess and <b>START-triage</b> every arrival, treat within CERT scope, and discharge or evacuate patients — while managing supplies, volunteers, funding, and a growing facility through escalating disaster shifts.</p>
+    <div class="tier-list">${cards}</div>`);
+  document.getElementById('ov').classList.add('show');
+}
+function briefing(n){
+  const t=tierByN(n); SND.click();
+  openOv(`<h2>${t.ic} ${t.name} Shift — Briefing</h2>
+    <p class="sub">${t.desc}</p>
+    <div class="db-grid">
+      <div class="db-cell"><div class="dbk">Shift length</div><div class="dbv">${fmtClock(t.shift)}</div></div>
+      <div class="db-cell"><div class="dbk">Starting funds</div><div class="dbv">$${t.money}</div></div>
+      <div class="db-cell"><div class="dbk">Volunteers</div><div class="dbv">${t.vols}</div></div>
+      <div class="db-cell"><div class="dbk">Ambulances</div><div class="dbv">${t.amb}</div></div>
+    </div>
+    <div class="teach"><b>Your loop:</b> tap a patient → assess vitals → assign a START tag → send to a bed (or drag the card) → apply the right treatments (they cost supplies) → discharge stable patients or request an ambulance for anything beyond CERT scope. Keep satisfaction up, spend funding wisely, and expand the station.</div>
+    <div class="btn-row"><button class="btn primary" onclick="closeOv();newGame(tierByN(${n}))">🚑 Open the aid station</button>
+      <button class="btn" onclick="openTierSelect()">← Back</button></div>`);
+}
+
+/* ---------- overlay + toast ---------- */
+function openOv(html){ document.getElementById('ov-box').innerHTML=html; document.getElementById('ov').classList.add('show'); }
+function closeOv(){ document.getElementById('ov').classList.remove('show'); }
+function toast(msg,cls){ const w=document.getElementById('toast-wrap'); const d=document.createElement('div');
+  d.className='toast '+(cls||''); d.textContent=msg; w.appendChild(d); setTimeout(()=>d.remove(),3000); }
+
+/* ---------- boot ---------- */
+['pointerdown','keydown','touchstart'].forEach(ev=>window.addEventListener(ev,function once(){ SND.arm(); },{once:true}));
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ if(document.getElementById('ov').classList.contains('show')&&G&&!G.over){ closeOv(); } } });
+SND.init();
+openTierSelect();
+</script>
+
+</body>
+</html>
