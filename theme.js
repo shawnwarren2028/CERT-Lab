@@ -55,7 +55,16 @@ function updateThemeBtn(){
     '.kbd-num{display:inline-flex;align-items:center;justify-content:center;min-width:1.4em;height:1.4em;'+
     'padding:0 .3em;margin-right:.6em;border-radius:5px;background:var(--surface2,#243018);'+
     'border:1px solid var(--border,#3a5228);color:var(--primary-light,#7ac95a);font-weight:700;'+
-    'font-size:.82em;line-height:1;flex-shrink:0;}';
+    'font-size:.82em;line-height:1;flex-shrink:0;}'+
+    /* Accessibility (suite-wide): a visible keyboard focus ring for keyboard/AT
+       users only (mouse clicks stay ring-free via :focus-visible), plus a
+       two-tone halo so it reads on any game background. */
+    ':focus-visible{outline:2.5px solid var(--primary,#5aaa3a);outline-offset:2px;border-radius:4px;'+
+    'box-shadow:0 0 0 4px rgba(90,170,58,.32);}'+
+    '.theme-btn:focus-visible,.icon-btn:focus-visible{outline-offset:1px;}'+
+    /* Honor the OS "reduce motion" preference everywhere, not just overlays. */
+    '@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;'+
+    'animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important;}}';
   var s=document.createElement('style'); s.textContent=css;
   (document.head||document.documentElement).appendChild(s);
 })();
