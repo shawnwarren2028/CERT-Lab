@@ -1185,32 +1185,78 @@ function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
 function stepTo(cur,target,sp){ const d=target-cur; return Math.abs(d)<=sp?d:Math.sign(d)*sp; }
 
 function groundColor(ch){ if (ch==='R') return '#3a3a40'; if (ch==='S') return '#6f6f66'; if (ch==='~') return '#2f6f7e'; return '#4d7c39'; }
-function drawGround(){
-  for (let y=0;y<ROWS;y++) for (let x=0;x<COLS;x++){
-    const ch=MAP[y][x]; ctx.fillStyle=groundColor(ch); ctx.fillRect(x*TILE,y*TILE,TILE,TILE);
-    if (groundColor(ch)==='#4d7c39' && ((x*3+y*7)%5===0)){ ctx.fillStyle='rgba(0,0,0,.06)'; ctx.fillRect(x*TILE+TILE*0.2,y*TILE+TILE*0.55,TILE*0.18,TILE*0.18); }
-    if (ch==='S'){ ctx.strokeStyle='rgba(0,0,0,.18)'; ctx.lineWidth=1; ctx.strokeRect(x*TILE+0.5,y*TILE+0.5,TILE-1,TILE-1); }
-    if (ch==='~'){ ctx.strokeStyle='rgba(255,255,255,.08)'; ctx.lineWidth=1; ctx.strokeRect(x*TILE+0.5,y*TILE+0.5,TILE-1,TILE-1); }
+// ---- Terrain: rendered ONCE to an offscreen canvas, then blitted each frame.
+//      This both unlocks rich per-tile texture and cuts per-frame draw cost. ----
+let terrainCanvas=null;
+function rndAt(x,y,s){ let h=((x+1)*73856093)^((y+1)*19349663)^((s+7)*83492791); h=(h^(h>>>13))>>>0; return (h%10000)/10000; }
+function terrTile(g,x,y,ch){
+  const px=x*TILE, py=y*TILE;
+  if (ch==='R'){ // asphalt road
+    g.fillStyle='#31313a'; g.fillRect(px,py,TILE,TILE);
+    for (let i=0;i<12;i++){ g.fillStyle=rndAt(x,y,i)>0.5?'rgba(255,255,255,.045)':'rgba(0,0,0,.11)'; g.fillRect(px+rndAt(x,y,i+40)*TILE,py+rndAt(x,y,i+80)*TILE,2,2); }
+    g.fillStyle='rgba(255,255,255,.035)'; g.fillRect(px+TILE*0.22,py,TILE*0.09,TILE); g.fillRect(px+TILE*0.69,py,TILE*0.09,TILE);
+    return;
   }
-  ctx.strokeStyle='#c9a23a'; ctx.lineWidth=2; ctx.setLineDash([12,9]);
-  ctx.beginPath(); ctx.moveTo(0,TILE); ctx.lineTo(COLS*TILE,TILE); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(0,(ROWS-1)*TILE+TILE/2); ctx.lineTo(COLS*TILE,(ROWS-1)*TILE+TILE/2); ctx.stroke();
-  ctx.setLineDash([]);
-  // treatment cross on pad
-  let minx=99,miny=99,maxx=-1,maxy=-1;
-  for (let y=0;y<ROWS;y++) for (let x=0;x<COLS;x++) if (MAP[y][x]==='~'){ minx=Math.min(minx,x);miny=Math.min(miny,y);maxx=Math.max(maxx,x);maxy=Math.max(maxy,y); }
-  if (maxx>=0){ const cx=(minx+maxx+1)/2*TILE, cy=(miny+maxy+1)/2*TILE; ctx.fillStyle='#eef2e8'; rr(cx-4,cy-13,8,26,2); ctx.fill(); rr(cx-13,cy-4,26,8,2); ctx.fill(); }
+  if (ch==='S'){ // concrete sidewalk
+    g.fillStyle='#71716b'; g.fillRect(px,py,TILE,TILE);
+    g.fillStyle='rgba(255,255,255,.06)'; g.fillRect(px,py,TILE,2);
+    g.fillStyle='rgba(0,0,0,.10)'; g.fillRect(px,py+TILE-2,TILE,2); g.fillRect(px+TILE-2,py,2,TILE);
+    for (let i=0;i<7;i++){ g.fillStyle='rgba(0,0,0,.05)'; g.fillRect(px+rndAt(x,y,i)*TILE,py+rndAt(x,y,i+25)*TILE,2,2); }
+    return;
+  }
+  if (ch==='~'){ // casualty collection pad (mat)
+    g.fillStyle='#2f6f7e'; g.fillRect(px,py,TILE,TILE);
+    g.fillStyle='rgba(255,255,255,.05)'; g.fillRect(px+2,py+2,TILE-4,TILE-4);
+    g.strokeStyle='rgba(255,255,255,.14)'; g.lineWidth=1; g.strokeRect(px+0.5,py+0.5,TILE-1,TILE-1);
+    return;
+  }
+  // grass (default) — tonal variation, tufts, occasional wildflowers
+  const v=rndAt(x,y,1);
+  g.fillStyle = v<0.34?'#497735': v<0.67?'#4d7c39':'#53823f'; g.fillRect(px,py,TILE,TILE);
+  if (rndAt(x,y,2)>0.62){ g.fillStyle='rgba(0,0,0,.05)'; g.beginPath(); g.ellipse(px+rndAt(x,y,4)*TILE,py+rndAt(x,y,5)*TILE,TILE*(0.16+rndAt(x,y,3)*0.16),TILE*0.12,0,0,7); g.fill(); }
+  g.strokeStyle='rgba(34,64,22,.55)'; g.lineWidth=1.4;
+  const nt=2+Math.floor(rndAt(x,y,6)*3);
+  for (let i=0;i<nt;i++){ const tx=px+(0.15+rndAt(x,y,i+10)*0.7)*TILE, ty=py+(0.35+rndAt(x,y,i+20)*0.55)*TILE;
+    g.beginPath(); g.moveTo(tx-2,ty); g.lineTo(tx-3,ty-5); g.moveTo(tx,ty); g.lineTo(tx,ty-6); g.moveTo(tx+2,ty); g.lineTo(tx+3,ty-5); g.stroke(); }
+  if (rndAt(x,y,7)>0.9){ g.fillStyle=['#e8c33a','#e86a6a','#d9d0e0'][Math.floor(rndAt(x,y,8)*3)]; g.beginPath(); g.arc(px+rndAt(x,y,8)*TILE,py+rndAt(x,y,9)*TILE,1.7,0,7); g.fill(); }
 }
-function drawFences(){
+function paintFences(g){
   for (let y=0;y<ROWS;y++) for (let x=0;x<COLS;x++) if (MAP[y][x]==='F'){
     const px=x*TILE, py=y*TILE;
-    ctx.strokeStyle='#7a6038'; ctx.lineWidth=3;
-    ctx.beginPath(); ctx.moveTo(px,py+TILE*0.45); ctx.lineTo(px+TILE,py+TILE*0.45); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(px,py+TILE*0.75); ctx.lineTo(px+TILE,py+TILE*0.75); ctx.stroke();
-    ctx.strokeStyle='#5e4a2c'; ctx.lineWidth=4;
-    [px+TILE*0.2,px+TILE*0.55,px+TILE*0.9].forEach(fx=>{ ctx.beginPath(); ctx.moveTo(fx,py+TILE*0.28); ctx.lineTo(fx,py+TILE*0.85); ctx.stroke(); });
+    g.fillStyle='rgba(0,0,0,.14)'; g.fillRect(px,py+TILE*0.82,TILE,4);
+    g.strokeStyle='#8a6c40'; g.lineWidth=3;
+    g.beginPath(); g.moveTo(px,py+TILE*0.45); g.lineTo(px+TILE,py+TILE*0.45); g.stroke();
+    g.beginPath(); g.moveTo(px,py+TILE*0.72); g.lineTo(px+TILE,py+TILE*0.72); g.stroke();
+    g.strokeStyle='#6a5230'; g.lineWidth=5;
+    [px+TILE*0.2,px+TILE*0.55,px+TILE*0.9].forEach(fx=>{ g.beginPath(); g.moveTo(fx,py+TILE*0.26); g.lineTo(fx,py+TILE*0.86); g.stroke(); });
+    g.strokeStyle='rgba(255,255,255,.16)'; g.lineWidth=1;
+    [px+TILE*0.2,px+TILE*0.55,px+TILE*0.9].forEach(fx=>{ g.beginPath(); g.moveTo(fx-1.6,py+TILE*0.26); g.lineTo(fx-1.6,py+TILE*0.86); g.stroke(); });
   }
 }
+function buildTerrain(){
+  terrainCanvas=document.createElement('canvas');
+  terrainCanvas.width=COLS*TILE; terrainCanvas.height=ROWS*TILE;
+  const g=terrainCanvas.getContext('2d');
+  for (let y=0;y<ROWS;y++) for (let x=0;x<COLS;x++) terrTile(g,x,y,MAP[y][x]);
+  // curbs where road meets non-road
+  g.fillStyle='rgba(214,214,204,.5)';
+  for (let y=0;y<ROWS;y++) for (let x=0;x<COLS;x++) if (MAP[y][x]==='R'){ const px=x*TILE, py=y*TILE;
+    if (y>0 && MAP[y-1][x]!=='R') g.fillRect(px,py,TILE,2);
+    if (y<ROWS-1 && MAP[y+1][x]!=='R') g.fillRect(px,py+TILE-2,TILE,2);
+    if (x>0 && MAP[y][x-1]!=='R') g.fillRect(px,py,2,TILE);
+    if (x<COLS-1 && MAP[y][x+1]!=='R') g.fillRect(px+TILE-2,py,2,TILE); }
+  // road center dashes
+  g.strokeStyle='#d9b24a'; g.lineWidth=3; g.setLineDash([14,10]);
+  g.beginPath(); g.moveTo(0,TILE); g.lineTo(COLS*TILE,TILE); g.stroke();
+  g.beginPath(); g.moveTo(0,(ROWS-1)*TILE+TILE/2); g.lineTo(COLS*TILE,(ROWS-1)*TILE+TILE/2); g.stroke();
+  g.setLineDash([]);
+  // treatment cross on the CCP pad
+  let minx=99,miny=99,maxx=-1,maxy=-1;
+  for (let y=0;y<ROWS;y++) for (let x=0;x<COLS;x++) if (MAP[y][x]==='~'){ minx=Math.min(minx,x);miny=Math.min(miny,y);maxx=Math.max(maxx,x);maxy=Math.max(maxy,y); }
+  if (maxx>=0){ const cx=(minx+maxx+1)/2*TILE, cy=(miny+maxy+1)/2*TILE; g.fillStyle='#eef2e8'; g.fillRect(cx-4,cy-13,8,26); g.fillRect(cx-13,cy-4,26,8); }
+  paintFences(g);
+}
+function drawTerrain(){ if (!terrainCanvas) buildTerrain(); ctx.drawImage(terrainCanvas,0,0); }
 function fireLevel(){ // 1 = fully involved, 0 = out. Driven by fire-suppression actions.
   const haz=S.hazards.filter(h=>h.reported).length;   // 0..6
   const util=(S.gasOff?1:0)+(S.elecOff?1:0);          // 0..2
@@ -1225,26 +1271,39 @@ function noteFireKnockdown(){
 }
 function drawBuilding(b, ts){
   const x=b.x*TILE, y=b.y*TILE, w=b.w*TILE, h=b.h*TILE;
+  ctx.fillStyle='rgba(0,0,0,.16)'; ctx.beginPath(); ctx.ellipse(x+w/2,y+h+5,w*0.52,TILE*0.2,0,0,7); ctx.fill();
   if (b.kind==='garage' || b.kind==='shed'){
-    ctx.fillStyle='#8a8a82'; ctx.fillRect(x,y,w,h);
-    ctx.fillStyle='#5e3826'; ctx.fillRect(x,y,w,TILE*0.18);
+    ctx.fillStyle='#8f8f86'; ctx.fillRect(x,y,w,h);
+    ctx.fillStyle='rgba(0,0,0,.10)'; ctx.fillRect(x+w*0.62,y,w*0.38,h);
+    ctx.fillStyle='#5e3826'; ctx.fillRect(x,y,w,TILE*0.2);
+    ctx.fillStyle='rgba(255,255,255,.10)'; ctx.fillRect(x,y,w,3);
     ctx.fillStyle='#6f6f68'; rr(x+4,y+TILE*0.42,w-8,h-TILE*0.5,3); ctx.fill();
     ctx.strokeStyle='#4a4a44'; ctx.lineWidth=1.5;
     for (let i=1;i<3;i++){ const yy=y+TILE*0.42+i*(h-TILE*0.5)/3; ctx.beginPath(); ctx.moveTo(x+6,yy); ctx.lineTo(x+w-6,yy); ctx.stroke(); }
+    ctx.strokeStyle='rgba(0,0,0,.28)'; ctx.lineWidth=1.5; ctx.strokeRect(x+1,y+1,w-2,h-2);
     return;
   }
   const roofH=TILE*0.85;
-  ctx.fillStyle='#caa06a'; ctx.fillRect(x,y+roofH,w,h-roofH);
-  ctx.fillStyle='rgba(0,0,0,.12)'; ctx.fillRect(x,y+h-8,w,8);
+  const wall=ctx.createLinearGradient(x,y+roofH,x,y+h); wall.addColorStop(0,'#d3a870'); wall.addColorStop(1,'#b98f57');
+  ctx.fillStyle=wall; ctx.fillRect(x,y+roofH,w,h-roofH);
+  ctx.fillStyle='rgba(0,0,0,.08)'; ctx.fillRect(x+w*0.66,y+roofH,w*0.34,h-roofH);
+  ctx.strokeStyle='rgba(0,0,0,.07)'; ctx.lineWidth=1;
+  for (let yy=y+roofH+TILE*0.28; yy<y+h-6; yy+=TILE*0.28){ ctx.beginPath(); ctx.moveTo(x,yy); ctx.lineTo(x+w,yy); ctx.stroke(); }
+  ctx.fillStyle='rgba(0,0,0,.14)'; ctx.fillRect(x,y+h-8,w,8);
   const winY1=y+roofH+TILE*0.35, winY2=y+roofH+TILE*1.7, wx=[x+TILE*0.6, x+w-TILE*1.4];
   wx.forEach(wxp=>{ [winY1,winY2].forEach(wy=>{ if (wy+TILE*0.75>y+h-6) return;
-    ctx.fillStyle='#bfe0f0'; rr(wxp,wy,TILE*0.8,TILE*0.7,3); ctx.fill();
-    ctx.strokeStyle='#6b4326'; ctx.lineWidth=2; ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(wxp+TILE*0.4,wy); ctx.lineTo(wxp+TILE*0.4,wy+TILE*0.7); ctx.moveTo(wxp,wy+TILE*0.35); ctx.lineTo(wxp+TILE*0.8,wy+TILE*0.35); ctx.stroke(); }); });
+    ctx.fillStyle='#5e4636'; rr(wxp-2,wy-2,TILE*0.8+4,TILE*0.7+4,3); ctx.fill();
+    const gl=ctx.createLinearGradient(wxp,wy,wxp+TILE*0.8,wy+TILE*0.7); gl.addColorStop(0,'#d3ecf7'); gl.addColorStop(1,'#93b9cc');
+    ctx.fillStyle=gl; rr(wxp,wy,TILE*0.8,TILE*0.7,2); ctx.fill();
+    ctx.strokeStyle='#5e4636'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(wxp+TILE*0.4,wy); ctx.lineTo(wxp+TILE*0.4,wy+TILE*0.7); ctx.moveTo(wxp,wy+TILE*0.35); ctx.lineTo(wxp+TILE*0.8,wy+TILE*0.35); ctx.stroke();
+    ctx.fillStyle='#8a6a4a'; ctx.fillRect(wxp-3,wy+TILE*0.7,TILE*0.8+6,3); }); });
   ctx.fillStyle='#6b4326'; rr(x+w/2-TILE*0.4,y+h-TILE*1.2,TILE*0.8,TILE*1.2,4); ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,.06)'; rr(x+w/2-TILE*0.33,y+h-TILE*1.13,TILE*0.28,TILE*0.98,3); ctx.fill();
   ctx.fillStyle='#e8c060'; ctx.beginPath(); ctx.arc(x+w/2+TILE*0.2,y+h-TILE*0.6,3,0,7); ctx.fill();
-  ctx.fillStyle='#7a4a32'; ctx.beginPath(); ctx.moveTo(x-10,y+roofH); ctx.lineTo(x+w*0.5,y-2); ctx.lineTo(x+w+10,y+roofH); ctx.closePath(); ctx.fill();
-  ctx.strokeStyle='#5e3826'; ctx.lineWidth=2; ctx.stroke();
+  const rg=ctx.createLinearGradient(x,y-2,x,y+roofH); rg.addColorStop(0,'#8a5638'); rg.addColorStop(1,'#6d4327');
+  ctx.fillStyle=rg; ctx.beginPath(); ctx.moveTo(x-10,y+roofH); ctx.lineTo(x+w*0.5,y-2); ctx.lineTo(x+w+10,y+roofH); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,.16)'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(x-10,y+roofH); ctx.lineTo(x+w*0.5,y-2); ctx.stroke();
+  ctx.strokeStyle='#4a2f1c'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(x-10,y+roofH); ctx.lineTo(x+w*0.5,y-2); ctx.lineTo(x+w+10,y+roofH); ctx.closePath(); ctx.stroke();
   if (b.burning){
     const lvl=fireLevel();
     // anchors ordered so the core roof flames stay lit longest; peripheral/door go out first
@@ -1533,8 +1592,7 @@ function drawWorld(ts){
   ctx.fillStyle='#0a0e07'; ctx.fillRect(0,0,canvas.width,canvas.height); // off-map dark border
   ctx.save();
   ctx.translate(-Math.round(cam.x),-Math.round(cam.y));
-  drawGround();
-  drawFences();
+  drawTerrain();
   for (const b of BUILDINGS) drawBuilding(b,ts);
   for (const d of DECOR) if (d.type==='truck') drawTruck(d);
   for (const h of S.hazards) if (h.discovered) drawHazard(h,ts);
@@ -1549,6 +1607,10 @@ function drawWorld(ts){
   const obj = S.over ? null : getObjective();
   if (obj && objVisible(obj)) drawWaypoint(obj.x,obj.y,ts);
   ctx.restore();
+  // atmospheric vignette for depth (screen space, under the HUD)
+  const vg=ctx.createRadialGradient(canvas.width/2,canvas.height*0.46,canvas.height*0.34,canvas.width/2,canvas.height/2,canvas.height*0.78);
+  vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(8,12,6,.30)');
+  ctx.fillStyle=vg; ctx.fillRect(0,0,canvas.width,canvas.height);
   if (obj && !objVisible(obj)) drawEdgeArrow(obj,ts);
   drawMinimap(ts);
   updateObjBanner(obj);
