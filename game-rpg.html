@@ -1306,29 +1306,65 @@ function drawBuilding(b, ts){
   ctx.strokeStyle='#4a2f1c'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(x-10,y+roofH); ctx.lineTo(x+w*0.5,y-2); ctx.lineTo(x+w+10,y+roofH); ctx.closePath(); ctx.stroke();
   if (b.burning){
     const lvl=fireLevel();
-    // anchors ordered so the core roof flames stay lit longest; peripheral/door go out first
-    const A=[
-      [x+w*0.50, y+roofH*0.30],[x+w*0.30, y+roofH*0.48],[x+w*0.70, y+roofH*0.48],
-      [x+w*0.50, y+roofH*0.64],[wx[1]+TILE*0.4, winY1+TILE*0.3],[wx[0]+TILE*0.4, winY1+TILE*0.3],
-      [x+w*0.18, y+roofH*0.58],[x+w*0.82, y+roofH*0.58],[x+w*0.50, y+h-TILE*0.7],[x+w*0.50, y+roofH*0.12],
-    ];
-    const nLit=Math.round(lvl*A.length);
-    const f=(Math.floor((ts||0)/150)%2)===0;
-    for (let i=0;i<nLit;i++){ drawFlame(A[i][0],A[i][1],(i%2===0)?f:!f); }
-    drawSmoke(x+w*0.5,y-4,ts,lvl);
+    if (lvl>0){
+      // cast warm light first (under flames), so it lights the house and lawn
+      fireGlow(x+w*0.5, y+roofH*0.55, (w*0.6+TILE*1.6)*(0.6+lvl*0.55), ts);
+      // anchors: [x, y, scale] — core roof flames stay lit longest & biggest; door/peripheral go out first
+      const A=[
+        [x+w*0.50, y+roofH*0.30,1.5],[x+w*0.30, y+roofH*0.48,1.3],[x+w*0.70, y+roofH*0.48,1.3],
+        [x+w*0.50, y+roofH*0.64,1.35],[wx[1]+TILE*0.4, winY1+TILE*0.55,1.15],[wx[0]+TILE*0.4, winY1+TILE*0.55,1.15],
+        [x+w*0.18, y+roofH*0.58,1.1],[x+w*0.82, y+roofH*0.58,1.1],[x+w*0.50, y+h-TILE*0.7,1.05],[x+w*0.50, y+roofH*0.10,1.65],
+      ];
+      const nLit=Math.round(lvl*A.length);
+      for (let i=0;i<nLit;i++){ drawFlame(A[i][0],A[i][1], A[i][2]*(0.8+lvl*0.4), i*1.7, ts); }
+      drawEmbers(x+w*0.5, y+roofH*0.25, 3+Math.round(7*lvl), ts);
+      drawSmoke(x+w*0.5, y-6, ts, lvl);
+    }
   }
 }
-function drawFlame(x,y,big){ const s=big?1.15:0.9;
-  ctx.fillStyle='#e8612a'; ctx.beginPath(); ctx.moveTo(x,y-16*s); ctx.quadraticCurveTo(x+9*s,y-2,x,y+9*s); ctx.quadraticCurveTo(x-9*s,y-2,x,y-16*s); ctx.fill();
-  ctx.fillStyle='#ffce3a'; ctx.beginPath(); ctx.moveTo(x,y-9*s); ctx.quadraticCurveTo(x+5*s,y-1,x,y+6*s); ctx.quadraticCurveTo(x-5*s,y-1,x,y-9*s); ctx.fill();
+function flameShape(bx,by,w,H,sway,color){
+  ctx.fillStyle=color; ctx.beginPath();
+  ctx.moveTo(bx-w,by);
+  ctx.quadraticCurveTo(bx-w*0.9,by-H*0.5, bx+sway*0.5,by-H*0.78);
+  ctx.quadraticCurveTo(bx+sway,by-H, bx+sway*0.35,by-H*0.6);
+  ctx.quadraticCurveTo(bx+w*0.9,by-H*0.45, bx+w,by);
+  ctx.quadraticCurveTo(bx,by+H*0.14, bx-w,by);
+  ctx.fill();
 }
-function drawSmoke(x,y,ts,intensity){ const t=(ts||0)/600; const iv=(intensity==null?1:intensity); const n=1+Math.round(iv*3);
-  for (let i=0;i<n;i++){ const o=(t+i*0.5)%2; const sy=y-o*TILE*1.4; const r=9+o*9+i; const a=(0.08+0.26*iv)*(1-o/2); ctx.fillStyle=`rgba(120,120,120,${a})`; ctx.beginPath(); ctx.arc(x+Math.sin((t+i)*2)*8,sy,r,0,7); ctx.fill(); }
+// Living, continuously-animated flame: layered red->orange->yellow->white core.
+function drawFlame(x,y,scale,seed,ts){
+  const t=(ts==null?performance.now():ts)*0.001, sc=scale||1; seed=seed||0;
+  const sway=Math.sin(t*7+seed)*4*sc + Math.sin(t*13+seed*2)*2*sc;
+  const H=26*sc*(1+0.16*Math.sin(t*10+seed*1.7)), W=8.5*sc;
+  flameShape(x,y,W*1.18,H*1.02,sway,'#c9340f');
+  flameShape(x,y,W*0.9,H*0.9,sway*1.1,'#ef6a1a');
+  flameShape(x,y-1,W*0.55,H*0.66,sway*1.2,'#ffc21e');
+  ctx.fillStyle='rgba(255,244,200,.92)'; ctx.beginPath(); ctx.ellipse(x+sway*0.15,y-H*0.2,W*0.3,H*0.18,0,0,7); ctx.fill();
+}
+// Warm cast light — added onto whatever is beneath so the fire lights the scene.
+function fireGlow(x,y,r,ts){
+  const t=(ts==null?performance.now():ts)*0.001, fl=r*(0.93+0.07*Math.sin(t*9));
+  const g=ctx.createRadialGradient(x,y,0,x,y,fl);
+  g.addColorStop(0,'rgba(255,180,70,.5)'); g.addColorStop(0.45,'rgba(255,120,30,.24)'); g.addColorStop(1,'rgba(255,90,20,0)');
+  ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y,fl,0,7); ctx.fill(); ctx.restore();
+}
+function drawEmbers(x,y,n,ts){
+  const t=(ts==null?performance.now():ts)*0.001;
+  ctx.save(); ctx.globalCompositeOperation='lighter';
+  for (let i=0;i<n;i++){ const ph=((t*0.55)+i*0.41)%1; const ex=x+Math.sin(t*2.2+i*1.6)*12*(0.4+ph)+(i-n/2)*3; const ey=y-ph*TILE*2.4; const a=(1-ph)*0.85; const r=1.3+(1-ph)*1.6;
+    ctx.fillStyle=`rgba(255,${150+Math.floor((1-ph)*70)},70,${a})`; ctx.beginPath(); ctx.arc(ex,ey,r,0,7); ctx.fill(); }
+  ctx.restore();
+}
+function drawSmoke(x,y,ts,intensity){ const t=(ts||0)/1000, iv=(intensity==null?1:intensity), n=2+Math.round(iv*4);
+  for (let i=0;i<n;i++){ const o=((t*0.4)+i*0.42)%1.7; const sy=y-o*TILE*2.0; const drift=Math.sin(t*1.1+i)*16+o*TILE*0.5; const r=11+o*18+i*2; const a=(0.05+0.2*iv)*(1-o/1.7);
+    const sh=Math.round(70+o*30); ctx.fillStyle=`rgba(${sh},${sh},${sh},${a})`; ctx.beginPath(); ctx.arc(x+drift,sy,r,0,7); ctx.fill(); }
 }
 function drawTruck(d){
   const x=d.x*TILE, y=d.y*TILE, w=d.w*TILE, h=d.h*TILE, bodyY=y+h*0.22, bodyH=h*0.5;
-  ctx.fillStyle='rgba(0,0,0,.25)'; ctx.fillRect(x+6,y+h*0.78,w-12,6);
-  ctx.fillStyle='#c0392b'; rr(x+4,bodyY,w-8,bodyH,6); ctx.fill();
+  ctx.fillStyle='rgba(0,0,0,.22)'; ctx.beginPath(); ctx.ellipse(x+w/2,y+h*0.82,w*0.46,h*0.1,0,0,7); ctx.fill();
+  const bg=ctx.createLinearGradient(x,bodyY,x,bodyY+bodyH); bg.addColorStop(0,'#d0453a'); bg.addColorStop(1,'#a5281f');
+  ctx.fillStyle=bg; rr(x+4,bodyY,w-8,bodyH,6); ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,.10)'; rr(x+6,bodyY+2,w-12,4,3); ctx.fill();
   ctx.fillStyle='#a52f24'; rr(x+w-TILE*1.7,bodyY-h*0.12,TILE*1.5,bodyH+h*0.12,5); ctx.fill();
   ctx.fillStyle='#bfe0f0'; rr(x+w-TILE*1.5,bodyY-h*0.05,TILE*0.7,bodyH*0.5,3); ctx.fill();
   ctx.fillStyle='#f2f2ec'; ctx.fillRect(x+4,bodyY+bodyH*0.55,w-8,5);
@@ -1336,23 +1372,39 @@ function drawTruck(d){
   for (let i=0;i<6;i++){ const lx=x+12+i*(w*0.55/6); ctx.beginPath(); ctx.moveTo(lx,bodyY-7); ctx.lineTo(lx,bodyY+1); ctx.stroke(); }
   ctx.fillStyle='#2266dd'; ctx.fillRect(x+w-TILE*1.4,bodyY-h*0.18,TILE*0.4,5);
   ctx.fillStyle='#dd2222'; ctx.fillRect(x+w-TILE*1.0,bodyY-h*0.18,TILE*0.4,5);
+  ctx.save(); ctx.globalCompositeOperation='lighter';
+  [['rgba(70,130,255,.6)',x+w-TILE*1.2],['rgba(255,70,70,.6)',x+w-TILE*0.8]].forEach(function(L){ const gg=ctx.createRadialGradient(L[1],bodyY-h*0.16,0,L[1],bodyY-h*0.16,13); gg.addColorStop(0,L[0]); gg.addColorStop(1,'rgba(0,0,0,0)'); ctx.fillStyle=gg; ctx.beginPath(); ctx.arc(L[1],bodyY-h*0.16,13,0,7); ctx.fill(); });
+  ctx.restore();
   ctx.fillStyle='#1c1c1c'; [x+TILE*0.9,x+w-TILE*1.1].forEach(wxp=>{ ctx.beginPath(); ctx.arc(wxp,bodyY+bodyH,TILE*0.26,0,7); ctx.fill(); });
   ctx.fillStyle='#444'; [x+TILE*0.9,x+w-TILE*1.1].forEach(wxp=>{ ctx.beginPath(); ctx.arc(wxp,bodyY+bodyH,TILE*0.1,0,7); ctx.fill(); });
 }
 function drawPerson(cx,cy,o){
   const s=TILE;
   if (o.lying){
-    ctx.fillStyle='rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(cx,cy+s*0.16,s*0.36,s*0.12,0,0,7); ctx.fill();
-    ctx.fillStyle=o.outfit; rr(cx-s*0.30,cy-s*0.04,s*0.46,s*0.22,7); ctx.fill();
-    ctx.fillStyle=o.pants||'#2c3036'; rr(cx+s*0.14,cy+s*0.01,s*0.22,s*0.12,4); ctx.fill();
-    ctx.fillStyle=o.skin||'#e6b88f'; ctx.beginPath(); ctx.arc(cx-s*0.34,cy+s*0.07,s*0.12,0,7); ctx.fill(); return;
+    ctx.fillStyle='rgba(0,0,0,.22)'; ctx.beginPath(); ctx.ellipse(cx,cy+s*0.18,s*0.4,s*0.13,0,0,7); ctx.fill();
+    ctx.fillStyle=o.outfit; rr(cx-s*0.30,cy-s*0.05,s*0.5,s*0.24,8); ctx.fill();
+    ctx.strokeStyle='rgba(0,0,0,.25)'; ctx.lineWidth=1.5; rr(cx-s*0.30,cy-s*0.05,s*0.5,s*0.24,8); ctx.stroke();
+    ctx.fillStyle=o.pants||'#2c3036'; rr(cx+s*0.16,cy,s*0.22,s*0.13,4); ctx.fill();
+    ctx.fillStyle=o.skin||'#e6b88f'; ctx.beginPath(); ctx.arc(cx-s*0.36,cy+s*0.07,s*0.12,0,7); ctx.fill(); ctx.stroke(); return;
   }
-  ctx.fillStyle='rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(cx,cy+s*0.34,s*0.24,s*0.08,0,0,7); ctx.fill();
-  ctx.fillStyle=o.pants||'#2c3036'; rr(cx-s*0.15,cy+s*0.06,s*0.12,s*0.22,2); ctx.fill(); rr(cx+s*0.03,cy+s*0.06,s*0.12,s*0.22,2); ctx.fill();
-  ctx.fillStyle=o.outfit; rr(cx-s*0.19,cy-s*0.20,s*0.38,s*0.32,5); ctx.fill();
+  // soft grounding shadow
+  ctx.fillStyle='rgba(0,0,0,.22)'; ctx.beginPath(); ctx.ellipse(cx+s*0.03,cy+s*0.35,s*0.26,s*0.09,0,0,7); ctx.fill();
+  // legs + arms + hands
+  ctx.fillStyle=o.pants||'#2c3036'; rr(cx-s*0.15,cy+s*0.06,s*0.12,s*0.24,3); ctx.fill(); rr(cx+s*0.03,cy+s*0.06,s*0.12,s*0.24,3); ctx.fill();
+  ctx.fillStyle=o.outfit; rr(cx-s*0.26,cy-s*0.16,s*0.1,s*0.26,4); ctx.fill(); rr(cx+s*0.16,cy-s*0.16,s*0.1,s*0.26,4); ctx.fill();
+  ctx.fillStyle=o.skin||'#e6b88f'; ctx.beginPath(); ctx.arc(cx-s*0.21,cy+s*0.1,s*0.045,0,7); ctx.fill(); ctx.beginPath(); ctx.arc(cx+s*0.21,cy+s*0.1,s*0.045,0,7); ctx.fill();
+  // torso with shading, top highlight, accent, outline
+  ctx.fillStyle=o.outfit; rr(cx-s*0.19,cy-s*0.20,s*0.38,s*0.34,6); ctx.fill();
+  ctx.fillStyle='rgba(0,0,0,.12)'; rr(cx+s*0.02,cy-s*0.20,s*0.17,s*0.34,6); ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,.10)'; rr(cx-s*0.19,cy-s*0.20,s*0.38,s*0.06,6); ctx.fill();
   if (o.accent){ ctx.fillStyle=o.accent; rr(cx-s*0.19,cy-s*0.04,s*0.38,s*0.07,2); ctx.fill(); }
+  ctx.strokeStyle='rgba(0,0,0,.28)'; ctx.lineWidth=1.5; rr(cx-s*0.19,cy-s*0.20,s*0.38,s*0.34,6); ctx.stroke();
+  // head: hair backing (no hat) + skin + outline + highlight
+  if (!o.hat){ ctx.fillStyle=o.hair||'#4a3626'; ctx.beginPath(); ctx.arc(cx,cy-s*0.28,s*0.15,0,7); ctx.fill(); }
   ctx.fillStyle=o.skin||'#e6b88f'; ctx.beginPath(); ctx.arc(cx,cy-s*0.28,s*0.13,0,7); ctx.fill();
-  if (o.hat==='helmet'){ ctx.fillStyle=o.hatColor||'#ddd'; ctx.beginPath(); ctx.arc(cx,cy-s*0.30,s*0.15,Math.PI,0); ctx.fill(); rr(cx-s*0.17,cy-s*0.32,s*0.34,s*0.05,2); ctx.fill(); }
+  ctx.strokeStyle='rgba(0,0,0,.22)'; ctx.lineWidth=1; ctx.stroke();
+  ctx.fillStyle='rgba(255,255,255,.14)'; ctx.beginPath(); ctx.arc(cx-s*0.04,cy-s*0.32,s*0.04,0,7); ctx.fill();
+  if (o.hat==='helmet'){ ctx.fillStyle=o.hatColor||'#ddd'; ctx.beginPath(); ctx.arc(cx,cy-s*0.30,s*0.15,Math.PI,0); ctx.fill(); rr(cx-s*0.17,cy-s*0.32,s*0.34,s*0.05,2); ctx.fill(); ctx.strokeStyle='rgba(0,0,0,.22)'; ctx.lineWidth=1; ctx.beginPath(); ctx.arc(cx,cy-s*0.30,s*0.15,Math.PI,0); ctx.stroke(); }
   else if (o.hat==='cap'){ ctx.fillStyle=o.hatColor||'#333'; ctx.beginPath(); ctx.arc(cx,cy-s*0.31,s*0.14,Math.PI,0); ctx.fill(); rr(cx-s*0.02,cy-s*0.33,s*0.20,s*0.04,2); ctx.fill(); }
 }
 const ART={
@@ -1399,13 +1451,19 @@ function drawUtility(cx,cy){ const s=TILE;
   ctx.fillStyle='#3a3a40'; rr(cx+s*0.02,cy-s*0.16,s*0.2,s*0.32,3); ctx.fill(); // panel
   ctx.fillStyle=S.elecOff?'#5aaa3a':'#c94a3a'; rr(cx+s*0.07,cy-s*0.06,s*0.1,s*0.12,1); ctx.fill();
 }
-function drawExtinguisher(cx,cy){ const s=TILE; // spot-fire marker (small fire + can hint)
-  if (!S.spotOut){ drawFlame(cx,cy+s*0.05,true); drawFlame(cx-s*0.16,cy+s*0.12,false); }
+function drawExtinguisher(cx,cy,ts){ const s=TILE; // spot-fire marker
+  if (!S.spotOut){
+    fireGlow(cx,cy+s*0.04, TILE*0.95, ts);
+    drawFlame(cx,cy+s*0.08,0.9,1,ts); drawFlame(cx-s*0.16,cy+s*0.14,0.72,3,ts); drawFlame(cx+s*0.15,cy+s*0.13,0.72,5,ts);
+    drawEmbers(cx,cy,4,ts);
+  }
   else { ctx.fillStyle='#5a6b5a'; ctx.font='bold 12px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('✓', cx, cy); }
 }
 function drawHazard(h,ts){
   const cx=h.x*TILE+TILE/2, cy=h.y*TILE+TILE/2, s=TILE;
   ctx.fillStyle=h.reported?'rgba(90,170,58,.16)':'rgba(204,40,40,.20)'; ctx.fillRect(h.x*TILE,h.y*TILE,TILE,TILE);
+  if (!h.reported){ const p=0.5+0.5*Math.sin((ts||0)/300); const g=ctx.createRadialGradient(cx,cy,0,cx,cy,s*0.5); g.addColorStop(0,`rgba(230,70,50,${0.16+0.14*p})`); g.addColorStop(1,'rgba(230,70,50,0)'); ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,s*0.5,0,7); ctx.fill(); }
+  ctx.fillStyle='rgba(0,0,0,.16)'; ctx.beginPath(); ctx.ellipse(cx,cy+s*0.28,s*0.2,s*0.07,0,0,7); ctx.fill();
   if (h.id==='power'){
     ctx.strokeStyle='#6b4a2a'; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(cx-s*0.05,cy-s*0.28); ctx.lineTo(cx-s*0.05,cy+s*0.28); ctx.stroke();
     ctx.strokeStyle='#1a1a1a'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(cx-s*0.34,cy-s*0.18); ctx.quadraticCurveTo(cx,cy+s*0.2,cx+s*0.34,cy-s*0.1); ctx.stroke();
@@ -1457,7 +1515,7 @@ function drawEntity(e,ts){
     case 'sizeup': drawScope(cx,cy); break;
     case 'treatment': drawTent(cx,cy); break;
     case 'utility': drawUtility(cx,cy); break;
-    case 'spotfire': drawExtinguisher(cx,cy); break;
+    case 'spotfire': drawExtinguisher(cx,cy,ts); break;
     case 'sideyard': drawSearch(cx,cy); break;
   }
   drawLabel(ENTITY_LABEL[e.id]||'',cx,cy);
