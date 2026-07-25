@@ -9,5 +9,7 @@ desktop.ini
 .vscode/
 .idea/
 
-# ReferenceGuide is an independent, separately-initialized git repo nested here
-ReferenceGuide/
+# Dependencies / build output (not used today; future-proofing)
+node_modules/
+dist/
+build/

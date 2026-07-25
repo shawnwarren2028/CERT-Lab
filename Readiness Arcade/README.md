@@ -2,8 +2,8 @@
 
 A browser-based **learning lab** that turns FEMA CERT Basic Training into hands-on,
 gamified practice for Community Emergency Response Team members and community
-volunteers. Nine interactive training games plus a searchable glossary and the
-full Section 1–8 course library — free to run, no install, works on any device.
+volunteers. Nine interactive training games — free to run, no install, works on
+any device.
 
 > **Status:** working prototype / proof-of-concept. A proper commercial rebuild
 > (accounts, cross-device sync, completion certificates, and admin reporting) is
@@ -23,9 +23,8 @@ full Section 1–8 course library — free to run, no install, works on any devi
 | 8 | Scene Recall | Observation & memory drill |
 | 9 | Treatment Aid Station | Disaster-medicine management sim |
 
-Plus: a searchable **Glossary** (80+ terms), an in-site **Course Materials**
-viewer (CERT Basic Training Sections 1–8), and a suite-wide **Training Record**
-(per-game mastery stars and achievement badges).
+Also included: a suite-wide **Training Record** (per-game mastery stars and
+achievement badges).
 
 Every game maps to CERT Basic Training and is kept faithful to **CERT scope** —
 stabilize-and-transfer, not advanced EMS or hospital medicine.
@@ -36,7 +35,7 @@ stabilize-and-transfer, not advanced EMS or hospital medicine.
   CSS/JS and hand-drawn inline-SVG (or canvas) art. No framework, no build step,
   no third-party dependencies.
 - **Shared modules** — `theme.js` (light/dark theme, icons, accessibility base),
-  `cert-terms.js` (term data for the crossword + glossary), `reference-sections.js`.
+  `cert-terms.js` (term data for the crossword).
 - **Progress** is stored in the browser via `localStorage` (keys prefixed
   `cert_*`). It is per-device and per-browser — there is no server or account yet.
 - **Hosting** — static files, deployed on GitHub Pages.
@@ -54,9 +53,6 @@ Then open <http://localhost:3000>.
 ```
 index.html            Suite hub / title screen + Training Record
 game-*.html           The nine games (one self-contained file each)
-glossary.html         Searchable term glossary
-reference.html        Course Materials index
-viewer.html           In-site deck viewer (PDF, with Office fallback)
 theme.js              Shared theme, icons, and accessibility base (loaded everywhere)
 cert-terms.js         Shared CERT term data
 manifest.json         PWA manifest

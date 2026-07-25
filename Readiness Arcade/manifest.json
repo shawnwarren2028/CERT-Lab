@@ -1,7 +1,7 @@
 {
   "name": "Wallingford CERT — Training Suite",
   "short_name": "CERT Suite",
-  "description": "Community Emergency Response Team training games and reference for Wallingford CERT.",
+  "description": "Community Emergency Response Team training games for Wallingford CERT.",
   "start_url": "index.html",
   "scope": "./",
   "display": "standalone",
