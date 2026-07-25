@@ -405,11 +405,14 @@ function renderGame(){
 }
 function buildSceneSVG(){
   const sc=G.scene, bg=sc.bg(), T=tierByN(G.tier);
+  const shadows=G.items.map(o=>`<ellipse cx="${o.x}" cy="${o.y+16*o.s}" rx="${14*o.s}" ry="${5*o.s}" fill="rgba(0,0,0,.16)"/>`).join('');
   const items=G.items.map((o,i)=>`<g class="item" data-i="${i}" transform="translate(${o.x},${o.y}) rotate(${o.rot||0}) scale(${o.s}) translate(-20,-20)">
     ${ICON[o.id]?ICON[o.id]():''}</g>`).join('');
   return `<svg class="scene" id="scene" viewBox="0 0 ${VBW} ${VBH}" xmlns="http://www.w3.org/2000/svg">
+    ${SCENE_DEFS}
     <rect x="0" y="0" width="${VBW}" height="${VBH}" fill="transparent" onclick="sceneMiss(event)"/>
     ${bg}
+    <g class="item-shadows">${shadows}</g>
     <g class="scene-items" style="filter:saturate(${T.sat!=null?T.sat:1})">${items}</g>
     <g id="marks"></g></svg>`;
 }
@@ -508,12 +511,29 @@ function starRating(){
 /* ============================================================
    BACKGROUNDS
    ============================================================ */
+const SCENE_DEFS=`<defs>
+  <linearGradient id="skyG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7ea9d6"/><stop offset="1" stop-color="#cfe4f2"/></linearGradient>
+  <linearGradient id="graG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#86974e"/><stop offset="1" stop-color="#67753f"/></linearGradient>
+  <linearGradient id="asphG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#45494f"/><stop offset="1" stop-color="#31353b"/></linearGradient>
+  <linearGradient id="glassG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d6edf7"/><stop offset="1" stop-color="#8fb3c8"/></linearGradient>
+  <linearGradient id="metalG" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#d7dce1"/><stop offset=".5" stop-color="#b4bac0"/><stop offset="1" stop-color="#cdd2d7"/></linearGradient>
+  <linearGradient id="grayskyG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#828a95"/><stop offset="1" stop-color="#b2b8bf"/></linearGradient>
+  <radialGradient id="fireGlowG"><stop offset="0" stop-color="#ffc24a" stop-opacity=".78"/><stop offset=".5" stop-color="#ff7a1a" stop-opacity=".34"/><stop offset="1" stop-color="#ff6a10" stop-opacity="0"/></radialGradient>
+  <linearGradient id="smokeG" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#78746c" stop-opacity=".85"/><stop offset="1" stop-color="#9a968e" stop-opacity="0"/></linearGradient>
+</defs>`;
+function svgFlame(x,y,s){ return `<g>
+  <path d="M${x} ${y-28*s} C${x+15*s} ${y-8*s} ${x+12*s} ${y+6*s} ${x} ${y+8*s} C${x-12*s} ${y+6*s} ${x-15*s} ${y-8*s} ${x} ${y-28*s} Z" fill="#e2531a"/>
+  <path d="M${x} ${y-18*s} C${x+9*s} ${y-4*s} ${x+7*s} ${y+4*s} ${x} ${y+6*s} C${x-7*s} ${y+4*s} ${x-9*s} ${y-4*s} ${x} ${y-18*s} Z" fill="#ffb028"/>
+  <path d="M${x} ${y-9*s} C${x+4*s} ${y-1*s} ${x+3*s} ${y+3*s} ${x} ${y+4*s} C${x-3*s} ${y+3*s} ${x-4*s} ${y-1*s} ${x} ${y-9*s} Z" fill="#fff0b0"/></g>`; }
 function bgNeighborhood(){
-  return `<rect x="0" y="0" width="${VBW}" height="${VBH}" fill="#8fb3d9"/>
-    <rect x="0" y="330" width="${VBW}" height="${VBH-330}" fill="#7c8a5a"/>
-    <rect x="0" y="300" width="${VBW}" height="34" fill="#9aa86e"/>
+  return `<rect x="0" y="0" width="${VBW}" height="${VBH}" fill="url(#skyG)"/>
+    <circle cx="705" cy="70" r="34" fill="#fff4cc" opacity=".85"/><circle cx="705" cy="70" r="54" fill="#fff4cc" opacity=".22"/>
+    <rect x="0" y="330" width="${VBW}" height="${VBH-330}" fill="url(#graG)"/>
+    <rect x="0" y="300" width="${VBW}" height="34" fill="#93a366"/>
+    <rect x="0" y="326" width="${VBW}" height="6" fill="rgba(255,255,255,.10)"/>
     <!-- road -->
-    <rect x="0" y="430" width="${VBW}" height="60" fill="#3a3f45"/>
+    <rect x="0" y="430" width="${VBW}" height="60" fill="url(#asphG)"/>
+    <rect x="0" y="430" width="${VBW}" height="3" fill="rgba(228,228,218,.4)"/>
     <g stroke="#e8c33a" stroke-width="4" stroke-dasharray="26 22"><line x1="0" y1="460" x2="${VBW}" y2="460"/></g>
     <!-- houses (sit on the grass line) -->
     ${house(70,214,'#cf9b6b','#7a5a38')}${house(300,210,'#b98f7a','#6b4c3a')}${house(560,216,'#9fb08a','#5f6f4a')}
@@ -524,62 +544,81 @@ function bgNeighborhood(){
       <ellipse cx="620" cy="55" rx="50" ry="20"/><ellipse cx="660" cy="48" rx="34" ry="16"/></g>`;
 }
 function house(x,y,wall,roof){ return `<g>
+  <ellipse cx="${x+75}" cy="${y+126}" rx="88" ry="12" fill="rgba(0,0,0,.16)"/>
   <rect x="${x}" y="${y}" width="150" height="120" fill="${wall}" stroke="#3a2a1a" stroke-width="2"/>
+  <rect x="${x+93}" y="${y}" width="57" height="120" fill="rgba(0,0,0,.10)"/>
   <path d="M${x-12} ${y} L${x+75} ${y-52} L${x+162} ${y} Z" fill="${roof}" stroke="#3a2a1a" stroke-width="2"/>
+  <path d="M${x-12} ${y} L${x+75} ${y-52}" stroke="rgba(255,255,255,.18)" stroke-width="2"/>
   <rect x="${x+58}" y="${y+62}" width="34" height="58" fill="#5a4632" stroke="#3a2a1a" stroke-width="1.5"/>
-  <rect x="${x+18}" y="${y+26}" width="28" height="26" fill="#a9d4f0" stroke="#3a2a1a" stroke-width="1.5"/>
-  <rect x="${x+104}" y="${y+26}" width="28" height="26" fill="#a9d4f0" stroke="#3a2a1a" stroke-width="1.5"/>
-  <path d="M${x+40} ${y+120} l14 -22 M${x+70} ${y+120} l-6 -30" stroke="#3a2a1a" stroke-width="1.5" opacity=".5"/></g>`; }
-function tree(x,y){ return `<g><rect x="${x-6}" y="${y}" width="12" height="34" fill="#6b4c22"/>
-  <circle cx="${x}" cy="${y-6}" r="24" fill="#3f7a34"/><circle cx="${x-16}" cy="${y+4}" r="16" fill="#4a8f3d"/><circle cx="${x+16}" cy="${y+4}" r="16" fill="#4a8f3d"/></g>`; }
+  <rect x="${x+62}" y="${y+66}" width="11" height="50" fill="rgba(255,255,255,.06)"/><circle cx="${x+85}" cy="${y+92}" r="2.4" fill="#e8c060"/>
+  <g stroke="#3a2a1a" stroke-width="1.5"><rect x="${x+18}" y="${y+26}" width="28" height="26" fill="url(#glassG)"/><rect x="${x+104}" y="${y+26}" width="28" height="26" fill="url(#glassG)"/></g>
+  <g stroke="#3a2a1a" stroke-width="1" opacity=".55"><line x1="${x+32}" y1="${y+26}" x2="${x+32}" y2="${y+52}"/><line x1="${x+18}" y1="${y+39}" x2="${x+46}" y2="${y+39}"/><line x1="${x+118}" y1="${y+26}" x2="${x+118}" y2="${y+52}"/><line x1="${x+104}" y1="${y+39}" x2="${x+132}" y2="${y+39}"/></g></g>`; }
+function tree(x,y){ return `<g>
+  <ellipse cx="${x}" cy="${y+34}" rx="26" ry="8" fill="rgba(0,0,0,.16)"/>
+  <rect x="${x-6}" y="${y}" width="12" height="34" fill="#6b4c22"/><rect x="${x-6}" y="${y}" width="4" height="34" fill="rgba(255,255,255,.10)"/>
+  <circle cx="${x-16}" cy="${y+4}" r="16" fill="#3f7a34"/><circle cx="${x+16}" cy="${y+4}" r="16" fill="#3f7a34"/>
+  <circle cx="${x}" cy="${y-6}" r="24" fill="#4a8f3d"/><circle cx="${x-7}" cy="${y-12}" r="11" fill="#5aa64c" opacity=".85"/></g>`; }
 
 function bgFire(){
-  return `<rect x="0" y="0" width="${VBW}" height="${VBH}" fill="#5b4a44"/>
-    <rect x="0" y="330" width="${VBW}" height="${VBH-330}" fill="#43413a"/>
-    <rect x="0" y="300" width="${VBW}" height="34" fill="#54503f"/>
-    <rect x="0" y="430" width="${VBW}" height="60" fill="#33352f"/>
+  return `<rect x="0" y="0" width="${VBW}" height="${VBH}" fill="#6b5a52"/>
+    <rect x="0" y="0" width="${VBW}" height="300" fill="url(#smokeG)" opacity=".28"/>
+    <rect x="0" y="330" width="${VBW}" height="${VBH-330}" fill="#46443c"/>
+    <rect x="0" y="300" width="${VBW}" height="34" fill="#565240"/>
+    <rect x="0" y="430" width="${VBW}" height="60" fill="url(#asphG)"/>
     <g stroke="#c9b24a" stroke-width="4" stroke-dasharray="26 22"><line x1="0" y1="460" x2="${VBW}" y2="460"/></g>
-    <!-- burning house (glow, not a target icon) -->
+    <!-- burning house (glow + flames, not a target icon) -->
     ${house(90,160,'#6f4f3a','#3f2f22')}
-    <ellipse cx="165" cy="210" rx="95" ry="120" fill="#ff7a1a" opacity=".33"/>
-    <ellipse cx="150" cy="235" rx="55" ry="70" fill="#ffd23f" opacity=".38"/>
-    <rect x="108" y="196" width="28" height="26" fill="#ffb028"/><rect x="194" y="196" width="28" height="26" fill="#ffb028"/>
+    <ellipse cx="165" cy="205" rx="125" ry="145" fill="url(#fireGlowG)"/>
+    ${svgFlame(140,238,2.1)}${svgFlame(190,232,1.9)}${svgFlame(165,202,2.6)}${svgFlame(120,214,1.5)}${svgFlame(212,214,1.5)}
     <!-- smoke -->
-    <g fill="#6e6a63" opacity=".82"><ellipse cx="185" cy="95" rx="62" ry="30"/><ellipse cx="250" cy="62" rx="50" ry="26"/><ellipse cx="315" cy="98" rx="44" ry="22"/><ellipse cx="120" cy="70" rx="40" ry="20"/></g>
+    <g><ellipse cx="185" cy="118" rx="62" ry="34" fill="url(#smokeG)"/><ellipse cx="250" cy="78" rx="52" ry="30" fill="url(#smokeG)"/><ellipse cx="315" cy="108" rx="44" ry="24" fill="url(#smokeG)"/><ellipse cx="120" cy="88" rx="40" ry="22" fill="url(#smokeG)"/></g>
     ${house(470,180,'#6f6a5a','#4a4636')}${house(662,192,'#7a6a5a','#4a3f30')}
     ${tree(400,312)}${tree(760,315)}
     ${firetruck(300,392)}`;
 }
 function firetruck(x,y){ return `<g>
-  <rect x="${x}" y="${y-2}" width="112" height="34" rx="4" fill="#c0392b" stroke="#7a1a1a" stroke-width="2"/>
-  <rect x="${x+80}" y="${y-20}" width="32" height="20" rx="3" fill="#c0392b" stroke="#7a1a1a" stroke-width="2"/>
-  <rect x="${x+84}" y="${y-16}" width="22" height="12" fill="#a9d4f0"/>
+  <ellipse cx="${x+56}" cy="${y+40}" rx="62" ry="10" fill="rgba(0,0,0,.2)"/>
+  <linearGradient id="truckG${x}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d0453a"/><stop offset="1" stop-color="#a5281f"/></linearGradient>
+  <rect x="${x}" y="${y-2}" width="112" height="34" rx="4" fill="url(#truckG${x})" stroke="#7a1a1a" stroke-width="2"/>
+  <rect x="${x+4}" y="${y+1}" width="104" height="4" rx="2" fill="rgba(255,255,255,.14)"/>
+  <rect x="${x+80}" y="${y-20}" width="32" height="20" rx="3" fill="url(#truckG${x})" stroke="#7a1a1a" stroke-width="2"/>
+  <rect x="${x+84}" y="${y-16}" width="22" height="12" fill="url(#glassG)"/>
   <rect x="${x+6}" y="${y+4}" width="62" height="14" fill="#e8d9a0" stroke="#7a1a1a" stroke-width="1"/>
   <line x1="${x+12}" y1="${y-4}" x2="${x+74}" y2="${y-15}" stroke="#b8bcc0" stroke-width="4"/>
-  <rect x="${x+42}" y="${y-11}" width="8" height="7" fill="#e8c33a"/>
-  <circle cx="${x+26}" cy="${y+32}" r="10" fill="#222" stroke="#000" stroke-width="1.5"/><circle cx="${x+92}" cy="${y+32}" r="10" fill="#222" stroke="#000" stroke-width="1.5"/></g>`; }
+  <rect x="${x+40}" y="${y-12}" width="7" height="7" fill="#3a7ff0"/><rect x="${x+49}" y="${y-12}" width="7" height="7" fill="#f04a4a"/>
+  <ellipse cx="${x+43}" cy="${y-9}" rx="10" ry="7" fill="#3a7ff0" opacity=".4"/><ellipse cx="${x+53}" cy="${y-9}" rx="10" ry="7" fill="#f04a4a" opacity=".4"/>
+  <circle cx="${x+26}" cy="${y+32}" r="10" fill="#222" stroke="#000" stroke-width="1.5"/><circle cx="${x+26}" cy="${y+32}" r="4" fill="#555"/>
+  <circle cx="${x+92}" cy="${y+32}" r="10" fill="#222" stroke="#000" stroke-width="1.5"/><circle cx="${x+92}" cy="${y+32}" r="4" fill="#555"/></g>`; }
 
 function bgHazmat(){
-  return `<rect x="0" y="0" width="${VBW}" height="${VBH}" fill="#8a929c"/>
-    <rect x="0" y="330" width="${VBW}" height="${VBH-330}" fill="#6a6f74"/>
-    <rect x="0" y="300" width="${VBW}" height="34" fill="#7a808a"/>
-    <!-- warehouse -->
+  return `<rect x="0" y="0" width="${VBW}" height="${VBH}" fill="url(#grayskyG)"/>
+    <rect x="0" y="330" width="${VBW}" height="${VBH-330}" fill="#63686d"/>
+    <rect x="0" y="300" width="${VBW}" height="34" fill="#767c86"/>
+    <rect x="0" y="326" width="${VBW}" height="5" fill="rgba(255,255,255,.06)"/>
+    <!-- warehouse with depth -->
+    <ellipse cx="185" cy="302" rx="145" ry="12" fill="rgba(0,0,0,.14)"/>
     <rect x="60" y="150" width="250" height="150" fill="#9aa0a6" stroke="#4a4f54" stroke-width="2"/>
+    <rect x="235" y="150" width="75" height="150" fill="rgba(0,0,0,.10)"/>
     <path d="M50 150 L185 100 L320 150 Z" fill="#6a7076" stroke="#4a4f54" stroke-width="2"/>
-    <rect x="105" y="212" width="58" height="88" fill="#5a6066"/><rect x="205" y="196" width="44" height="40" fill="#b9d4e0" stroke="#4a4f54" stroke-width="1.5"/>
+    <path d="M50 150 L185 100" stroke="rgba(255,255,255,.14)" stroke-width="2"/>
+    <rect x="105" y="212" width="58" height="88" fill="#565c62"/><rect x="109" y="216" width="12" height="80" fill="rgba(255,255,255,.05)"/>
+    <rect x="205" y="196" width="44" height="40" fill="url(#glassG)" stroke="#4a4f54" stroke-width="1.5"/>
     <g stroke="#4a4f54" stroke-width="1" opacity=".5"><line x1="60" y1="180" x2="310" y2="180"/><line x1="60" y1="240" x2="310" y2="240"/></g>
     <!-- storage tanks -->
     ${tank(430,178)}${tank(505,168)}${tank(700,186)}
     <!-- pipes -->
     <g stroke="#8a8f92" stroke-width="8" fill="none"><path d="M355 300 H${VBW}"/><path d="M355 300 V244 H565"/></g>
+    <g stroke="#c2c7cc" stroke-width="2" fill="none" opacity=".55"><path d="M355 297 H${VBW}"/><path d="M358 300 V244 H565"/></g>
     <g fill="#5a5f63"><circle cx="565" cy="244" r="7"/><circle cx="565" cy="300" r="7"/><circle cx="700" cy="300" r="7"/></g>
     <rect x="0" y="430" width="${VBW}" height="60" fill="#4a4f54"/>
     <g stroke="#e8c33a" stroke-width="3" stroke-dasharray="18 16" opacity=".7"><line x1="0" y1="460" x2="${VBW}" y2="460"/></g>`;
 }
 function tank(x,y){ return `<g>
-  <rect x="${x}" y="${y}" width="52" height="122" rx="14" fill="#c2c7cc" stroke="#6a6f74" stroke-width="2"/>
-  <ellipse cx="${x+26}" cy="${y}" rx="26" ry="7" fill="#d2d7dc" stroke="#6a6f74" stroke-width="1.5"/>
-  <rect x="${x+7}" y="${y+34}" width="38" height="10" fill="#e8b53f"/><rect x="${x+7}" y="${y+56}" width="38" height="5" fill="#6a6f74"/></g>`; }
+  <ellipse cx="${x+26}" cy="${y+128}" rx="30" ry="8" fill="rgba(0,0,0,.18)"/>
+  <rect x="${x}" y="${y}" width="52" height="122" rx="14" fill="url(#metalG)" stroke="#6a6f74" stroke-width="2"/>
+  <ellipse cx="${x+26}" cy="${y}" rx="26" ry="7" fill="#dbe0e5" stroke="#6a6f74" stroke-width="1.5"/>
+  <rect x="${x+7}" y="${y+34}" width="38" height="10" fill="#e8b53f"/><rect x="${x+7}" y="${y+56}" width="38" height="5" fill="#6a6f74"/>
+  <rect x="${x+6}" y="${y+10}" width="5" height="104" rx="2.5" fill="rgba(255,255,255,.28)"/></g>`; }
 
 /* ---------- overlay ---------- */
 function openOv(html){ document.getElementById('ov-box').innerHTML=html; document.getElementById('ov').classList.add('show'); }
