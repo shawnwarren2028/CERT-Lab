@@ -561,8 +561,8 @@ function renderSceneSVG(s,reveal){
 function exteriorBody(s){
   return `${sky(s.weather)}${building(s)}${ground(s.weather)}
     ${s.victims.map(v=>elem(v.x,person(v.shirt),360)).join('')}
-    ${s.hazards.filter(h=>h.type!=='fire').map(h=>elem(h.x,haz(h.type),404)).join('')}
-    ${s.vehicle?elem(s.vehicle.x,vehicle(s.vehicle.type),406):''}
+    ${s.hazards.filter(h=>h.type!=='fire').map(h=>elem(h.x,'<ellipse cx="20" cy="39" rx="13" ry="3" fill="rgba(0,0,0,.17)"/>'+haz(h.type),404)).join('')}
+    ${s.vehicle?elem(s.vehicle.x,'<ellipse cx="20" cy="37" rx="17" ry="3.5" fill="rgba(0,0,0,.2)"/>'+vehicle(s.vehicle.type),406):''}
     ${s.placard?placardOnPost(s.placard.number):''}
     ${fireRender(s)}
     ${weatherFX(s.weather)}`;
@@ -571,7 +571,7 @@ function interiorBody(s){
   return `${interiorBg(s)}
     ${s.furniture.map(f=>elem(f.x,furn(f.type),330)).join('')}
     ${s.victims.map(v=>elem(v.x,person(v.shirt),366)).join('')}
-    ${s.hazards.filter(h=>h.type!=='fire').map(h=>elem(h.x,haz(h.type),408)).join('')}
+    ${s.hazards.filter(h=>h.type!=='fire').map(h=>elem(h.x,'<ellipse cx="20" cy="39" rx="13" ry="3" fill="rgba(0,0,0,.17)"/>'+haz(h.type),408)).join('')}
     ${s.placard?placardOnWall(s.placard.number):''}
     ${fireRender(s)}`;
 }
@@ -617,18 +617,25 @@ function placardOnWall(num){ const x=350,y=64;
 }
 
 function sky(w){
-  const c={clear:'#8fb3d9',cloudy:'#a7b7c6',overcast:'#8f97a0',night:'#1e2740',rainy:'#7a828c'}[w];
+  const grad={clear:['#7ea9d6','#bcd8ec'],cloudy:['#9aacbd','#c2cdd7'],overcast:['#848c95','#a2a9b0'],night:['#141d33','#28324c'],rainy:['#6b7480','#8a929c']}[w];
   let extra='';
-  if(w==='clear'||w==='cloudy') extra=`<g fill="#eef3f8" opacity=".9"><ellipse cx="160" cy="70" rx="52" ry="22"/><ellipse cx="205" cy="60" rx="38" ry="18"/><ellipse cx="640" cy="58" rx="54" ry="22"/><ellipse cx="688" cy="50" rx="38" ry="17"/></g>`;
+  if(w==='clear') extra=`<circle cx="702" cy="64" r="30" fill="#fff4cc" opacity=".9"/><circle cx="702" cy="64" r="50" fill="#fff4cc" opacity=".18"/>`;
+  if(w==='clear'||w==='cloudy') extra+=`<g fill="#eef3f8" opacity=".9"><ellipse cx="160" cy="70" rx="52" ry="22"/><ellipse cx="205" cy="60" rx="38" ry="18"/><ellipse cx="640" cy="58" rx="54" ry="22"/><ellipse cx="688" cy="50" rx="38" ry="17"/></g>`;
   if(w==='cloudy') extra+=`<g fill="#c7d0d9" opacity=".8"><ellipse cx="400" cy="90" rx="60" ry="24"/><ellipse cx="452" cy="80" rx="42" ry="20"/></g>`;
-  if(w==='night') extra=`<circle cx="690" cy="70" r="26" fill="#f2efc9"/><circle cx="700" cy="64" r="24" fill="#1e2740"/><g fill="#eef3f8"><circle cx="120" cy="60" r="1.6"/><circle cx="220" cy="100" r="1.4"/><circle cx="330" cy="50" r="1.6"/><circle cx="470" cy="90" r="1.4"/><circle cx="560" cy="55" r="1.6"/></g>`;
+  if(w==='night') extra=`<circle cx="690" cy="70" r="26" fill="#f2efc9"/><circle cx="700" cy="64" r="24" fill="#182238"/><g fill="#eef3f8"><circle cx="120" cy="60" r="1.6"/><circle cx="220" cy="100" r="1.4"/><circle cx="330" cy="50" r="1.6"/><circle cx="470" cy="90" r="1.4"/><circle cx="560" cy="55" r="1.6"/></g>`;
   if(w==='overcast') extra=`<g fill="#a7aeb5" opacity=".7"><ellipse cx="250" cy="80" rx="80" ry="26"/><ellipse cx="560" cy="70" rx="90" ry="28"/></g>`;
-  return `<rect x="0" y="0" width="${VBW}" height="${VBH}" fill="${c}"/>${extra}`;
+  return `<defs>
+    <linearGradient id="obSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${grad[0]}"/><stop offset="1" stop-color="${grad[1]}"/></linearGradient>
+    <linearGradient id="obGlass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d6edf7"/><stop offset="1" stop-color="#8fb3c8"/></linearGradient></defs>
+    <rect x="0" y="0" width="${VBW}" height="${VBH}" fill="url(#obSky)"/>${extra}`;
 }
-function ground(w){ const g = w==='night'?'#2e3a26':(w==='rainy'?'#5f6a4c':'#7c8a5a');
+function ground(w){ const g = w==='night'?['#2a3622','#232d1c']:(w==='rainy'?['#5f6a4c','#525c42']:['#84925f','#6f7d4d']);
   const road = w==='night'?'#22262b':'#3a3f45';
-  return `<rect x="0" y="300" width="${VBW}" height="${VBH-300}" fill="${g}"/>
+  return `<defs><linearGradient id="obGnd" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${g[0]}"/><stop offset="1" stop-color="${g[1]}"/></linearGradient></defs>
+    <rect x="0" y="300" width="${VBW}" height="${VBH-300}" fill="url(#obGnd)"/>
+    <rect x="0" y="298" width="${VBW}" height="4" fill="rgba(255,255,255,.08)"/>
     <rect x="0" y="425" width="${VBW}" height="45" fill="${road}"/>
+    <rect x="0" y="425" width="${VBW}" height="3" fill="rgba(228,228,218,.32)"/>
     <g stroke="#e8c33a" stroke-width="3" stroke-dasharray="24 20" opacity=".8"><line x1="0" y1="447" x2="${VBW}" y2="447"/></g>`;
 }
 function building(s){
@@ -638,20 +645,31 @@ function building(s){
     return `<rect x="${dx}" y="${by+bh-70}" width="52" height="70" fill="#4a3a28" stroke="#2a2016" stroke-width="2"/>
       ${boarded?`<g stroke="#8a6a3a" stroke-width="7"><line x1="${dx-4}" y1="${by+bh-58}" x2="${dx+56}" y2="${by+bh-40}"/><line x1="${dx-4}" y1="${by+bh-30}" x2="${dx+56}" y2="${by+bh-12}"/><line x1="${dx+56}" y1="${by+bh-58}" x2="${dx-4}" y2="${by+bh-40}"/></g>`:''}`;
   };
+  const win=(wx)=>`<rect x="${wx-2}" y="${by+24}" width="50" height="38" fill="#3a2c1e"/>
+    <rect x="${wx}" y="${by+26}" width="46" height="34" fill="url(#obGlass)"/>
+    <g stroke="#3a2c1e" stroke-width="1.5"><line x1="${wx+23}" y1="${by+26}" x2="${wx+23}" y2="${by+60}"/><line x1="${wx}" y1="${by+43}" x2="${wx+46}" y2="${by+43}"/></g>
+    <rect x="${wx-3}" y="${by+60}" width="52" height="3" fill="#8a6a4a"/>`;
   return `<g>
+    <ellipse cx="${bx+bw/2}" cy="${by+bh+6}" rx="${bw*0.54}" ry="14" fill="rgba(0,0,0,.16)"/>
     <rect x="${bx}" y="${by}" width="${bw}" height="${bh}" fill="${col}" stroke="#2a2016" stroke-width="2.5"/>
-    <path d="M${bx-18} ${by} L${bx+bw/2} ${by-48} L${bx+bw+18} ${by} Z" fill="${roof}" stroke="#2a2016" stroke-width="2.5"/>
-    <rect x="${bx+30}" y="${by+26}" width="46" height="34" fill="#a9d4f0" stroke="#2a2016" stroke-width="2"/>
-    <rect x="${bx+bw-76}" y="${by+26}" width="46" height="34" fill="#a9d4f0" stroke="#2a2016" stroke-width="2"/>
+    <rect x="${bx+bw*0.66}" y="${by}" width="${bw*0.34}" height="${bh}" fill="rgba(0,0,0,.09)"/>
+    <rect x="${bx}" y="${by+bh-10}" width="${bw}" height="10" fill="rgba(0,0,0,.14)"/>
+    <linearGradient id="obRoof" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6e5644"/><stop offset="1" stop-color="#463628"/></linearGradient>
+    <path d="M${bx-18} ${by} L${bx+bw/2} ${by-48} L${bx+bw+18} ${by} Z" fill="url(#obRoof)" stroke="#2a2016" stroke-width="2.5"/>
+    <path d="M${bx-18} ${by} L${bx+bw/2} ${by-48}" stroke="rgba(255,255,255,.16)" stroke-width="2"/>
+    ${win(bx+30)}${win(bx+bw-76)}
     ${s.exits.map((e,i)=>doorFor(e,i)).join('')}
   </g>`;
 }
 
 /* ---- element icons (drawn ~40x40, scaled up by elem()) ---- */
 function person(shirt){ const c=SHIRTS[shirt];
-  return `<circle cx="20" cy="9" r="7" fill="#e8b88e" stroke="#b07f56" stroke-width="1"/>
-    <path d="M11 40 V24 q0-8 9-8 t9 8 V40 Z" fill="${c}" stroke="rgba(0,0,0,.3)" stroke-width="1"/>
-    <rect x="14" y="40" width="5" height="10" fill="#3a4a63"/><rect x="21" y="40" width="5" height="10" fill="#3a4a63"/>`;
+  return `<ellipse cx="20" cy="49" rx="11" ry="3.4" fill="rgba(0,0,0,.22)"/>
+    <rect x="14" y="40" width="5" height="10" fill="#3a4a63"/><rect x="21" y="40" width="5" height="10" fill="#3a4a63"/>
+    <path d="M11 40 V24 q0-8 9-8 t9 8 V40 Z" fill="${c}" stroke="rgba(0,0,0,.34)" stroke-width="1.2"/>
+    <path d="M20 16 q9 0 9 8 V40 H20 Z" fill="rgba(0,0,0,.10)"/>
+    <circle cx="20" cy="9" r="7" fill="#e8b88e" stroke="#b07f56" stroke-width="1"/>
+    <circle cx="17.6" cy="6.6" r="2" fill="rgba(255,255,255,.18)"/>`;
 }
 function haz(t){
   if(t==='fire') return `<path d="M20 4 C26 12 30 15 27 23 C33 21 31 32 22 37 C26 31 20 30 20 24 C16 31 12 28 15 22 C11 25 12 16 20 4 Z" fill="#ef6a1a"/><path d="M20 15 C23 20 24 22 22 27 C26 25 24 32 20 34 Z" fill="#ffd23f"/>`;
