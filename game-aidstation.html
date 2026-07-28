@@ -449,11 +449,11 @@ const EVENTS=[
 
 /* ---------- tiers ---------- */
 const TIERS=[
-  {n:1,name:'Recruit',   ic:'🔰', shift:150, money:600, spawn:[10,7],  sev:1, amb:2, vols:3, ev:0.05, thr:[80,60], desc:'Calm neighborhood incident. Learn the patient flow.'},
-  {n:2,name:'Trainee',   ic:'🎓', shift:180, money:560, spawn:[9,6],   sev:2, amb:2, vols:3, ev:0.07, thr:[82,62], desc:'Steady arrivals; your first serious cases.'},
-  {n:3,name:'Responder', ic:'🚑', shift:210, money:520, spawn:[8,5],   sev:3, amb:3, vols:4, ev:0.09, thr:[84,64], desc:'Busy station, tighter supplies, more events.'},
-  {n:4,name:'Veteran',   ic:'🎖️', shift:240, money:470, spawn:[7,4],   sev:4, amb:3, vols:4, ev:0.11, thr:[86,66], desc:'Heavy volume, severe injuries, frequent events.'},
-  {n:5,name:'Specialist',ic:'⭐', shift:300, money:430, spawn:[6,3.5], sev:5, amb:4, vols:5, ev:0.13, thr:[88,70], desc:'Mass-casualty scale. Manage everything at once.'},
+  {n:1,name:'Recruit',   ic:'🔰', shift:300, money:600, spawn:[15,10.5],  sev:1, amb:2, vols:3, ev:0.05, thr:[80,60], desc:'Calm neighborhood incident. Learn the patient flow.'},
+  {n:2,name:'Trainee',   ic:'🎓', shift:360, money:560, spawn:[13.5,9],   sev:2, amb:2, vols:3, ev:0.07, thr:[82,62], desc:'Steady arrivals; your first serious cases.'},
+  {n:3,name:'Responder', ic:'🚑', shift:420, money:520, spawn:[12,7.5],   sev:3, amb:3, vols:4, ev:0.09, thr:[84,64], desc:'Busy station, tighter supplies, more events.'},
+  {n:4,name:'Veteran',   ic:'🎖️', shift:480, money:470, spawn:[10.5,6],   sev:4, amb:3, vols:4, ev:0.11, thr:[86,66], desc:'Heavy volume, severe injuries, frequent events.'},
+  {n:5,name:'Specialist',ic:'⭐', shift:600, money:430, spawn:[9,5.25], sev:5, amb:4, vols:5, ev:0.13, thr:[88,70], desc:'Mass-casualty scale. Manage everything at once.'},
 ];
 function tierByN(n){ return TIERS.find(t=>t.n===n)||TIERS[0]; }
 
@@ -803,6 +803,10 @@ function tryMoveRecovery(p){
 function render(){
   if(!G) return;
   const m=document.getElementById('main');
+  const scrollState=['.qlist','.logbox'].map(sel=>{
+    const el=m.querySelector(sel);
+    return el?{sel,top:el.scrollTop}:null;
+  }).filter(Boolean);
   const left=Math.max(0,G.shift-G.t);
   const satC=G.sat>60?'var(--t-min)':G.sat>30?'var(--warn)':'var(--danger)';
   const satFace=G.sat>70?'😊':G.sat>45?'🙂':G.sat>22?'😟':'😣';
@@ -828,6 +832,10 @@ function render(){
    </div>
    ${renderDock()}
   `;
+  for(const s of scrollState){
+    const el=m.querySelector(s.sel);
+    if(el) el.scrollTop=s.top;
+  }
 }
 function renderWaiting(){
   const ids=G.waiting.filter(id=>{const p=G.patients[id];return p&&(p.stage==='triage'||p.stage==='triaged');});
