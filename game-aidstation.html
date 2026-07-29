@@ -318,6 +318,15 @@ function fmtClock(s){ s=Math.max(0,Math.round(s)); return Math.floor(s/60)+':'+S
 const FIRST=['Ava','Liam','Noah','Mia','Ethan','Sofia','Jack','Emma','Lucas','Zoe','Owen','Ruby','Leo','Nora','Kai','Ivy','Max','Elena','Sam','Priya','Diego','Aisha','Omar','Grace','Hana','Marcus','Lena','Tariq','Yuki','Cole'];
 const LAST=['Reyes','Kim','Patel','Nguyen','Cohen','Brooks','Silva','Osei','Haddad','Larsen','Moreno','Walsh','Tran','Ali','Bauer','Ito','Flores','Novak','Dubois','Park','Mensah','Rossi','Khan','Ford','Serrano'];
 
+// recurring "regulars" — familiar faces who occasionally reappear with a callback line
+const REGULARS=[
+  {name:'Walter Higgins', type:'sprain', age:71, line:'Twisted his ankle chasing his dog again.'},
+  {name:'Priya Chandra', type:'anxiety', age:34, line:"Another anxiety spike — the sirens get to her."},
+  {name:'Deshawn Marsh', type:'cut', age:45, line:'Cut his hand on scrap metal, same as last time.'},
+  {name:'Rosa Delgado', type:'dehydration', age:68, line:'Forgot to drink water again in all the commotion.'},
+];
+let regularsSeen=new Set();
+
 /* ---------- supplies ---------- */
 const SUP={
   gloves:{lb:'Gloves',em:'🧤',adv:false}, gauze:{lb:'Gauze',em:'🩹',adv:false},
@@ -485,6 +494,14 @@ const EVENTS=[
   {id:'truck',w:3,bad:false,msg:'🚚 Supply truck arrived — free supplies!',fn:g=>{restock(g,{gloves:10,gauze:8,water:8,blanket:4,ice:4,roller:4});}},
   {id:'donation',w:3,bad:false,msg:'💵 Community donation received!',fn:g=>{const m=rnd(80,160);g.money+=m;g.stats.donated+=m;}},
   {id:'grant',w:2,bad:false,msg:'🏛️ CERT grant awarded!',fn:g=>{const m=rnd(150,260);g.money+=m;g.stats.grant+=m;}},
+  // scenario-exclusive events (only eligible for their matching tier)
+  {id:'secondary_collapse',w:3,bad:true,scenario:[9],msg:'💥 Secondary collapse! More casualties trapped in the debris.',
+   fn:g=>{for(let i=0;i<rnd(2,4);i++)spawn(g,true,'crush');g.sat=clamp(g.sat-5,0,100);}},
+  {id:'road_out',w:2,bad:true,scenario:[7],msg:'🌊 A road washed out — ambulance ETA doubled for a while.',fn:g=>{g.mods.roadout=20;}},
+  {id:'wind_shift',w:2,bad:true,scenario:[6],msg:'💨 Wind shift — the fire jumps the line. More evacuees incoming.',
+   fn:g=>{for(let i=0;i<rnd(2,3);i++)spawn(g,true,pick(['burn','smoke','anxiety']));}},
+  {id:'black_ice',w:2,bad:true,scenario:[8],msg:'🧊 Black ice on the walkways — a wave of fall injuries.',
+   fn:g=>{for(let i=0;i<rnd(2,3);i++)spawn(g,true,pick(['fracture','sprain','head']));}},
 ];
 
 /* ---------- tiers / scenarios ---------- */
@@ -625,8 +642,10 @@ function spawn(g,force,forceType,extra){
     if(g.mods.cold && chance(.5)) type=TYPE_BY.hypothermia;
   }
   const data=type.gen();
-  const p={id:g.nextPid++, type:type.id, name:pick(FIRST)+' '+pick(LAST), age:rnd(type.age[0],type.age[1]),
-    em:type.em, label:type.label, desc:data.desc, pain:data.pain, rr:data.rr, mental:data.mental,
+  const regular = (!force) ? REGULARS.find(r=>r.type===type.id && chance(.12)) : null;
+  const p={id:g.nextPid++, type:type.id, name:regular?regular.name:pick(FIRST)+' '+pick(LAST),
+    age:regular?regular.age:rnd(type.age[0],type.age[1]),
+    em:type.em, label:type.label, desc:regular?regular.line:data.desc, pain:data.pain, rr:data.rr, mental:data.mental,
     bleeding:data.bleeding, mobility:data.mobility, apnea:!!data.apnea, needs:data.needs.slice(), harmful:(data.harmful||[]).slice(),
     exceeds:!!type.exceeds, expectant:!!type.expectant, hazmat:extra&&extra.hazmat,
     done:[], stage:'triage', playerTag:null, bed:null, care:0, patience:100, wait:0, mistreat:0 };
@@ -634,6 +653,10 @@ function spawn(g,force,forceType,extra){
   p.deadline = p.trueTag==='immediate'?20:(p.trueTag==='delayed'?34:(p.trueTag==='expectant'?14:46));
   g.patients[p.id]=p; g.waiting.push(p.id); g.stats.arrived++;
   SND.arrive();
+  if(regular){
+    const known=regularsSeen.has(regular.name); regularsSeen.add(regular.name);
+    logMsg(g,known?`${regular.name} is back again.`:`👋 ${regular.name} — a familiar face around here.`,'');
+  }
   if(g===G) srAnnounce(`New arrival: ${p.name}, ${p.desc}.${p.hazmat?' Hazmat.':''}`);
 }
 
@@ -786,6 +809,7 @@ function requestEvac(id){
   if(!p.cared){ toast('Stabilize the patient (complete the care plan) before evac.','bad'); SND.bad(); return; }
   if(G.ambReady<=0){ toast('No ambulance available — treat longer or wait for one to return.','bad'); SND.bad(); return; }
   G.ambReady--; let eta=G.ambEta;
+  if(G.mods.roadout) eta=Math.round(eta*2);
   if(G.helipad && (p.type==='head'||p.type==='crush'||p.type==='heat_stroke')) eta=Math.max(4,Math.round(eta*0.5));
   p.stage='evac'; p.evacEta=eta;
   G.ambPending.push(p.id);
@@ -799,7 +823,7 @@ function requestEvacDirect(id){
   const p=G.patients[id]; if(!p||p.stage!=='triaged'||!p.hazmat) return;
   if(freeIsoBed()){ toast('An isolation bed is free — send this patient there instead.','bad'); return; }
   if(G.ambReady<=0){ toast('No ambulance available — wait for one to return.','bad'); SND.bad(); return; }
-  G.ambReady--; p.stage='evac'; p.evacEta=G.ambEta; p.untreated=true;
+  G.ambReady--; p.stage='evac'; p.evacEta=G.mods.roadout?Math.round(G.ambEta*2):G.ambEta; p.untreated=true;
   dequeueWaiting(p.id); G.ambPending.push(p.id);
   SND.click(); logMsg(G,`Ambulance requested for ${p.name} — evacuated untreated, no isolation bed available (ETA ${p.evacEta}s).`,'bad');
   G.sel=null; render();
@@ -962,7 +986,7 @@ function bedMult(b){ let m=1; if(b.vol){ const v=G.vols.find(x=>x.id===b.vol); i
 function recoveryRate(){ let r=9; if(G.trauma)r*=1.35; if(G.lighting)r*=1.1; if(G.mods.power)r*=0.6; return r; }
 
 function fireEvent(){
-  const pool=EVENTS.filter(e=>!e.minSev||G.tier.sev>=e.minSev);
+  const pool=EVENTS.filter(e=>(!e.minSev||G.tier.sev>=e.minSev)&&(!e.scenario||e.scenario.includes(G.tier.n)));
   const bag=[]; pool.forEach(e=>{ for(let i=0;i<e.w;i++) bag.push(e); });
   const e=pick(bag); e.fn(G); SND.evt(); logMsg(G,e.msg,'evt'); toast(e.msg,'evt'); render();
 }
