@@ -238,7 +238,7 @@
 <footer><span>Wallingford CERT</span> — Training Suite · Treatment Aid Station · For educational use — follow your local CERT program guidelines.</footer>
 
 <div class="toast-wrap" id="toast-wrap"></div>
-<div class="ov" id="ov" onclick="if(event.target===this)closeOv()"><div class="ov-box" id="ov-box"></div></div>
+<div class="ov" id="ov" onclick="if(event.target===this && canDismissOv())closeOv()"><div class="ov-box" id="ov-box"></div></div>
 
 <script>
 /* ============================================================
@@ -447,13 +447,25 @@ const EVENTS=[
   {id:'grant',w:2,bad:false,msg:'🏛️ CERT grant awarded!',fn:g=>{const m=rnd(150,260);g.money+=m;g.stats.grant+=m;}},
 ];
 
-/* ---------- tiers ---------- */
+/* ---------- tiers / scenarios ---------- */
 const TIERS=[
-  {n:1,name:'Recruit',   ic:'🔰', shift:300, money:600, spawn:[15,10.5],  sev:1, amb:2, vols:3, ev:0.05, thr:[80,60], desc:'Calm neighborhood incident. Learn the patient flow.'},
-  {n:2,name:'Trainee',   ic:'🎓', shift:360, money:560, spawn:[13.5,9],   sev:2, amb:2, vols:3, ev:0.07, thr:[82,62], desc:'Steady arrivals; your first serious cases.'},
-  {n:3,name:'Responder', ic:'🚑', shift:420, money:520, spawn:[12,7.5],   sev:3, amb:3, vols:4, ev:0.09, thr:[84,64], desc:'Busy station, tighter supplies, more events.'},
-  {n:4,name:'Veteran',   ic:'🎖️', shift:480, money:470, spawn:[10.5,6],   sev:4, amb:3, vols:4, ev:0.11, thr:[86,66], desc:'Heavy volume, severe injuries, frequent events.'},
-  {n:5,name:'Specialist',ic:'⭐', shift:600, money:430, spawn:[9,5.25], sev:5, amb:4, vols:5, ev:0.13, thr:[88,70], desc:'Mass-casualty scale. Manage everything at once.'},
+  {n:1,name:'Recruit',   ic:'🔰', shift:300, money:600, spawn:[15,10.5],  sev:1, amb:2, vols:3, ev:0.05, thr:[80,60], win:3, desc:'Calm neighborhood incident. Learn the patient flow.'},
+  {n:2,name:'Trainee',   ic:'🎓', shift:360, money:560, spawn:[13.5,9],   sev:2, amb:2, vols:3, ev:0.07, thr:[82,62], win:3, desc:'Steady arrivals; your first serious cases.'},
+  {n:3,name:'Responder', ic:'🚑', shift:420, money:520, spawn:[12,7.5],   sev:3, amb:3, vols:4, ev:0.09, thr:[84,64], win:3, desc:'Busy station, tighter supplies, more events.'},
+  {n:4,name:'Veteran',   ic:'🎖️', shift:480, money:470, spawn:[10.5,6],   sev:4, amb:3, vols:4, ev:0.11, thr:[86,66], win:3, desc:'Heavy volume, severe injuries, frequent events.'},
+  {n:5,name:'Specialist',ic:'⭐', shift:600, money:430, spawn:[9,5.25], sev:5, amb:4, vols:5, ev:0.13, thr:[88,70], win:3, desc:'Mass-casualty scale. Manage everything at once.'},
+  {n:6,name:'Wildfire Evacuation', ic:'🔥', shift:420, money:500, spawn:[11,7.5], sev:3, amb:3, vols:4, ev:0.10, thr:[84,64], win:3,
+   favorTypes:['burn','smoke','heat_exh','heat_stroke','anxiety','dehydration'],
+   desc:'A wind-driven wildfire is pushing residents out fast. Expect burns, smoke inhalation, and heat casualties as evacuees stream in.'},
+  {n:7,name:'Flash Flood', ic:'🌊', shift:450, money:510, spawn:[11,7], sev:3, amb:3, vols:4, ev:0.10, thr:[84,64], win:3,
+   favorTypes:['hypothermia','laceration','fracture','shock','cut'],
+   desc:'Floodwaters rose overnight and swept through the neighborhood. Cold, waterlogged patients arrive with cuts, fractures, and hypothermia.'},
+  {n:8,name:'Winter Storm Blackout', ic:'❄️', shift:480, money:480, spawn:[10,6.5], sev:4, amb:3, vols:4, ev:0.12, thr:[86,66], win:3,
+   favorTypes:['hypothermia','shock','fracture','illness'],
+   desc:'A crippling ice storm has knocked out power across the district. Cold exposure and fall injuries are surging while resources run thin.'},
+  {n:9,name:'Building Collapse', ic:'🏚️', shift:600, money:450, spawn:[8,5], sev:5, amb:4, vols:5, ev:0.14, thr:[88,70], win:2,
+   favorTypes:['crush','head','fracture','laceration','shock','critical'],
+   desc:'A partial structure collapse has trapped and injured dozens. Expect severe trauma, crush injuries, and hard triage calls.'},
 ];
 function tierByN(n){ return TIERS.find(t=>t.n===n)||TIERS[0]; }
 
@@ -486,14 +498,27 @@ function newGame(tier){
     ambMax:tier.amb, ambReady:tier.amb, ambEta:12, ambPending:[],
     bought:{}, mods:{}, log:[],
     generator:false,hvac:false,pharmacy:false,trauma:false,training:false,lighting:false,iso:false,restFast:false,helipad:false,
-    spawnTimer:tier.spawn[0], evTimer:24,
+    spawnTimer:tier.spawn[0], evTimer:24, exhaustTimer:0,
+    day:1, daysHigh:0,
     stats:{arrived:0,discharged:0,evac:0,lost:0,walkaway:0,triaged:0,triageRight:0,expOk:0,donated:0,grant:0,satSum:0,satN:0},
+    dayBase:{arrived:0,discharged:0,evac:0,lost:0,walkaway:0,triaged:0,triageRight:0,satSum:0,satN:0},
   };
   addBed(G,2);
   const skills=['Medical','Medical','Logistics','Communications','Administration','Search & Rescue'];
   for(let i=0;i<tier.vols;i++) recruit(G,skills[i]||'Medical');
   logMsg(G,'Aid station open. Two beds, '+tier.vols+' volunteers on shift.','');
   render(); startLoop();
+}
+function dayDelta(g){
+  const b=g.dayBase||{}, s=g.stats;
+  return {
+    arrived:s.arrived-(b.arrived||0), discharged:s.discharged-(b.discharged||0), evac:s.evac-(b.evac||0),
+    lost:s.lost-(b.lost||0), walkaway:s.walkaway-(b.walkaway||0), triaged:s.triaged-(b.triaged||0),
+    triageRight:s.triageRight-(b.triageRight||0), satSum:s.satSum-(b.satSum||0), satN:s.satN-(b.satN||0),
+  };
+}
+function coreSupplyTotal(g){
+  let n=0; for(const s of SUP_IDS){ if(!SUP[s].adv || g.pharmacy) n+=(g.inv[s]||0); } return n;
 }
 function addBed(g,n){ for(let i=0;i<n;i++) g.beds.push({id:'b'+g.beds.length,pid:null,offline:0}); }
 function recruit(g,skill){ if(g.vols.length>=g.volCap) return false;
@@ -523,7 +548,11 @@ function spawn(g,force,forceType,extra){
   else{
     let band=bandForTier(g.tier.sev);
     if(g.mods.heat && chance(.5)) band='delayed';
-    const cands=TYPES.filter(t=>t.band===band);
+    let cands=TYPES.filter(t=>t.band===band);
+    if(g.tier.favorTypes && chance(.55)){
+      const favor=g.tier.favorTypes.map(id=>TYPE_BY[id]).filter(t=>t&&t.band===band);
+      if(favor.length) cands=favor;
+    }
     type=pick(cands.length?cands:TYPES.filter(t=>t.band==='minor'));
     if(g.mods.heat && chance(.5)) type=pick([TYPE_BY.heat_exh,TYPE_BY.heat_stroke]);
   }
@@ -624,12 +653,13 @@ function applyTx(id,tx){
 function assignVol(id){
   const p=G.patients[id]; if(!p||p.stage!=='bed') return;
   const bed=G.beds.find(b=>b.id===p.bed); if(!bed) return;
-  // best free, rested medical volunteer
-  const avail=G.vols.filter(v=>!v.bed&&!v.hurt).sort((a,b)=>((b.skill==='Medical')-(a.skill==='Medical'))||(b.exp-a.exp)||(a.fatigue-b.fatigue));
   if(bed.vol){ const v=G.vols.find(x=>x.id===bed.vol); if(v)v.bed=null; bed.vol=null; SND.click(); render(); return; }
-  if(!avail.length){ toast('No volunteers free — recruit or free one up.','bad'); SND.bad(); return; }
-  const v=avail[0]; v.bed=bed.id; bed.vol=v.id; SND.click();
-  logMsg(G,`${v.name} (${v.skill}) assigned to a bed.`,''); render();
+  // best free, rested, un-exhausted medical volunteer
+  const avail=G.vols.filter(v=>!v.bed&&!v.hurt&&v.fatigue<100).sort((a,b)=>((b.skill==='Medical')-(a.skill==='Medical'))||(b.exp-a.exp)||(a.fatigue-b.fatigue));
+  if(!avail.length){ toast('No volunteers free — recruit, rest one up, or free one up.','bad'); SND.bad(); return; }
+  if((G.inv.gloves||0)<1){ toast('Out of gloves — a volunteer needs PPE to tend a patient. Restock in the shop.','bad'); SND.bad(); return; }
+  const v=avail[0]; v.bed=bed.id; bed.vol=v.id; G.inv.gloves--; SND.click();
+  logMsg(G,`${v.name} (${v.skill}) assigned to a bed (PPE used).`,''); render();
 }
 function discharge(id){
   const p=G.patients[id]; if(!p) return;
@@ -775,10 +805,15 @@ function tick(){
   G.evTimer--;
   if(G.evTimer<=0){ if(chance(G.tier.ev*2)) fireEvent(); G.evTimer=rnd(14,26); }
   // heat mod adds heat arrivals faster (handled in spawn weighting)
+  // volunteer exhaustion: every volunteer hurt or maxed-out on fatigue, sustained
+  if(G.vols.length && G.vols.every(v=>v.hurt>0 || v.fatigue>=100)){ G.exhaustTimer=(G.exhaustTimer||0)+1; }
+  else { G.exhaustTimer=0; }
   // fail / end
-  if(G.sat<=0){ return endShift(false); }
-  if(G.t>=G.shift && activeCount()===0){ return endShift(true); }
-  if(G.t>=G.shift+40){ return endShift(true); } // hard stop; unresolved patients resolved in scoring
+  if(G.sat<=0){ return endDay('sat'); }
+  if(G.money<=0 && coreSupplyTotal(G)<=0){ return endDay('broke'); }
+  if(G.exhaustTimer>=15){ return endDay('exhausted'); }
+  if(G.t>=G.shift && activeCount()===0){ return endDay(null); }
+  if(G.t>=G.shift+40){ return endDay(null); } // hard stop; unresolved patients resolved in scoring
   if(!G.dragging) render();
 }
 function activeCount(){ return Object.values(G.patients).filter(p=>p.stage!=='done').length; }
@@ -813,6 +848,7 @@ function render(){
   const q=G.waiting.filter(id=>{const p=G.patients[id];return p&&(p.stage==='triage'||p.stage==='triaged');}).length;
   m.innerHTML=`
    <div class="top">
+     <div class="chip"><span class="ck">📅 Day</span><span class="cv">${G.day}</span></div>
      <div class="chip"><span class="ck">💵 Funding</span><span class="cv">$${G.money}</span></div>
      <div class="chip wide"><span class="ck">${satFace} Satisfaction</span><span class="cv">${Math.round(G.sat)}%</span>
        <div class="sat-bar"><span style="width:${G.sat}%;background:${satC}"></span></div></div>
@@ -955,8 +991,9 @@ function sendToObs(id){ const p=G.patients[id]; if(!p||p.stage!=='triaged')retur
 /* ============================================================
    SHOP
    ============================================================ */
-function openShop(tab){ if(tab)G.shopTab=tab; if(G&&G.running){ G._wasRunning=true; } drawShop(); document.getElementById('ov').classList.add('show'); }
-function drawShop(){
+function openShop(tab){ if(tab)G.shopTab=tab; drawShop('live'); document.getElementById('ov').classList.add('show'); }
+function drawShop(mode){
+  mode=mode||G._shopMode||'live'; G._shopMode=mode;
   const cats=[['room','🏗️ Rooms'],['equip','⚙️ Upgrades'],['supply','📦 Supplies'],['vol','🧑‍🚒 Volunteers']];
   const tabs=cats.map(c=>`<button class="shop-tab ${G.shopTab===c[0]?'on':''}" onclick="G.shopTab='${c[0]}';drawShop()">${c[1]}</button>`).join('');
   const items=SHOP.filter(s=>s.cat===G.shopTab).map(s=>{
@@ -974,11 +1011,16 @@ function drawShop(){
       <div class="si-b"><div class="si-n">${s.n}</div><div class="si-d">${s.d}</div></div>
       <div class="si-buy">${btn}</div></div>`;
   }).join('');
-  document.getElementById('ov-box').innerHTML=`<h2>🏗️ Build &amp; Buy</h2>
-    <p class="sub">Funding: <b style="color:var(--gold)">$${G.money}</b> · Invest in capacity, capability, or efficiency.</p>
+  const head = mode==='intermission'
+    ? `<h2>🏗️ Prepare for Day ${G.day}</h2><p class="sub">Funding: <b style="color:var(--gold)">$${G.money}</b> · No timer is running — restock, expand, or upgrade before the next day begins.</p>`
+    : `<h2>🏗️ Build &amp; Buy</h2><p class="sub">Funding: <b style="color:var(--gold)">$${G.money}</b> · Invest in capacity, capability, or efficiency.</p>`;
+  const foot = mode==='intermission'
+    ? `<div class="btn-row"><button class="btn primary" onclick="beginDay()">🚑 Start Day ${G.day}</button></div>`
+    : `<div class="btn-row"><button class="btn primary" onclick="closeOv()">Back to the station</button></div>`;
+  document.getElementById('ov-box').innerHTML=`${head}
     <div class="shop-tabs">${tabs}</div>
     <div class="shop-grid">${items}</div>
-    <div class="btn-row"><button class="btn primary" onclick="closeOv()">Back to the station</button></div>`;
+    ${foot}`;
 }
 function buy(id){
   const s=SHOP.find(x=>x.id===id); if(!s) return;
@@ -993,9 +1035,17 @@ function buy(id){
 }
 
 /* ============================================================
-   END OF SHIFT / SCORING
+   END OF DAY / CAMPAIGN / SCORING
    ============================================================ */
-function endShift(finished){
+const TEACH_TIPS = [
+  '<b>START triage</b> sorts patients by need: walking → Minor, then breathing, perfusion, and mental status decide the rest. Re-triage patients whose condition changes.',
+  '<b>CERT scope is stabilize-and-transfer.</b> Control bleeding, position airways, treat for shock — then evacuate anything beyond CERT training to EMS.',
+  '<b>Resource conservation matters.</b> Every glove and bandage counts in a disaster — treat the right patients with the right supplies and avoid over-treating.',
+  '<b>Patient flow is throughput.</b> Recovery and observation areas free up treatment beds so criticals never wait. Capacity, capability, and efficiency are all investments.',
+  '<b>PPE isn\'t optional.</b> Every volunteer uses a pair of gloves for each patient they tend — keep the station stocked or care grinds to a halt.',
+];
+
+function endDay(loseReason){
   if(G.over) return; G.over=true; G.running=false; if(LOOP)clearInterval(LOOP);
   // resolve anyone mid-care generously-ish: count saved if cared, else lost
   Object.values(G.patients).forEach(p=>{
@@ -1005,50 +1055,112 @@ function endShift(finished){
     else if(p.trueTag==='expectant'){ /* neither */ }
     else { G.stats.walkaway++; }
   });
-  const s=G.stats;
-  const saved=s.discharged+s.evac;
-  const lost=s.lost+s.walkaway;
+  const d=dayDelta(G);
+  const saved=d.discharged+d.evac;
+  const lost=d.lost+d.walkaway;
   const handled=Math.max(1,saved+lost);
   const outcomePct=Math.round(saved/handled*100);
-  const triageAcc=s.triaged?Math.round(s.triageRight/s.triaged*100):0;
-  const avgSat=s.satN?Math.round(s.satSum/s.satN):Math.round(G.sat);
+  const triageAcc=d.triaged?Math.round(d.triageRight/d.triaged*100):0;
+  const avgSat=d.satN?Math.round(d.satSum/d.satN):Math.round(G.sat);
   let score;
-  if(!finished && G.sat<=0){ score=Math.round(outcomePct*0.3+triageAcc*0.2); } // overwhelmed
+  if(loseReason){ score=Math.round(outcomePct*0.3+triageAcc*0.2); }
   else { score=Math.round(outcomePct*0.42+triageAcc*0.30+avgSat*0.28); }
   score=clamp(score,0,100);
   let stars;
-  if(!finished && G.sat<=0) stars=0;
+  if(loseReason) stars=0;
   else stars = score>=G.tier.thr[0]?3 : score>=G.tier.thr[1]?2 : 1;
   if(stars>0) saveProgress(G.tier.n,stars,score);
-  if(stars>=2)SND.win(); else if(stars===0)SND.lose(); else SND.good();
 
-  const starStr=[1,2,3].map(i=>i<=stars?'★':'☆').join('');
-  const title = (!finished&&G.sat<=0)?'⚠️ Station Overwhelmed':(stars>=3?'🏅 Outstanding Shift':stars>=2?'✅ Shift Complete':'Shift Complete');
-  const teach = pick([
-    '<b>START triage</b> sorts patients by need: walking → Minor, then breathing, perfusion, and mental status decide the rest. Re-triage patients whose condition changes.',
-    '<b>CERT scope is stabilize-and-transfer.</b> Control bleeding, position airways, treat for shock — then evacuate anything beyond CERT training to EMS.',
-    '<b>Resource conservation matters.</b> Every glove and bandage counts in a disaster — treat the right patients with the right supplies and avoid over-treating.',
-    '<b>Patient flow is throughput.</b> Recovery and observation areas free up treatment beds so criticals never wait. Capacity, capability, and efficiency are all investments.'
-  ]);
+  const m={score,stars,avgSat,outcomePct,triageAcc,saved,lost};
+  const highDay = !loseReason && score>=G.tier.thr[0];
+  if(highDay) G.daysHigh++;
+  const won = !loseReason && G.daysHigh>=(G.tier.win||3);
+
+  if(loseReason){ SND.lose(); showCampaignReport('lose',loseReason,m); }
+  else if(won){ SND.win(); showCampaignReport('win',null,m); }
+  else { if(stars>=2)SND.win(); else SND.good(); showDayReport(m); }
+}
+function showDayReport(m){
+  G._lastReportMetrics=m;
+  const starStr=[1,2,3].map(i=>i<=m.stars?'★':'☆').join('');
+  const title = m.stars>=3?'🏅 Outstanding Day':m.stars>=2?'✅ Day Complete':'Day Complete';
   openOv(`<h2>${title}</h2>
     <div class="stars-big">${starStr}</div>
-    <div class="score-line">Performance score: ${score}%</div>
-    <p class="sub">${G.tier.ic} ${G.tier.name} shift · ${finished?'You made it through the incident.':'The community lost confidence in the station.'}</p>
+    <div class="score-line">Day score: ${m.score}%</div>
+    <p class="sub">${G.tier.ic} ${G.tier.name} · Day ${G.day} of the campaign complete.</p>
     <div class="db-grid">
-      <div class="db-cell"><div class="dbk">Patients arrived</div><div class="dbv">${s.arrived}</div></div>
-      <div class="db-cell"><div class="dbk">Saved (discharged + evac)</div><div class="dbv" style="color:var(--t-min)">${saved}</div></div>
-      <div class="db-cell"><div class="dbk">Lost / walked away</div><div class="dbv" style="color:var(--danger)">${lost}</div></div>
-      <div class="db-cell"><div class="dbk">Triage accuracy</div><div class="dbv">${triageAcc}%</div></div>
-      <div class="db-cell"><div class="dbk">Avg. satisfaction</div><div class="dbv">${avgSat}%</div></div>
-      <div class="db-cell"><div class="dbk">Funding + donations</div><div class="dbv">$${G.money}</div></div>
+      <div class="db-cell"><div class="dbk">Saved today</div><div class="dbv" style="color:var(--t-min)">${m.saved}</div></div>
+      <div class="db-cell"><div class="dbk">Lost today</div><div class="dbv" style="color:var(--danger)">${m.lost}</div></div>
+      <div class="db-cell"><div class="dbk">Triage accuracy</div><div class="dbv">${m.triageAcc}%</div></div>
+      <div class="db-cell"><div class="dbk">Avg. satisfaction</div><div class="dbv">${m.avgSat}%</div></div>
+      <div class="db-cell"><div class="dbk">High-satisfaction days</div><div class="dbv">${G.daysHigh}/${G.tier.win||3}</div></div>
+      <div class="db-cell"><div class="dbk">Funding on hand</div><div class="dbv">$${G.money}</div></div>
     </div>
-    <div class="teach">${teach}</div>
+    <div class="teach">Use this break to restock, expand, or upgrade — the clock is paused until Day ${G.day+1} begins.</div>
     <div class="btn-row">
-      <button class="btn primary" onclick="closeOv();newGame(TIER)">🔁 Run this shift again</button>
+      <button class="btn primary" onclick="closeOv();continueCampaign()">▶️ Continue to Day ${G.day+1}</button>
+      <button class="btn" onclick="endCampaignVoluntary()">🏁 End campaign here</button>
+    </div>
+    <div class="btn-row">
       <button class="btn" onclick="closeOv();openTierSelect()">🎚️ Choose shift</button>
       <a class="btn" href="index.html">🏠 Menu</a>
     </div>`);
+  document.getElementById('ov').classList.add('show');
 }
+function endCampaignVoluntary(){ closeOv(); showCampaignReport('ended',null,G._lastReportMetrics); }
+function showCampaignReport(kind,loseReason,m){
+  const starStr=[1,2,3].map(i=>i<=m.stars?'★':'☆').join('');
+  let title,sub;
+  if(kind==='lose'){
+    title = loseReason==='sat'?'⚠️ Station Overwhelmed':loseReason==='broke'?'💸 Station Out of Resources':'😴 Volunteers Exhausted';
+    sub = loseReason==='sat'?'The community lost confidence in the station.':
+          loseReason==='broke'?'Funding and supplies ran out — the station could no longer operate.':
+          'Every volunteer was hurt or too exhausted to work — the station had to shut down.';
+  } else if(kind==='win'){
+    title='🏆 Campaign Complete — Well Done!';
+    sub=`You ran ${G.day} day${G.day===1?'':'s'} and delivered ${G.daysHigh} high-satisfaction days at the ${G.tier.name} level.`;
+  } else {
+    title='🏁 Campaign Ended';
+    sub=`You ran ${G.day} day${G.day===1?'':'s'} at the ${G.tier.name} level.`;
+  }
+  const teach = pick(TEACH_TIPS);
+  openOv(`<h2>${title}</h2>
+    <div class="stars-big">${starStr}</div>
+    <div class="score-line">Final day score: ${m.score}%</div>
+    <p class="sub">${sub}</p>
+    <div class="db-grid">
+      <div class="db-cell"><div class="dbk">Days run</div><div class="dbv">${G.day}</div></div>
+      <div class="db-cell"><div class="dbk">High-satisfaction days</div><div class="dbv">${G.daysHigh}</div></div>
+      <div class="db-cell"><div class="dbk">Patients arrived (career)</div><div class="dbv">${G.stats.arrived}</div></div>
+      <div class="db-cell"><div class="dbk">Saved (career)</div><div class="dbv" style="color:var(--t-min)">${G.stats.discharged+G.stats.evac}</div></div>
+      <div class="db-cell"><div class="dbk">Lost (career)</div><div class="dbv" style="color:var(--danger)">${G.stats.lost+G.stats.walkaway}</div></div>
+      <div class="db-cell"><div class="dbk">Final funding</div><div class="dbv">$${G.money}</div></div>
+    </div>
+    <div class="teach">${teach}</div>
+    <div class="btn-row">
+      <button class="btn primary" onclick="closeOv();newGame(TIER)">🔁 New Campaign</button>
+      <button class="btn" onclick="closeOv();openTierSelect()">🎚️ Choose shift</button>
+      <a class="btn" href="index.html">🏠 Menu</a>
+    </div>`);
+  document.getElementById('ov').classList.add('show');
+}
+
+function continueCampaign(){ nextDay(); openIntermission(); }
+function nextDay(){
+  G.day++;
+  G.t=0; G.spawnTimer=G.tier.spawn[0]; G.evTimer=24; G.exhaustTimer=0;
+  G.waiting=[]; G.patients={}; G.ambPending=[]; G.sel=null; G.mods={};
+  G.beds.forEach(b=>{b.pid=null;b.offline=0;b.vol=null;});
+  G.recovery.forEach(r=>r.pid=null);
+  G.obs.forEach(o=>o.pid=null);
+  G.vols.forEach(v=>{v.bed=null; v.hurt=0; v.fatigue=clamp(v.fatigue-35,0,100);});
+  G.sat=clamp(G.sat+12,45,100);
+  G.dayBase={arrived:G.stats.arrived,discharged:G.stats.discharged,evac:G.stats.evac,lost:G.stats.lost,
+    walkaway:G.stats.walkaway,triaged:G.stats.triaged,triageRight:G.stats.triageRight,satSum:G.stats.satSum,satN:G.stats.satN};
+  logMsg(G,`Day ${G.day} beginning. Station restocked and crew rested.`,'good');
+}
+function openIntermission(){ G.shopTab=G.shopTab||'room'; drawShop('intermission'); document.getElementById('ov').classList.add('show'); }
+function beginDay(){ G.over=false; G.running=true; closeOv(); render(); startLoop(); }
 
 /* ============================================================
    TIER SELECT / BRIEFING
@@ -1082,7 +1194,7 @@ function briefing(n){
       <div class="db-cell"><div class="dbk">Volunteers</div><div class="dbv">${t.vols}</div></div>
       <div class="db-cell"><div class="dbk">Ambulances</div><div class="dbv">${t.amb}</div></div>
     </div>
-    <div class="teach"><b>Your loop:</b> tap a patient → assess vitals → assign a START tag → send to a bed (or drag the card) → apply the right treatments (they cost supplies) → discharge stable patients or request an ambulance for anything beyond CERT scope. Keep satisfaction up, spend funding wisely, and expand the station.</div>
+    <div class="teach"><b>Your loop:</b> tap a patient → assess vitals → assign a START tag → send to a bed (or drag the card) → assign a volunteer (uses a pair of gloves) → apply the right treatments (they cost supplies) → discharge stable patients or request an ambulance for anything beyond CERT scope. This is a multi-day campaign: survive each day and you'll get a paused break to restock, expand, or upgrade before the next one. Run out of satisfaction, funding + supplies, or rested volunteers and the campaign ends — string together ${t.win||3} high-satisfaction days to win it.</div>
     <div class="btn-row"><button class="btn primary" onclick="closeOv();newGame(tierByN(${n}))">🚑 Open the aid station</button>
       <button class="btn" onclick="openTierSelect()">← Back</button></div>`);
 }
@@ -1090,12 +1202,17 @@ function briefing(n){
 /* ---------- overlay + toast ---------- */
 function openOv(html){ document.getElementById('ov-box').innerHTML=html; document.getElementById('ov').classList.add('show'); }
 function closeOv(){ document.getElementById('ov').classList.remove('show'); }
+// The overlay may only be dismissed by clicking its backdrop while a game is
+// actively in progress (assess/shop popups). Menus, briefings, day reports,
+// and the between-day intermission have nothing playable behind them, so
+// dismissing them would strand the player with no way to navigate onward.
+function canDismissOv(){ return !!(G && !G.over); }
 function toast(msg,cls){ const w=document.getElementById('toast-wrap'); const d=document.createElement('div');
   d.className='toast '+(cls||''); d.textContent=msg; w.appendChild(d); setTimeout(()=>d.remove(),3000); }
 
 /* ---------- boot ---------- */
 ['pointerdown','keydown','touchstart'].forEach(ev=>window.addEventListener(ev,function once(){ SND.arm(); },{once:true}));
-document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ if(document.getElementById('ov').classList.contains('show')&&G&&!G.over){ closeOv(); } } });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ if(document.getElementById('ov').classList.contains('show')&&canDismissOv()){ closeOv(); } } });
 SND.init();
 openTierSelect();
 </script>
