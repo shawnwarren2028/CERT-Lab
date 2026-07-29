@@ -60,6 +60,14 @@
     box-shadow:inset 0 0 44px rgba(0,0,0,.4),0 3px 10px rgba(0,0,0,.2);}
   .scene-banner svg{width:100%;height:auto;display:block;max-height:130px;}
 
+  .tut-banner{display:flex;align-items:center;gap:10px;background:linear-gradient(155deg,#183042,#0e1f2b);
+    border:1.5px solid var(--info);border-radius:var(--radius);padding:10px 12px;box-shadow:0 3px 10px rgba(0,0,0,.2);}
+  .tut-banner .tb-ic{font-size:1.3rem;flex-shrink:0;}
+  .tut-banner .tb-txt{flex:1;font-size:0.84rem;color:#dff3ff;line-height:1.4;}
+  .tut-banner .tb-skip{flex-shrink:0;background:none;border:1px solid rgba(255,255,255,.3);color:#dff3ff;
+    font-size:0.72rem;font-weight:700;padding:5px 10px;border-radius:7px;cursor:pointer;font-family:inherit;}
+  .tut-banner .tb-skip:hover{background:rgba(255,255,255,.1);}
+
   /* ---- top stat bar ---- */
   .top{display:flex;gap:8px;flex-wrap:wrap;align-items:stretch;}
   .chip{background:linear-gradient(160deg,var(--surface) 0%,var(--surface2) 150%);border:1px solid var(--border);
@@ -542,8 +550,21 @@ function newGame(tier){
   for(let i=0;i<tier.vols;i++) recruit(G,skills[i]||'Medical');
   logMsg(G,'Aid station open. Two beds, '+tier.vols+' volunteers on shift.','');
   spawn(G,true);
+  if(!localStorage.getItem('cert_aid_tutorial_seen')){
+    localStorage.setItem('cert_aid_tutorial_seen','1');
+    G.tutorial={step:0,pid:G.waiting[0]};
+  }
   render(); startLoop();
 }
+const TUTORIAL_STEPS=[
+  "Tap your first patient's card below to assess them.",
+  "Review their vitals, then choose the correct START triage category.",
+  "Send them to a bed — tap the button, or drag their card onto an empty bed.",
+  "Assign a volunteer to treat them (this uses a pair of gloves for PPE).",
+  "Apply each treatment they need, then discharge them (or request an ambulance if they're beyond CERT scope).",
+];
+function tutStep(n){ if(G&&G.tutorial&&G.tutorial.step===n) G.tutorial.step=n+1; }
+function tutSkip(){ if(G) G.tutorial=null; render(); }
 function dayDelta(g){
   const b=g.dayBase||{}, s=g.stats;
   return {
@@ -617,6 +638,7 @@ function selPatient(id){ const p=G.patients[id]; if(!p) return; SND.click();
 }
 function openAssess(id){
   const p=G.patients[id]; if(!p) return;
+  if(G.tutorial&&G.tutorial.pid===id) tutStep(0);
   const bleedTxt={none:'none',minor:'minor',moderate:'moderate',severe:'severe (no radial pulse)'}[p.bleeding];
   const mob={walking:'Walking',limited:'Limited / weak',immobile:'Cannot walk'}[p.mobility];
   const men={follows:'Follows commands',altered:'Altered / confused',unresponsive:'Unresponsive'}[p.mental];
@@ -640,6 +662,7 @@ function openAssess(id){
 }
 function doTriage(id,tag){
   const p=G.patients[id]; if(!p||p.stage!=='triage') return;
+  if(G.tutorial&&G.tutorial.pid===id) tutStep(1);
   p.playerTag=tag; p.stage='triaged'; G.stats.triaged++;
   const right=(tag===p.trueTag);
   if(right){ G.stats.triageRight++; G.money+=8; G.sat=clamp(G.sat+2,0,100); SND.tag();
@@ -672,7 +695,8 @@ function sendToBed(id){
 }
 function dequeueWaiting(id){ const i=G.waiting.indexOf(id); if(i>=0)G.waiting.splice(i,1); }
 function placeInBed(p,b){ b.pid=p.id; p.bed=b.id; p.stage='bed'; p.patience=100; dequeueWaiting(p.id);
-  logMsg(G,`${p.name} moved to a${G.isoBeds.includes(b)?'n isolation':' treatment'} bed.`,''); }
+  logMsg(G,`${p.name} moved to a${G.isoBeds.includes(b)?'n isolation':' treatment'} bed.`,'');
+  if(G.tutorial&&G.tutorial.pid===p.id) tutStep(2); }
 function assignToBedById(pid,bid){
   const p=G.patients[pid], b=findBedSlot(bid);
   if(!p||!b) return;
@@ -703,6 +727,7 @@ function applyTx(id,tx){
   p.done.push(slot); SND.good();
   if(slot!==tx){ G.sat=clamp(G.sat+2,0,100); logMsg(G,`${p.name}: advanced dressing used — a little extra reassurance.`,'good'); }
   if(p.done.length>=p.needs.length){ p.cared=true; logMsg(G,`${p.name} stabilized — care plan complete.`,'good'); }
+  if(G.tutorial&&G.tutorial.pid===id) tutStep(4);
   render();
 }
 function assignVol(id){
@@ -740,6 +765,7 @@ function assignVolChoice(pid,vid){
   if((G.inv.gloves||0)<1){ toast('Out of gloves.','bad'); closeOv(); return; }
   v.bed=bed.id; bed.vol=v.id; G.inv.gloves--; SND.click();
   logMsg(G,`${v.name} (${v.skill}) assigned to a bed (PPE used).`,'');
+  if(G.tutorial&&G.tutorial.pid===pid) tutStep(3);
   closeOv(); render();
 }
 function discharge(id){
@@ -994,6 +1020,14 @@ function stationScene(){
 
 function render(){
   if(!G) return;
+  if(G.tutorial){
+    if(G.tutorial.step>=TUTORIAL_STEPS.length){
+      toast("🎉 Nice work — you've got the core loop! Build/Buy lets you restock and expand between days.",'');
+      G.tutorial=null;
+    } else if(!G.patients[G.tutorial.pid]){
+      G.tutorial=null; // the tutorial patient left the flow before finishing the walkthrough
+    }
+  }
   const m=document.getElementById('main');
   const winScroll=window.scrollY;
   const scrollState=['.qlist','.logbox'].map(sel=>{
@@ -1006,6 +1040,7 @@ function render(){
   const q=G.waiting.filter(id=>{const p=G.patients[id];return p&&(p.stage==='triage'||p.stage==='triaged');}).length;
   m.innerHTML=`
    ${stationScene()}
+   ${G.tutorial?`<div class="tut-banner"><span class="tb-ic">🎓</span><span class="tb-txt">${TUTORIAL_STEPS[G.tutorial.step]}</span><button class="tb-skip" onclick="tutSkip()">Skip</button></div>`:''}
    <div class="top">
      <div class="chip"><span class="ck">📅 Day</span><span class="cv">${G.day}</span></div>
      <div class="chip"><span class="ck">💵 Funding</span><span class="cv">$${G.money}</span></div>
