@@ -498,7 +498,7 @@ function newGame(tier){
     ambMax:tier.amb, ambReady:tier.amb, ambEta:12, ambPending:[],
     bought:{}, mods:{}, log:[],
     generator:false,hvac:false,pharmacy:false,trauma:false,training:false,lighting:false,iso:false,restFast:false,helipad:false,
-    spawnTimer:tier.spawn[0], evTimer:24, exhaustTimer:0,
+    spawnTimer:tier.spawn[0], evTimer:24, exhaustTimer:0, warnedEnd:false,
     day:1, daysHigh:0,
     stats:{arrived:0,discharged:0,evac:0,lost:0,walkaway:0,triaged:0,triageRight:0,expOk:0,donated:0,grant:0,satSum:0,satN:0},
     dayBase:{arrived:0,discharged:0,evac:0,lost:0,walkaway:0,triaged:0,triageRight:0,satSum:0,satN:0},
@@ -507,6 +507,7 @@ function newGame(tier){
   const skills=['Medical','Medical','Logistics','Communications','Administration','Search & Rescue'];
   for(let i=0;i<tier.vols;i++) recruit(G,skills[i]||'Medical');
   logMsg(G,'Aid station open. Two beds, '+tier.vols+' volunteers on shift.','');
+  spawn(G,true);
   render(); startLoop();
 }
 function dayDelta(g){
@@ -653,13 +654,39 @@ function applyTx(id,tx){
 function assignVol(id){
   const p=G.patients[id]; if(!p||p.stage!=='bed') return;
   const bed=G.beds.find(b=>b.id===p.bed); if(!bed) return;
-  if(bed.vol){ const v=G.vols.find(x=>x.id===bed.vol); if(v)v.bed=null; bed.vol=null; SND.click(); render(); return; }
-  // best free, rested, un-exhausted medical volunteer
-  const avail=G.vols.filter(v=>!v.bed&&!v.hurt&&v.fatigue<100).sort((a,b)=>((b.skill==='Medical')-(a.skill==='Medical'))||(b.exp-a.exp)||(a.fatigue-b.fatigue));
+  if(bed.vol){ unassignVol(bed.id); return; }
+  const avail=G.vols.filter(v=>!v.bed&&!v.hurt&&v.fatigue<100);
   if(!avail.length){ toast('No volunteers free — recruit, rest one up, or free one up.','bad'); SND.bad(); return; }
   if((G.inv.gloves||0)<1){ toast('Out of gloves — a volunteer needs PPE to tend a patient. Restock in the shop.','bad'); SND.bad(); return; }
-  const v=avail[0]; v.bed=bed.id; bed.vol=v.id; G.inv.gloves--; SND.click();
-  logMsg(G,`${v.name} (${v.skill}) assigned to a bed (PPE used).`,''); render();
+  openVolPicker(id);
+}
+function unassignVol(bedId){
+  const bed=G.beds.find(b=>b.id===bedId); if(!bed||!bed.vol) return;
+  const v=G.vols.find(x=>x.id===bed.vol); if(v)v.bed=null; bed.vol=null; SND.click(); render();
+}
+function openVolPicker(pid){
+  const p=G.patients[pid]; if(!p||p.stage!=='bed') return;
+  const avail=G.vols.filter(v=>!v.bed&&!v.hurt&&v.fatigue<100)
+    .sort((a,b)=>((b.skill==='Medical')-(a.skill==='Medical'))||(b.exp-a.exp)||(a.fatigue-b.fatigue));
+  const cards=avail.map(v=>`<button class="tier-card" onclick="assignVolChoice(${pid},'${v.id}')">
+     <span class="tc-ic">${SKILL_EM[v.skill]}</span>
+     <div class="tc-body"><span class="tc-name">${v.name}</span>
+       <span class="tc-desc">${v.skill} · exp ${'★'.repeat(v.exp)}${'☆'.repeat(3-v.exp)} · fatigue ${Math.round(v.fatigue)}%</span></div>
+   </button>`).join('');
+  openOv(`<h2>🩺 Assign a Volunteer</h2>
+    <p class="sub">${p.em} <b>${p.name}</b> — choose who tends this patient. Uses 1 pair of gloves.</p>
+    <div class="tier-list">${cards}</div>
+    <div class="btn-row"><button class="btn" onclick="closeOv()">Cancel</button></div>`);
+  document.getElementById('ov').classList.add('show');
+}
+function assignVolChoice(pid,vid){
+  const p=G.patients[pid]; if(!p||p.stage!=='bed'){ closeOv(); return; }
+  const bed=G.beds.find(b=>b.id===p.bed); if(!bed||bed.vol){ closeOv(); render(); return; }
+  const v=G.vols.find(x=>x.id===vid); if(!v||v.bed||v.hurt||v.fatigue>=100){ closeOv(); render(); return; }
+  if((G.inv.gloves||0)<1){ toast('Out of gloves.','bad'); closeOv(); return; }
+  v.bed=bed.id; bed.vol=v.id; G.inv.gloves--; SND.click();
+  logMsg(G,`${v.name} (${v.skill}) assigned to a bed (PPE used).`,'');
+  closeOv(); render();
 }
 function discharge(id){
   const p=G.patients[id]; if(!p) return;
@@ -722,6 +749,11 @@ function tick(){
   G.t++;
   // clock
   const left=G.shift-G.t;
+  if(left<=30 && left>0 && !G.warnedEnd){
+    G.warnedEnd=true;
+    toast('⏱️ 30 seconds left in the shift!','evt'); SND.evt();
+    logMsg(G,'30 seconds left in the shift.','evt');
+  }
   // spawn interpolation
   const frac=G.t/G.shift;
   let interval=G.tier.spawn[0]+(G.tier.spawn[1]-G.tier.spawn[0])*frac;
@@ -838,6 +870,7 @@ function tryMoveRecovery(p){
 function render(){
   if(!G) return;
   const m=document.getElementById('main');
+  const winScroll=window.scrollY;
   const scrollState=['.qlist','.logbox'].map(sel=>{
     const el=m.querySelector(sel);
     return el?{sel,top:el.scrollTop}:null;
@@ -872,6 +905,7 @@ function render(){
     const el=m.querySelector(s.sel);
     if(el) el.scrollTop=s.top;
   }
+  window.scrollTo(0,winScroll);
 }
 function renderWaiting(){
   const ids=G.waiting.filter(id=>{const p=G.patients[id];return p&&(p.stage==='triage'||p.stage==='triaged');});
@@ -1148,7 +1182,7 @@ function showCampaignReport(kind,loseReason,m){
 function continueCampaign(){ nextDay(); openIntermission(); }
 function nextDay(){
   G.day++;
-  G.t=0; G.spawnTimer=G.tier.spawn[0]; G.evTimer=24; G.exhaustTimer=0;
+  G.t=0; G.spawnTimer=G.tier.spawn[0]; G.evTimer=24; G.exhaustTimer=0; G.warnedEnd=false;
   G.waiting=[]; G.patients={}; G.ambPending=[]; G.sel=null; G.mods={};
   G.beds.forEach(b=>{b.pid=null;b.offline=0;b.vol=null;});
   G.recovery.forEach(r=>r.pid=null);
@@ -1160,7 +1194,7 @@ function nextDay(){
   logMsg(G,`Day ${G.day} beginning. Station restocked and crew rested.`,'good');
 }
 function openIntermission(){ G.shopTab=G.shopTab||'room'; drawShop('intermission'); document.getElementById('ov').classList.add('show'); }
-function beginDay(){ G.over=false; G.running=true; closeOv(); render(); startLoop(); }
+function beginDay(){ G.over=false; G.running=true; spawn(G,true); closeOv(); render(); startLoop(); }
 
 /* ============================================================
    TIER SELECT / BRIEFING
