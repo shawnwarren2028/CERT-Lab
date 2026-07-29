@@ -1,9 +1,10 @@
 /* ══════════════ SHARED CERT TERM DATA ══════════════
-   Single source of truth for the CERT Crossword (game-crossword.html) and
-   the Glossary (glossary.html).
+   Term data for the CERT Crossword (game-crossword.html).
    d   = difficulty (1 easy/common · 2 medium · 3 hard)
    clue= mixed style (definition / fill-in-the-blank / acronym)
-   info= reinforced-learning note (shown on Reveal Word + in the glossary) */
+   info= reinforced-learning note (shown on Reveal Word)
+   Kept in sync with the fuller glossary in the separate CERT Reference
+   Guide project — only single-word, crossword-safe terms are mirrored here. */
 const CERT_TERMS = [
   // ── d1 ──
   {a:"SCENE",   d:1, clue:"Always ensure ___ safety before you act.", info:"Scene safety is CERT rule #1 — never become a second victim."},
@@ -92,46 +93,134 @@ const CERT_TERMS = [
   {a:"LACERATION",  d:3, clue:"A jagged cut — the L in DCAP-BTLS.", info:"Control laceration bleeding with direct pressure."},
   {a:"QUADRANT",    d:3, clue:"Each colored section of the NFPA 704 diamond.", info:"NFPA 704 quadrants rate health, fire, reactivity, and special hazards."},
   {a:"CAPILLARY",   d:3, clue:"___ refill under 2 seconds shows good perfusion.", info:"Press a nail bed; capillary refill helps judge perfusion during START."},
+
+  // ── reference materials expansion (Field Reference + NATO alphabet + additional course terms) ──
+  // ── d1 ──
+  {a:"NWS",         d:1, clue:"National Weather Service (acronym).", info:"The NWS issues the official watches and warnings behind every severe-weather alert."},
+  {a:"GOBAG",       d:1, clue:"A portable, grab-and-run version of your emergency kit.", info:"Keep a go-bag by the door — it's your kit, ready to move with you."},
+  {a:"PERIMETER",   d:1, clue:"The outer boundary you set around a scene.", info:"Establishing a perimeter keeps bystanders out and helps you control the scene."},
+  {a:"VEST",        d:1, clue:"High-visibility PPE that identifies you as CERT.", info:"A CERT vest makes you recognizable to survivors and other responders."},
+  {a:"WHISTLE",     d:1, clue:"Simple tool used to signal for help or attention.", info:"Three short blasts is a common distress signal — carry a whistle in your kit."},
+  {a:"FLASHLIGHT",  d:1, clue:"Battery-powered light — a kit essential.", info:"Keep a flashlight with fresh batteries in every disaster kit and vehicle."},
+  {a:"BATTERIES",   d:1, clue:"Store extra ___ for flashlights and radios.", info:"Rotate stored batteries periodically so they're fresh when you need them."},
+  {a:"PRESCRIPTIONS", d:1, clue:"Keep a list and extra supply of these in your kit.", info:"Running out of medication mid-disaster can turn into its own emergency."},
+  {a:"EXTINGUISHER", d:1, clue:"Portable device that puts out a small fire.", info:"Know PASS and check your extinguisher's class before you reach for one."},
+  {a:"BURN",        d:1, clue:"The second B in DCAP-BTLS.", info:"Cool a burn, then cover it with a sterile dressing to reduce infection risk."},
+  {a:"ALLERGIES",   d:1, clue:"The A in a SAMPLE history.", info:"Ask about allergies before assisting with any medication."},
+  {a:"MEDICATIONS", d:1, clue:"The second M in a SAMPLE history.", info:"Current medications can explain symptoms or complicate treatment."},
+  {a:"ONSET",       d:1, clue:"The O in OPQRST — when the pain or symptom began.", info:"Sudden onset versus gradual onset can point to very different problems."},
+  {a:"QUALITY",     d:1, clue:"The Q in OPQRST — how the pain feels.", info:"Sharp, dull, crushing, burning — the quality of pain is a diagnostic clue."},
+  {a:"SEVERITY",    d:1, clue:"The S in OPQRST, often rated 1 to 10.", info:"Tracking severity over time shows whether a patient is improving or not."},
+  {a:"UNRESPONSIVE", d:1, clue:"The U in AVPU — no reaction to any stimulus.", info:"An unresponsive patient needs immediate airway and breathing checks."},
+  {a:"CPR",         d:1, clue:"Cardiopulmonary Resuscitation (acronym).", info:"CPR keeps blood moving to the brain until an AED or EMS arrives."},
+  {a:"AED",         d:1, clue:"Automated External Defibrillator (acronym).", info:"An AED talks you through shocking a heart back into a normal rhythm."},
+  {a:"GRIEF",       d:1, clue:"The emotional response to loss.", info:"Grief has no fixed timeline — be patient with survivors and yourself."},
+  {a:"LOCKDOWN",    d:1, clue:"Securing a location and restricting movement in and out.", info:"A lockdown is used when a threat is inside or near a building."},
+  {a:"SUSPICIOUS",  d:1, clue:"A ___ package or activity should be reported, not investigated.", info:"If something looks out of place, report it — don't touch or approach it."},
+  {a:"EARTHQUAKE",  d:1, clue:"Sudden shaking of the ground caused by shifting tectonic plates.", info:"Drop, cover, and hold on is the standard earthquake response."},
+  {a:"WILDFIRE",    d:1, clue:"An uncontrolled fire burning in wildland vegetation.", info:"Defensible space around a home is one of the best wildfire mitigations."},
+  {a:"HURRICANE",   d:1, clue:"A powerful tropical cyclone with sustained winds of 74 mph or more.", info:"Hurricanes bring wind, storm surge, and inland flooding — plan for all three."},
+  {a:"TORNADO",     d:1, clue:"A violently rotating column of air extending from a thunderstorm to the ground.", info:"Go to the lowest floor, interior room, away from windows for tornado safety."},
+  {a:"FLOOD",       d:1, clue:"Water covering normally dry land.", info:"Turn around, don't drown — most flood deaths happen in vehicles."},
+  {a:"ALPHA",       d:1, clue:"NATO phonetic alphabet letter for A.", info:"Say 'Alpha' instead of 'A' on the radio so it isn't confused with another letter."},
+  {a:"BRAVO",       d:1, clue:"NATO phonetic alphabet letter for B.", info:"'Bravo' is clearer over a radio than a spoken 'B'."},
+  {a:"CHARLIE",     d:1, clue:"NATO phonetic alphabet letter for C.", info:"'Charlie' avoids confusion between C and other similar-sounding letters."},
+  {a:"DELTA",       d:1, clue:"NATO phonetic alphabet letter for D.", info:"'Delta' is used in place of D for clear radio communication."},
+  {a:"ECHO",        d:1, clue:"NATO phonetic alphabet letter for E.", info:"'Echo' stands in for E on the radio."},
+  {a:"FOXTROT",     d:1, clue:"NATO phonetic alphabet letter for F.", info:"'Foxtrot' replaces F to avoid confusion with S over the radio."},
+  {a:"GOLF",        d:1, clue:"NATO phonetic alphabet letter for G.", info:"'Golf' stands in for G on the radio."},
+  {a:"HOTEL",       d:1, clue:"NATO phonetic alphabet letter for H.", info:"'Hotel' replaces H for clear radio spelling."},
+  {a:"INDIA",       d:1, clue:"NATO phonetic alphabet letter for I.", info:"'India' stands in for I on the radio."},
+  {a:"JULIETT",     d:1, clue:"NATO phonetic alphabet letter for J.", info:"'Juliett' is spelled with two Ts in the official radio alphabet."},
+  {a:"KILO",        d:1, clue:"NATO phonetic alphabet letter for K.", info:"'Kilo' stands in for K on the radio."},
+  {a:"LIMA",        d:1, clue:"NATO phonetic alphabet letter for L.", info:"'Lima' replaces L for clear radio spelling."},
+  {a:"MIKE",        d:1, clue:"NATO phonetic alphabet letter for M.", info:"'Mike' stands in for M — don't confuse it with 'November'."},
+  {a:"NOVEMBER",    d:1, clue:"NATO phonetic alphabet letter for N.", info:"'November' replaces N for clear radio spelling."},
+  {a:"OSCAR",       d:1, clue:"NATO phonetic alphabet letter for O.", info:"'Oscar' stands in for O on the radio."},
+  {a:"PAPA",        d:1, clue:"NATO phonetic alphabet letter for P.", info:"'Papa' replaces P to avoid confusion with B and D."},
+  {a:"QUEBEC",      d:1, clue:"NATO phonetic alphabet letter for Q.", info:"'Quebec' stands in for Q on the radio."},
+  {a:"ROMEO",       d:1, clue:"NATO phonetic alphabet letter for R.", info:"'Romeo' replaces R for clear radio spelling."},
+  {a:"SIERRA",      d:1, clue:"NATO phonetic alphabet letter for S.", info:"'Sierra' stands in for S — clearer than 'F' over a radio."},
+  {a:"TANGO",       d:1, clue:"NATO phonetic alphabet letter for T.", info:"'Tango' replaces T for clear radio spelling."},
+  {a:"UNIFORM",     d:1, clue:"NATO phonetic alphabet letter for U.", info:"'Uniform' stands in for U on the radio."},
+  {a:"VICTOR",      d:1, clue:"NATO phonetic alphabet letter for V.", info:"'Victor' replaces V to avoid confusion with B."},
+  {a:"WHISKEY",     d:1, clue:"NATO phonetic alphabet letter for W.", info:"'Whiskey' stands in for W on the radio."},
+  {a:"YANKEE",      d:1, clue:"NATO phonetic alphabet letter for Y.", info:"'Yankee' stands in for Y on the radio."},
+  {a:"ZULU",        d:1, clue:"NATO phonetic alphabet letter for Z — also military shorthand for UTC time.", info:"'Zulu' replaces Z, and 'Zulu time' means UTC in radio and military use."},
+
+  // ── d2 ──
+  {a:"CISA",        d:2, clue:"Cybersecurity and Infrastructure Security Agency (acronym).", info:"CISA publishes the active-shooter and infrastructure-security guidance in this guide's Field Reference."},
+  {a:"OSHA",        d:2, clue:"Occupational Safety and Health Administration (acronym).", info:"OSHA sets the workplace PPE and hazard-communication standards behind CERT's own PPE training."},
+  {a:"USFA",        d:2, clue:"U.S. Fire Administration (acronym).", info:"USFA is the FEMA agency focused on fire prevention, including home escape-plan guidance."},
+  {a:"VOAD",        d:2, clue:"Voluntary Organizations Active in Disaster (acronym).", info:"National VOAD coordinates the volunteer groups — including CERT — that respond alongside professional agencies."},
+  {a:"ANNEX",       d:2, clue:"A hazard-specific ___ extends CERT's core training.", info:"FEMA's CERT Hazard-Specific Annex covers hazards — like earthquakes or wildfires — beyond the eight core sections."},
+  {a:"WATCH",       d:2, clue:"Weather alert meaning a hazard's conditions are possible.", info:"A watch means stay alert and get ready — the hazard hasn't started yet."},
+  {a:"WARNING",     d:2, clue:"Weather alert meaning a hazard is happening or about to.", info:"A warning is more urgent than a watch — take action now."},
+  {a:"SDS",         d:2, clue:"Safety Data Sheet (acronym).", info:"An SDS lists a chemical's hazards, handling, and first-aid measures."},
+  {a:"ICS",         d:2, clue:"Incident Command System (acronym).", info:"ICS is the management structure CERT plugs into once professional responders arrive."},
+  {a:"ACCOUNTABILITY", d:2, clue:"Knowing where every team member is at all times.", info:"An accountability system prevents responders from becoming lost or forgotten."},
+  {a:"SANITATION",  d:2, clue:"Managing waste and hygiene when normal services are down.", info:"Poor sanitation after a disaster can cause a second wave of illness."},
+  {a:"IGNITION",    d:2, clue:"The point at which a fuel starts to burn.", info:"Removing an ignition source is one way to prevent a fire before it starts."},
+  {a:"DEFORMITY",   d:2, clue:"The D in DCAP-BTLS.", info:"A deformity — an abnormal body shape — can signal a fracture or dislocation."},
+  {a:"ABRASION",    d:2, clue:"The second A in DCAP-BTLS — a scrape.", info:"Clean an abrasion gently and cover it to prevent infection."},
+  {a:"PUNCTURE",    d:2, clue:"The P in DCAP-BTLS — a deep, narrow wound.", info:"Don't remove an impaled object from a puncture wound — stabilize it in place."},
+  {a:"TENDERNESS",  d:2, clue:"The first T in DCAP-BTLS — pain when an area is touched.", info:"Tenderness during a head-to-toe exam can point to a hidden injury."},
+  {a:"SWELLING",    d:2, clue:"The S in DCAP-BTLS.", info:"Swelling often develops after a fracture, sprain, or internal injury."},
+  {a:"SAMPLE",      d:2, clue:"Signs, Allergies, Medications, Pertinent history, Last intake, Events (history acronym).", info:"A SAMPLE history gives EMS the medical background they need in seconds."},
+  {a:"OPQRST",      d:2, clue:"Onset, Provocation, Quality, Radiation, Severity, Time (pain-assessment acronym).", info:"OPQRST digs into a patient's pain to help sort out what's wrong."},
+  {a:"PROVOCATION", d:2, clue:"The P in OPQRST — what makes the pain better or worse.", info:"Provocation and palliation both live under the same OPQRST letter."},
+  {a:"RADIATION",   d:2, clue:"The R in OPQRST — where pain spreads to.", info:"Pain that radiates can signal a problem far from where it's felt."},
+  {a:"AVPU",        d:2, clue:"Alert, Verbal, Pain, Unresponsive (mental-status acronym).", info:"AVPU is a fast way to check a patient's level of consciousness."},
+  {a:"HEIMLICH",    d:2, clue:"Abdominal thrust maneuver for a choking victim.", info:"The Heimlich maneuver can clear an airway blocked by food or an object."},
+  {a:"SPINAL",      d:2, clue:"Treat for a possible ___ injury if the mechanism suggests one.", info:"Minimize movement of the head and neck if you suspect a spinal injury."},
+  {a:"SUPERFICIAL", d:2, clue:"The mildest burn classification — epidermis only.", info:"A superficial burn is red and painful but doesn't blister."},
+  {a:"PANCAKE",     d:2, clue:"A void type where a floor drops flat onto the level below.", info:"A pancake void is held up at the edges by furniture or debris underneath."},
+  {a:"TAGGING",     d:2, clue:"Marking a structure's safety status after it's assessed.", info:"Tagging tells other teams whether a structure is safe, restricted, or unsafe."},
+  {a:"OPERATIONS",  d:2, clue:"ICS section that carries out the tactical response.", info:"Operations does the hands-on work of achieving the incident objectives."},
+  {a:"PLANNING",    d:2, clue:"ICS section that tracks resources and develops the action plan.", info:"Planning keeps a running picture of the incident and what happens next."},
+  {a:"FINANCE",     d:2, clue:"ICS section that tracks costs and documentation.", info:"Finance/Administration tracks the incident's costs and paperwork."},
+  {a:"DEMOBILIZATION", d:2, clue:"Safely and orderly releasing resources once they're no longer needed.", info:"Demobilization is planned, not just 'everyone goes home' — track who leaves and when."},
+  {a:"DEBRIEFING",  d:2, clue:"A structured discussion after a difficult incident.", info:"Debriefing helps responders process what happened and spot who needs more support."},
+  {a:"RESILIENCE",  d:2, clue:"The ability to recover and adapt after a difficult event.", info:"Sleep, support, and routine all help rebuild resilience after a disaster."},
+  {a:"IED",         d:2, clue:"Improvised Explosive Device (acronym).", info:"Recognize, retreat, and report an IED — CERT never attempts to disarm one."},
+  {a:"TSUNAMI",     d:2, clue:"A series of large ocean waves usually triggered by an underwater earthquake.", info:"Move to high ground immediately if you feel a coastal earthquake or hear a tsunami warning."},
+  {a:"VOLCANO",     d:2, clue:"A mountain that can erupt molten rock, ash, and gas.", info:"Volcanic hazards include lava, ash fall, and lahars — not just the eruption itself."},
+  {a:"LANDSLIDE",   d:2, clue:"A mass of rock, earth, or debris moving down a slope.", info:"Heavy rain after a wildfire raises landslide risk on burned, unstable slopes."},
+  {a:"PANDEMIC",    d:2, clue:"An epidemic that has spread across multiple countries or continents.", info:"Pandemic planning covers supply stockpiling, hygiene, and reducing exposure."},
+
+  // ── d3 ──
+  {a:"GDACS",       d:3, clue:"Global Disaster Alert and Coordination System (acronym).", info:"GDACS is a UN/EU-backed alert network that flags major disasters worldwide, usually within hours."},
+  {a:"LAHAR",       d:3, clue:"A volcanic mudflow of ash, rock, and water.", info:"A lahar can travel fast and far from a volcano — well beyond the area that looks at risk."},
+  {a:"GHS",         d:3, clue:"Globally Harmonized System (acronym) of hazard pictograms.", info:"GHS pictograms give hazardous materials a consistent look across labels worldwide."},
+  {a:"FLASHOVER",   d:3, clue:"Sudden, simultaneous ignition of everything combustible in a room.", info:"Flashover is a lethal fire-growth stage — well beyond anything CERT should approach."},
+  {a:"BACKDRAFT",   d:3, clue:"Explosive reignition when oxygen rushes into a superheated, smoke-filled room.", info:"Never open a hot door fast — a backdraft can level a room instantly."},
+  {a:"GCS",         d:3, clue:"Glasgow Coma Scale (acronym), scored 3 to 15.", info:"GCS scores eye, verbal, and motor response to gauge consciousness."},
+  {a:"SHORING",     d:3, clue:"Bracing a structure to prevent further collapse.", info:"Shoring is heavier and more involved than cribbing — usually beyond CERT's scope."},
 ];
 
-/* CERT sections (used for themed crossword mode + glossary grouping).
-   `ref` links to the matching course material on reference.html. */
+/* CERT sections (used for themed crossword mode). */
 const SECTION_DEFS = [
-  {id:'general', name:'Scene Basics & PPE',   icon:'🧭', ref:'reference.html',
-    words:['SCENE','PPE','CERT','RADIO','SAFETY','DANGER','HAZARD','SIZEUP','BRIEFING','STAGING']},
-  {id:'prep',    name:'Disaster Preparedness', icon:'🏠', ref:'section_01_unit_1_ppt_508.pptx',
-    words:['PLAN','KIT','WATER','MITIGATION','AFTERSHOCK','EVACUATION','SHELTER','ESCAPE']},
-  {id:'fire',    name:'Fire Safety & Hazmat',  icon:'🔥', ref:'section_02_unit_2_ppt_508.pptx',
-    words:['FUEL','HEAT','OXYGEN','PASS','GAS','SMOKE','INCIPIENT','PORTABLE','FLAMMABLE','TRIANGLE','ELECTRIC','UTILITIES','DECON','IDLH','QUADRANT']},
-  {id:'medical', name:'Medical Operations',    icon:'🩺', ref:'section_03_unit_3_ppt_508.pptx',
-    words:['TRIAGE','SHOCK','AIRWAY','GLOVES','PULSE','WOUND','START','RPM','IMMEDIATE','DELAYED','MINOR','BLEEDING','PRESSURE','TOURNIQUET','PERFUSION','SPLINT','BANDAGE','DRESSING','FRACTURE','DOCUMENT','TRANSPORT','HYPOTHERMIA','ANAPHYLAXIS','CONTUSION','LACERATION','CAPILLARY','DOFF']},
-  {id:'sar',     name:'Light Search & Rescue', icon:'🔍', ref:'section_05_unit_5_ppt_508.pptx',
-    words:['CRIBBING','LEVER','FULCRUM','VOID','RESCUE','DEBRIS','LEVERAGE','MARKING','HELMET']},
-  {id:'ics',     name:'CERT Organization',     icon:'🗂️', ref:'section_06_unit_6_ppt_508.pptx',
-    words:['NIMS','COMMAND','LOGISTICS','SPAN','RESOURCES']},
-  {id:'psych',   name:'Disaster Psychology',   icon:'🧠', ref:'section_07_unit_7_ppt_508.pptx',
-    words:['REHAB','STRESS','BUDDY']},
-  {id:'terror',  name:'Terrorism Awareness',   icon:'💥', ref:'section_08_unit_8_ppt_508.pptx',
-    words:['CBRNE','SECONDARY','STANDOFF']},
+  {id:'general', name:'Scene Basics & PPE',   icon:'🧭',
+    words:['SCENE','PPE','CERT','RADIO','SAFETY','DANGER','HAZARD','SIZEUP','BRIEFING','STAGING','PERIMETER','ACCOUNTABILITY','VEST','WHISTLE']},
+  {id:'prep',    name:'Disaster Preparedness', icon:'🏠',
+    words:['PLAN','KIT','WATER','MITIGATION','AFTERSHOCK','EVACUATION','SHELTER','ESCAPE','GOBAG','FLASHLIGHT','BATTERIES','PRESCRIPTIONS','SANITATION']},
+  {id:'fire',    name:'Fire Safety & Hazmat',  icon:'🔥',
+    words:['FUEL','HEAT','OXYGEN','PASS','GAS','SMOKE','INCIPIENT','PORTABLE','FLAMMABLE','TRIANGLE','ELECTRIC','UTILITIES','DECON','IDLH','QUADRANT','SDS','GHS','FLASHOVER','BACKDRAFT','IGNITION','EXTINGUISHER']},
+  {id:'medical', name:'Medical Operations',    icon:'🩺',
+    words:['TRIAGE','SHOCK','AIRWAY','GLOVES','PULSE','WOUND','START','RPM','IMMEDIATE','DELAYED','MINOR','BLEEDING','PRESSURE','TOURNIQUET','PERFUSION','SPLINT','BANDAGE','DRESSING','FRACTURE','DOCUMENT','TRANSPORT','HYPOTHERMIA','ANAPHYLAXIS','CONTUSION','LACERATION','CAPILLARY','DOFF',
+      'DEFORMITY','ABRASION','PUNCTURE','BURN','TENDERNESS','SWELLING','SAMPLE','ALLERGIES','MEDICATIONS','OPQRST','ONSET','PROVOCATION','RADIATION','QUALITY','SEVERITY','AVPU','UNRESPONSIVE','GCS','CPR','AED','HEIMLICH','SPINAL','SUPERFICIAL']},
+  {id:'sar',     name:'Light Search & Rescue', icon:'🔍',
+    words:['CRIBBING','LEVER','FULCRUM','VOID','RESCUE','DEBRIS','LEVERAGE','MARKING','HELMET','PANCAKE','TAGGING','SHORING']},
+  {id:'ics',     name:'CERT Organization',     icon:'🗂️',
+    words:['NIMS','COMMAND','LOGISTICS','SPAN','RESOURCES','ICS','OPERATIONS','PLANNING','FINANCE','DEMOBILIZATION']},
+  {id:'psych',   name:'Disaster Psychology',   icon:'🧠',
+    words:['REHAB','STRESS','BUDDY','DEBRIEFING','GRIEF','RESILIENCE']},
+  {id:'terror',  name:'Terrorism Awareness',   icon:'💥',
+    words:['CBRNE','SECONDARY','STANDOFF','IED','LOCKDOWN','SUSPICIOUS']},
+  {id:'fieldref', name:'Field Reference (Multi-Agency)', icon:'🌐',
+    words:['CISA','OSHA','USFA','VOAD','GDACS','NWS','ANNEX','WATCH','WARNING','LAHAR','EARTHQUAKE','TSUNAMI','VOLCANO','LANDSLIDE','WILDFIRE','HURRICANE','TORNADO','FLOOD','PANDEMIC']},
+  {id:'nato', name:'NATO Phonetic Alphabet', icon:'📻',
+    words:['ALPHA','BRAVO','CHARLIE','DELTA','ECHO','FOXTROT','GOLF','HOTEL','INDIA','JULIETT','KILO','LIMA','MIKE','NOVEMBER','OSCAR','PAPA','QUEBEC','ROMEO','SIERRA','TANGO','UNIFORM','VICTOR','WHISKEY','YANKEE','ZULU']},
 ];
 const SECTION_OF={}; SECTION_DEFS.forEach(s=>s.words.forEach(w=>SECTION_OF[w]=s.id));
 const SECTION_BY={}; SECTION_DEFS.forEach(s=>SECTION_BY[s.id]=s);
-
-/* Best-effort term → slide (PDF page) for the glossary deep-links: the first
-   slide in that term's section deck whose text mentions the term verbatim.
-   Terms not found verbatim in the slide text default to slide 1 of the deck.
-   (Auto-generated from the .pptx slide text; general/Scene-Basics terms have
-   no single deck and link to reference.html instead.) */
-const TERM_SLIDE = {
-  PLAN:7, KIT:1, WATER:16, MITIGATION:15, AFTERSHOCK:1, EVACUATION:9, SHELTER:20, ESCAPE:21,
-  FUEL:4, HEAT:6, OXYGEN:6, PASS:1, GAS:11, SMOKE:24, INCIPIENT:1, PORTABLE:17, FLAMMABLE:7,
-  TRIANGLE:6, ELECTRIC:1, UTILITIES:4, DECON:1, IDLH:1, QUADRANT:27,
-  TRIAGE:2, SHOCK:2, AIRWAY:2, GLOVES:21, PULSE:1, WOUND:1, START:3, RPM:1, IMMEDIATE:19,
-  DELAYED:19, MINOR:20, BLEEDING:2, PRESSURE:13, TOURNIQUET:1, PERFUSION:1, SPLINT:1, BANDAGE:1,
-  DRESSING:1, FRACTURE:1, DOCUMENT:17, TRANSPORT:1, HYPOTHERMIA:1, ANAPHYLAXIS:1, CONTUSION:1,
-  LACERATION:1, CAPILLARY:11, DOFF:1,
-  CRIBBING:36, LEVER:1, FULCRUM:1, VOID:23, RESCUE:1, DEBRIS:6, LEVERAGE:1, MARKING:1, HELMET:1,
-  NIMS:10, COMMAND:7, LOGISTICS:1, SPAN:5, RESOURCES:6,
-  REHAB:1, STRESS:2, BUDDY:1,
-  CBRNE:3, SECONDARY:1, STANDOFF:1
-};
