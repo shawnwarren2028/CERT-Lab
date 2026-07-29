@@ -504,6 +504,14 @@ function saveProgress(tierN,stars,pct){
   cur.stars=Math.max(cur.stars||0,stars); cur.best=Math.max(cur.best||0,pct); cur.plays=(cur.plays||0)+1;
   p.tiers[tierN]=cur; p.stars=sumTierStars(p); localStorage.setItem('cert_aid_progress',JSON.stringify(p));
 }
+// career totals, tracked across every campaign (win, lose, or voluntary end)
+function saveCareerStats(saved,lost,days,won){
+  const p=loadProg(); p.completed=true;
+  p.career=p.career||{saved:0,lost:0,daysRun:0,campaigns:0};
+  p.career.saved+=saved; p.career.lost+=lost; p.career.daysRun+=days; p.career.campaigns++;
+  if(won) p.campaignsWon=(p.campaignsWon||0)+1;
+  localStorage.setItem('cert_aid_progress',JSON.stringify(p));
+}
 
 /* ============================================================
    GAME STATE
@@ -1297,6 +1305,9 @@ function showCampaignReport(kind,loseReason,m){
     sub=`You ran ${G.day} day${G.day===1?'':'s'} at the ${G.tier.name} level.`;
   }
   const teach = pick(TEACH_TIPS);
+  const saved=G.stats.discharged+G.stats.evac, lost=G.stats.lost+G.stats.walkaway;
+  saveCareerStats(saved,lost,G.day,kind==='win');
+  const career=loadProg().career||{saved:0,lost:0,daysRun:0,campaigns:0};
   openOv(`<h2>${title}</h2>
     <div class="stars-big">${starStr}</div>
     <div class="score-line">Final day score: ${m.score}%</div>
@@ -1304,12 +1315,14 @@ function showCampaignReport(kind,loseReason,m){
     <div class="db-grid">
       <div class="db-cell"><div class="dbk">Days run</div><div class="dbv">${G.day}</div></div>
       <div class="db-cell"><div class="dbk">High-satisfaction days</div><div class="dbv">${G.daysHigh}</div></div>
-      <div class="db-cell"><div class="dbk">Patients arrived (career)</div><div class="dbv">${G.stats.arrived}</div></div>
-      <div class="db-cell"><div class="dbk">Saved (career)</div><div class="dbv" style="color:var(--t-min)">${G.stats.discharged+G.stats.evac}</div></div>
-      <div class="db-cell"><div class="dbk">Lost (career)</div><div class="dbv" style="color:var(--danger)">${G.stats.lost+G.stats.walkaway}</div></div>
+      <div class="db-cell"><div class="dbk">Patients arrived (this run)</div><div class="dbv">${G.stats.arrived}</div></div>
+      <div class="db-cell"><div class="dbk">Saved (this run)</div><div class="dbv" style="color:var(--t-min)">${saved}</div></div>
+      <div class="db-cell"><div class="dbk">Lost (this run)</div><div class="dbv" style="color:var(--danger)">${lost}</div></div>
       <div class="db-cell"><div class="dbk">Final funding</div><div class="dbv">$${G.money}</div></div>
     </div>
     <div class="teach">${teach}</div>
+    <div class="teach" style="margin-top:6px"><b>Lifetime record:</b> ${career.campaigns} campaign${career.campaigns===1?'':'s'} run ·
+      ${career.saved} patients saved · ${career.daysRun} total days on shift${(loadProg().campaignsWon)?` · 🏆 ${loadProg().campaignsWon} won`:''}</div>
     <div class="btn-row">
       <button class="btn primary" onclick="closeOv();newGame(TIER)">🔁 New Campaign</button>
       <button class="btn" onclick="closeOv();openTierSelect()">🎚️ Choose shift</button>
