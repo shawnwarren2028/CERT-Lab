@@ -401,8 +401,8 @@ const SHOP=[
   // rooms
   {id:'bed1',cat:'room',n:'Small Treatment Room',em:'🛏️',cost:240,once:true,d:'Adds 1 treatment bed.',eff:g=>addBed(g,1)},
   {id:'bed2',cat:'room',n:'Large Treatment Room',em:'🏥',cost:430,once:true,d:'Adds 2 treatment beds.',eff:g=>addBed(g,2)},
-  {id:'recovery',cat:'room',n:'Recovery Room',em:'🛋️',cost:300,once:true,d:'+3 recovery slots. Recovered patients auto-move here, freeing beds.',eff:g=>{g.recoveryCap+=3;}},
-  {id:'obs',cat:'room',n:'Observation Area',em:'👁️',cost:250,once:true,d:'+3 observation slots for low-acuity patients (frees beds).',eff:g=>{g.obsCap+=3;}},
+  {id:'recovery',cat:'room',n:'Recovery Room',em:'🛋️',cost:300,once:true,d:'+3 recovery slots. Recovered patients auto-move here, freeing beds.',eff:g=>addRecoverySlot(g,3)},
+  {id:'obs',cat:'room',n:'Observation Area',em:'👁️',cost:250,once:true,d:'+3 observation slots for low-acuity patients (frees beds).',eff:g=>addObsSlot(g,3)},
   {id:'storage',cat:'room',n:'Supply Storage',em:'📦',cost:200,once:true,d:'+30 stock cap per item and 15% cheaper restocks.',eff:g=>{g.invCap+=30;g.supplyDisc=0.85;}},
   {id:'iso',cat:'room',n:'Isolation Room',em:'☣️',cost:300,once:true,d:'Safely handle hazmat/contaminated patients (no forced-evac penalty).',eff:g=>{g.iso=true;}},
   {id:'break',cat:'room',n:'Volunteer Break Room',em:'☕',cost:200,once:true,d:'+2 volunteer capacity; volunteers rest faster.',eff:g=>{g.volCap+=2;g.restFast=true;}},
@@ -522,6 +522,8 @@ function coreSupplyTotal(g){
   let n=0; for(const s of SUP_IDS){ if(!SUP[s].adv || g.pharmacy) n+=(g.inv[s]||0); } return n;
 }
 function addBed(g,n){ for(let i=0;i<n;i++) g.beds.push({id:'b'+g.beds.length,pid:null,offline:0}); }
+function addRecoverySlot(g,n){ for(let i=0;i<n;i++) g.recovery.push({id:'r'+g.recovery.length,pid:null,hold:0}); g.recoveryCap=g.recovery.length; }
+function addObsSlot(g,n){ for(let i=0;i<n;i++) g.obs.push({id:'o'+g.obs.length,pid:null}); g.obsCap=g.obs.length; }
 function recruit(g,skill){ if(g.vols.length>=g.volCap) return false;
   const exp=g.training?rnd(2,3):rnd(1,3);
   g.vols.push({id:'v'+(g.vols.length)+'_'+Date.now()%1000,name:pick(FIRST),skill,exp,fatigue:0,bed:null,hurt:0}); return true; }
