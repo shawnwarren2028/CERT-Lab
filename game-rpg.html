@@ -962,8 +962,12 @@ function openDlg(id){
   document.getElementById('dlg-ov').classList.remove('h');
 }
 function closeDlg(){ document.getElementById('dlg-ov').classList.add('h'); render(); }
-document.getElementById('dlg-ov').addEventListener('click', e=>{ if (e.target===document.getElementById('dlg-ov')) closeDlg(); });
-document.getElementById('menu-ov').addEventListener('click', e=>{ if (e.target===document.getElementById('menu-ov')) closeMenu(); });
+// dlg-ov/menu-ov only ever open over the live mission canvas, never over a
+// blank screen — but guard backdrop-dismiss on S.over anyway so a report
+// screen could never be added later without inheriting this protection.
+function canDismissOv(){ return !(typeof S!=='undefined' && S.over); }
+document.getElementById('dlg-ov').addEventListener('click', e=>{ if (e.target===document.getElementById('dlg-ov') && canDismissOv()) closeDlg(); });
+document.getElementById('menu-ov').addEventListener('click', e=>{ if (e.target===document.getElementById('menu-ov') && canDismissOv()) closeMenu(); });
 
 /* ════════════ MENU ════════════ */
 function openMenu(title, desc, choices, step){
