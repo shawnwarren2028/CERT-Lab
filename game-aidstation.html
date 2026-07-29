@@ -309,7 +309,14 @@ const TREAT={
   hydrate:{lb:'Give oral fluids',em:'🥤',cost:{water:1}},
   observe:{lb:'Monitor / observe',em:'👀',cost:{}},
   support:{lb:'Reassure & support',em:'🫶',cost:{}},
+  oxygen:{lb:'Give oxygen',em:'🅾️',cost:{oxygen:1}},
+  advsplint:{lb:'Advanced splint',em:'🦿',cost:{advsplint:1}},
+  burndress:{lb:'Advanced burn dressing',em:'🧯',cost:{burndress:1}},
 };
+// burndress satisfies the same care-plan slot as 'bandage' for burn
+// patients — an optional upgrade once Pharmacy is bought, not a hard
+// requirement (keeps burns treatable from day one without it).
+const NEED_ALIAS={burndress:'bandage'};
 
 /* ---------- patient types ----------
    Each gen() sets vitals so the correct START tag falls out of startTag().
@@ -362,20 +369,20 @@ const TYPES=[
    teach:'Lay flat, keep warm, control any bleeding. Altered/RR>30 → RED.'},
   {id:'smoke',label:'Smoke inhalation',em:'🌫️',band:'immediate',age:[8,80],exceeds:true,
    gen:()=>({...vit({pain:rnd(3,5),rr:rnd(26,36),mental:chance(.4)?'altered':'follows',mobility:'limited'}),
-     desc:'Coughing, sooty, short of breath',needs:['airway','observe'],harmful:[]}),
-   teach:'Airway is the threat. Position, give O₂ if available — then EVACUATE. Beyond CERT scope.'},
+     desc:'Coughing, sooty, short of breath',needs:['airway','oxygen','observe'],harmful:[]}),
+   teach:'Airway is the threat. Position, give O₂ (needs Pharmacy) — then EVACUATE. Beyond CERT scope.'},
   {id:'heat_stroke',label:'Heat stroke',em:'☀️',band:'immediate',age:[14,82],exceeds:true,
    gen:()=>({...vit({pain:rnd(3,5),rr:rnd(26,36),mental:'altered',mobility:'immobile'}),
-     desc:'Hot skin, confused — heat STROKE',needs:['cool','airway'],harmful:['warm']}),
-   teach:'True emergency: rapid cooling + protect airway, then EVACUATE. Never warm.'},
+     desc:'Hot skin, confused — heat STROKE',needs:['cool','airway','oxygen'],harmful:['warm']}),
+   teach:'True emergency: rapid cooling + protect airway + O₂ (needs Pharmacy), then EVACUATE. Never warm.'},
   {id:'crush',label:'Crush injury',em:'🧱',band:'immediate',age:[16,70],exceeds:true,
    gen:()=>({...vit({pain:rnd(6,9),rr:rnd(22,32),mental:chance(.4)?'altered':'follows',bleeding:chance(.5)?'severe':'moderate',mobility:'immobile'}),
-     desc:'Crush injury, trapped under debris',needs:['bleed','splint','shock'],harmful:[]}),
-   teach:'Control bleeding, immobilize, treat for shock — crush syndrome needs EMS. EVACUATE.'},
+     desc:'Crush injury, trapped under debris',needs:['bleed','advsplint','shock'],harmful:[]}),
+   teach:'Control bleeding, immobilize with an advanced splint (needs Pharmacy), treat for shock — crush syndrome needs EMS. EVACUATE.'},
   {id:'head',label:'Head injury',em:'🤕',band:'immediate',age:[8,85],exceeds:true,
    gen:()=>{const un=chance(.25); return {...vit({pain:rnd(4,7),rr:un?rnd(8,12):rnd(12,24),mental:un?'unresponsive':'altered',bleeding:chance(.5)?'moderate':'minor',mobility:'immobile'}),
-     desc:'Head injury, confused / unequal pupils',needs:['airway','bleed','observe'],harmful:['hydrate'],apnea:false};},
-   teach:'Protect airway with spinal precautions, control bleeding, do NOT give fluids. EVACUATE.'},
+     desc:'Head injury, confused / unequal pupils',needs:['airway','oxygen','bleed','observe'],harmful:['hydrate'],apnea:false};},
+   teach:'Protect airway, give O₂ (needs Pharmacy), control bleeding, do NOT give fluids. EVACUATE.'},
   {id:'critical',label:'Critical / not breathing',em:'⚫',band:'expectant',age:[20,80],exceeds:true,expectant:true,
    gen:()=>({...vit({pain:0,rr:0,mental:'unresponsive',bleeding:'severe',mobility:'immobile'}),
      desc:'No breathing after airway repositioning',needs:[],harmful:[],apnea:true}),
@@ -404,7 +411,7 @@ const SHOP=[
   {id:'recovery',cat:'room',n:'Recovery Room',em:'🛋️',cost:300,once:true,d:'+3 recovery slots. Recovered patients auto-move here, freeing beds.',eff:g=>addRecoverySlot(g,3)},
   {id:'obs',cat:'room',n:'Observation Area',em:'👁️',cost:250,once:true,d:'+3 observation slots for low-acuity patients (frees beds).',eff:g=>addObsSlot(g,3)},
   {id:'storage',cat:'room',n:'Supply Storage',em:'📦',cost:200,once:true,d:'+30 stock cap per item and 15% cheaper restocks.',eff:g=>{g.invCap+=30;g.supplyDisc=0.85;}},
-  {id:'iso',cat:'room',n:'Isolation Room',em:'☣️',cost:300,once:true,d:'Safely handle hazmat/contaminated patients (no forced-evac penalty).',eff:g=>{g.iso=true;}},
+  {id:'iso',cat:'room',n:'Isolation Room',em:'☣️',cost:300,once:true,d:'Adds 2 dedicated isolation beds. Without one, hazmat patients can only be evacuated untreated.',eff:g=>addIsoBed(g,2)},
   {id:'break',cat:'room',n:'Volunteer Break Room',em:'☕',cost:200,once:true,d:'+2 volunteer capacity; volunteers rest faster.',eff:g=>{g.volCap+=2;g.restFast=true;}},
   {id:'ambbay',cat:'room',n:'Ambulance Loading Zone',em:'🚑',cost:340,once:true,d:'+1 ambulance and faster evac turnaround.',eff:g=>{g.ambMax+=1;g.ambReady+=1;g.ambEta=Math.max(6,g.ambEta-3);}},
   {id:'helipad',cat:'room',n:'Helipad',em:'🚁',cost:680,once:true,d:'Air evac: fast lane for critical patients, higher reimbursement.',eff:g=>{g.helipad=true;}},
@@ -439,6 +446,7 @@ const EVENTS=[
   {id:'equip',w:2,bad:true,msg:'Equipment failure — a bed is offline.',fn:g=>{const b=g.beds.find(x=>!x.pid&&!x.offline); if(b){b.offline=20;}else{const b2=g.beds.find(x=>!x.offline); if(b2)b2.offline=20;}}},
   {id:'volhurt',w:2,bad:true,msg:'A volunteer was injured and needs a break.',fn:g=>{const v=pick(g.vols.filter(x=>!x.hurt)); if(v){v.hurt=16;v.bed=null;v.fatigue=clamp(v.fatigue+30,0,100);}}},
   {id:'heat',w:2,bad:true,msg:'Extreme heat — more heat casualties.',fn:g=>{g.mods.heat=g.hvac?10:24;}},
+  {id:'cold',w:2,bad:true,msg:'🥶 Cold snap — more hypothermia casualties.',fn:g=>{g.mods.cold=g.hvac?10:24;}},
   {id:'rain',w:2,bad:false,msg:'Heavy rain — arrivals slow for a while.',fn:g=>{g.mods.rain=16;}},
   {id:'hazmat',w:2,bad:true,minSev:3,msg:'☣️ Hazmat patient arrived — needs isolation or evac.',fn:g=>{spawn(g,true,'smoke',{hazmat:true});}},
   {id:'reunite',w:2,bad:false,msg:'Family reunification surge — worried minor cases.',fn:g=>{for(let i=0;i<rnd(2,3);i++)spawn(g,true,pick(['anxiety','illness','cut']));}},
@@ -490,7 +498,7 @@ function newGame(tier){
   G={
     tier, t:0, shift:tier.shift, running:true, over:false, speed:1,
     money:tier.money, sat:80, nextPid:1, sel:null, dragging:false, shopTab:'room',
-    waiting:[], patients:{}, beds:[], recovery:[], obs:[],
+    waiting:[], patients:{}, beds:[], recovery:[], obs:[], isoBeds:[],
     recoveryCap:0, obsCap:0, waitCap:6,
     inv:{gloves:24,gauze:16,roller:8,triangular:8,elastic:8,tape:12,saline:6,water:16,blanket:8,ice:8,oxygen:0,burndress:0,advsplint:0},
     invCap:40, supplyDisc:1,
@@ -524,6 +532,8 @@ function coreSupplyTotal(g){
 function addBed(g,n){ for(let i=0;i<n;i++) g.beds.push({id:'b'+g.beds.length,pid:null,offline:0}); }
 function addRecoverySlot(g,n){ for(let i=0;i<n;i++) g.recovery.push({id:'r'+g.recovery.length,pid:null,hold:0}); g.recoveryCap=g.recovery.length; }
 function addObsSlot(g,n){ for(let i=0;i<n;i++) g.obs.push({id:'o'+g.obs.length,pid:null}); g.obsCap=g.obs.length; }
+function addIsoBed(g,n){ for(let i=0;i<n;i++) g.isoBeds.push({id:'iso'+g.isoBeds.length,pid:null,offline:0}); }
+function findBedSlot(bedId){ return G.beds.find(x=>x.id===bedId) || G.isoBeds.find(x=>x.id===bedId); }
 function recruit(g,skill){ if(g.vols.length>=g.volCap) return false;
   const exp=g.training?rnd(2,3):rnd(1,3);
   g.vols.push({id:'v'+(g.vols.length)+'_'+Date.now()%1000,name:pick(FIRST),skill,exp,fatigue:0,bed:null,hurt:0}); return true; }
@@ -551,6 +561,7 @@ function spawn(g,force,forceType,extra){
   else{
     let band=bandForTier(g.tier.sev);
     if(g.mods.heat && chance(.5)) band='delayed';
+    if(g.mods.cold && chance(.5)) band='delayed';
     let cands=TYPES.filter(t=>t.band===band);
     if(g.tier.favorTypes && chance(.55)){
       const favor=g.tier.favorTypes.map(id=>TYPE_BY[id]).filter(t=>t&&t.band===band);
@@ -558,6 +569,7 @@ function spawn(g,force,forceType,extra){
     }
     type=pick(cands.length?cands:TYPES.filter(t=>t.band==='minor'));
     if(g.mods.heat && chance(.5)) type=pick([TYPE_BY.heat_exh,TYPE_BY.heat_stroke]);
+    if(g.mods.cold && chance(.5)) type=TYPE_BY.hypothermia;
   }
   const data=type.gen();
   const p={id:g.nextPid++, type:type.id, name:pick(FIRST)+' '+pick(LAST), age:rnd(type.age[0],type.age[1]),
@@ -618,20 +630,30 @@ function doTriage(id,tag){
   closeOv(); G.sel=id; render();
 }
 function freeBed(){ return G.beds.find(b=>!b.pid && !b.offline); }
+function freeIsoBed(){ return G.isoBeds.find(b=>!b.pid && !b.offline); }
 function sendToBed(id){
   const p=G.patients[id]; if(!p) return;
   if(p.stage!=='triaged'){ return; }
+  if(p.hazmat){
+    const ib=freeIsoBed();
+    if(!ib){ toast('No isolation bed available — evacuate this hazmat patient directly instead.','bad'); SND.bad(); return; }
+    placeInBed(p,ib); SND.click(); render(); return;
+  }
   const b=freeBed();
   if(!b){ toast('No free bed — discharge someone or build more.','bad'); SND.bad(); return; }
   placeInBed(p,b); SND.click(); render();
 }
 function dequeueWaiting(id){ const i=G.waiting.indexOf(id); if(i>=0)G.waiting.splice(i,1); }
-function placeInBed(p,b){ b.pid=p.id; p.bed=b.id; p.stage='bed'; p.patience=100; dequeueWaiting(p.id); logMsg(G,`${p.name} moved to a treatment bed.`,''); }
+function placeInBed(p,b){ b.pid=p.id; p.bed=b.id; p.stage='bed'; p.patience=100; dequeueWaiting(p.id);
+  logMsg(G,`${p.name} moved to a${G.isoBeds.includes(b)?'n isolation':' treatment'} bed.`,''); }
 function assignToBedById(pid,bid){
-  const p=G.patients[pid], b=G.beds.find(x=>x.id===bid);
+  const p=G.patients[pid], b=findBedSlot(bid);
   if(!p||!b) return;
   if(b.pid||b.offline){ toast('That bed is occupied.','bad'); return; }
   if(p.stage!=='triaged'){ if(p.stage==='triage'){ toast('Assess & triage this patient first.','bad'); } return; }
+  const isIso=G.isoBeds.includes(b);
+  if(p.hazmat && !isIso){ toast('Hazmat patients need an isolation bed.','bad'); return; }
+  if(!p.hazmat && isIso){ toast('Isolation beds are reserved for hazmat patients.','bad'); return; }
   placeInBed(p,b); SND.click(); G.sel=pid; render();
 }
 
@@ -642,20 +664,23 @@ function applyTx(id,tx){
   // supply check
   for(const s in t.cost){ if((G.inv[s]||0)<t.cost[s]){ toast('Out of '+SUP[s].lb+' — restock in the shop.','bad'); SND.bad(); return; } }
   for(const s in t.cost){ G.inv[s]-=t.cost[s]; }
-  const needed=p.needs.includes(tx), harmful=p.harmful.includes(tx);
+  const alias=NEED_ALIAS[tx]; // e.g. burndress upgrades the 'bandage' slot
+  const slot=(alias && p.needs.includes(alias)) ? alias : tx;
+  const needed=p.needs.includes(slot), harmful=p.harmful.includes(tx);
   if(harmful){ p.mistreat++; G.sat=clamp(G.sat-7,0,100); G.money=Math.max(0,G.money-10); SND.bad();
     logMsg(G,`${p.name}: ${t.lb} was HARMFUL for this patient.`,'bad');
     toast(`${t.lb} harmed ${p.name.split(' ')[0]} — wrong for this condition.`,'bad'); render(); return; }
   if(!needed){ p.mistreat++; G.sat=clamp(G.sat-2,0,100); SND.bad();
     logMsg(G,`${p.name}: ${t.lb} wasn't needed — supplies wasted.`,'bad'); render(); return; }
-  if(p.done.includes(tx)){ render(); return; }
-  p.done.push(tx); SND.good();
+  if(p.done.includes(slot)){ render(); return; }
+  p.done.push(slot); SND.good();
+  if(slot!==tx){ G.sat=clamp(G.sat+2,0,100); logMsg(G,`${p.name}: advanced dressing used — a little extra reassurance.`,'good'); }
   if(p.done.length>=p.needs.length){ p.cared=true; logMsg(G,`${p.name} stabilized — care plan complete.`,'good'); }
   render();
 }
 function assignVol(id){
   const p=G.patients[id]; if(!p||p.stage!=='bed') return;
-  const bed=G.beds.find(b=>b.id===p.bed); if(!bed) return;
+  const bed=findBedSlot(p.bed); if(!bed) return;
   if(bed.vol){ unassignVol(bed.id); return; }
   const avail=G.vols.filter(v=>!v.bed&&!v.hurt&&v.fatigue<100);
   if(!avail.length){ toast('No volunteers free — recruit, rest one up, or free one up.','bad'); SND.bad(); return; }
@@ -663,7 +688,7 @@ function assignVol(id){
   openVolPicker(id);
 }
 function unassignVol(bedId){
-  const bed=G.beds.find(b=>b.id===bedId); if(!bed||!bed.vol) return;
+  const bed=findBedSlot(bedId); if(!bed||!bed.vol) return;
   const v=G.vols.find(x=>x.id===bed.vol); if(v)v.bed=null; bed.vol=null; SND.click(); render();
 }
 function openVolPicker(pid){
@@ -683,7 +708,7 @@ function openVolPicker(pid){
 }
 function assignVolChoice(pid,vid){
   const p=G.patients[pid]; if(!p||p.stage!=='bed'){ closeOv(); return; }
-  const bed=G.beds.find(b=>b.id===p.bed); if(!bed||bed.vol){ closeOv(); render(); return; }
+  const bed=findBedSlot(p.bed); if(!bed||bed.vol){ closeOv(); render(); return; }
   const v=G.vols.find(x=>x.id===vid); if(!v||v.bed||v.hurt||v.fatigue>=100){ closeOv(); render(); return; }
   if((G.inv.gloves||0)<1){ toast('Out of gloves.','bad'); closeOv(); return; }
   v.bed=bed.id; bed.vol=v.id; G.inv.gloves--; SND.click();
@@ -706,8 +731,19 @@ function requestEvac(id){
   p.stage='evac'; p.evacEta=eta;
   G.ambPending.push(p.id);
   // free the bed now (loaded for transport)
-  const b=G.beds.find(x=>x.id===p.bed); if(b){b.pid=null; if(b.vol){const v=G.vols.find(z=>z.id===b.vol); if(v)v.bed=null; b.vol=null;}}
+  const b=findBedSlot(p.bed); if(b){b.pid=null; if(b.vol){const v=G.vols.find(z=>z.id===b.vol); if(v)v.bed=null; b.vol=null;}}
   p.bed=null; SND.click(); logMsg(G,`Ambulance requested for ${p.name} (ETA ${eta}s).`,''); G.sel=null; render();
+}
+// hazmat patients with no isolation bed available can be evacuated straight
+// from triage, untreated — matches "needs isolation or evac"
+function requestEvacDirect(id){
+  const p=G.patients[id]; if(!p||p.stage!=='triaged'||!p.hazmat) return;
+  if(freeIsoBed()){ toast('An isolation bed is free — send this patient there instead.','bad'); return; }
+  if(G.ambReady<=0){ toast('No ambulance available — wait for one to return.','bad'); SND.bad(); return; }
+  G.ambReady--; p.stage='evac'; p.evacEta=G.ambEta; p.untreated=true;
+  dequeueWaiting(p.id); G.ambPending.push(p.id);
+  SND.click(); logMsg(G,`Ambulance requested for ${p.name} — evacuated untreated, no isolation bed available (ETA ${p.evacEta}s).`,'bad');
+  G.sel=null; render();
 }
 function finishPatient(p,how){
   let pay=0;
@@ -715,14 +751,16 @@ function finishPatient(p,how){
   if(how==='discharged'){ pay=(p.trueTag==='minor'?18:p.trueTag==='delayed'?34:26); G.stats.discharged++;
     G.sat=clamp(G.sat+ (p.mistreat?2:5),0,100); logMsg(G,`${p.name} discharged — recovered. +$${Math.round(pay*adminBonus)}`,'good'); }
   else if(how==='evac'){ pay=(G.helipad?70:55); G.stats.evac++;
-    G.sat=clamp(G.sat+5,0,100); logMsg(G,`${p.name} evacuated by ambulance. Reimbursed +$${Math.round(pay*adminBonus)}`,'good'); }
+    if(p.untreated){ pay=Math.round(pay*0.5); G.sat=clamp(G.sat-3,0,100);
+      logMsg(G,`${p.name} evacuated untreated (no isolation available). Reimbursed +$${Math.round(pay*adminBonus)}`,'bad'); }
+    else { G.sat=clamp(G.sat+5,0,100); logMsg(G,`${p.name} evacuated by ambulance. Reimbursed +$${Math.round(pay*adminBonus)}`,'good'); } }
   pay=Math.round(pay*adminBonus); if(p.mistreat) pay=Math.round(pay*0.7);
   G.money+=pay; SND.cash();
   releasePatient(p);
 }
 function losePatient(p,how){
   // how: 'lost' (died) or 'walkaway'
-  const b=G.beds.find(x=>x.id===p.bed); if(b){b.pid=null; if(b.vol){const v=G.vols.find(z=>z.id===b.vol); if(v)v.bed=null; b.vol=null;}}
+  const b=findBedSlot(p.bed); if(b){b.pid=null; if(b.vol){const v=G.vols.find(z=>z.id===b.vol); if(v)v.bed=null; b.vol=null;}}
   const r=G.recovery.find(x=>x.pid===p.id); if(r)r.pid=null;
   const o=G.obs.find(x=>x.pid===p.id); if(o)o.pid=null;
   if(how==='lost'){ G.stats.lost++; G.sat=clamp(G.sat-16,0,100); G.money=Math.max(0,G.money-20); SND.lose();
@@ -733,7 +771,7 @@ function losePatient(p,how){
   if(G.sel===p.id)G.sel=null;
 }
 function releasePatient(p){
-  const b=G.beds.find(x=>x.id===p.bed); if(b){b.pid=null; if(b.vol){const v=G.vols.find(z=>z.id===b.vol); if(v)v.bed=null; b.vol=null;}}
+  const b=findBedSlot(p.bed); if(b){b.pid=null; if(b.vol){const v=G.vols.find(z=>z.id===b.vol); if(v)v.bed=null; b.vol=null;}}
   const r=G.recovery.find(x=>x.pid===p.id); if(r)r.pid=null;
   const o=G.obs.find(x=>x.pid===p.id); if(o)o.pid=null;
   delete G.patients[p.id];
@@ -762,12 +800,14 @@ function tick(){
   if(G.mods.rain) interval*=1.7;
   if(G.t<G.shift){ G.spawnTimer-=1;
     if(G.spawnTimer<=0){ spawn(G,false); G.spawnTimer=Math.max(2,Math.round(interval)); } }
-  // patience of waiting patients
+  // patience of waiting patients (Trauma Bay steadies immediate/critical patients)
+  const traumaMul=G.trauma?0.72:1;
   for(const id of G.waiting.slice()){
     const p=G.patients[id]; if(!p) continue;
     if(p.stage==='triage'||p.stage==='triaged'){
       p.wait++;
-      const rate = (p.trueTag==='immediate'?2.6:p.trueTag==='delayed'?1.5:1.0);
+      let rate = (p.trueTag==='immediate'?2.6:p.trueTag==='delayed'?1.5:1.0);
+      if(p.trueTag==='immediate') rate*=traumaMul;
       p.patience-=rate*(100/ (p.deadline*6));
       if(p.patience<=0){
         if(p.trueTag==='immediate'||p.exceeds){ losePatient(p,'lost'); }
@@ -782,9 +822,9 @@ function tick(){
   while(G.waiting.filter(id=>{const p=G.patients[id];return p&&p.stage!=='bed'&&p.stage!=='recovery'&&p.stage!=='obs'&&p.stage!=='evac';}).length>G.waitCap){
     const id=untri.shift(); if(id==null)break; const p=G.patients[id]; if(p) losePatient(p,'walkaway');
   }
-  // beds: recovery / deterioration
+  // beds: recovery / deterioration (regular treatment beds + isolation beds)
   const spd=recoveryRate();
-  for(const b of G.beds){
+  for(const b of [...G.beds,...G.isoBeds]){
     if(b.offline>0){ b.offline--; continue; }
     if(!b.pid) continue;
     const p=G.patients[b.pid]; if(!p){b.pid=null;continue;}
@@ -799,9 +839,10 @@ function tick(){
       }
     } else {
       // untreated critical needs -> deteriorate
-      p.patience-=critical(p)?2.4:0.7;
+      const crit=critical(p);
+      p.patience-=(crit?2.4:0.7)*(crit?traumaMul:1);
       if(p.patience<=0){
-        if(critical(p)||p.exceeds){ losePatient(p,'lost'); }
+        if(crit||p.exceeds){ losePatient(p,'lost'); }
         else { p.patience=30; G.sat=clamp(G.sat-2,0,100); }
       }
     }
@@ -915,21 +956,30 @@ function renderWaiting(){
   return `<div class="zone"><h3>🚶 Waiting Room <span class="zc">${ids.length} waiting</span></h3>
     <div class="qlist ${ids.length?'':'empty'}" data-empty="No patients waiting.">${cards}</div></div>`;
 }
+function bedCellHtml(b,label,emptyNote,dropAttr){
+  if(b.offline>0) return `<div class="bed offline"><div class="bh"><span>${label}</span><span>⚠️ offline ${b.offline}s</span></div><div class="empty-l">Repairing…</div></div>`;
+  if(!b.pid) return `<div class="bed" ${dropAttr}><div class="bh"><span>${label}</span><span>empty</span></div><div class="empty-l">${emptyNote}</div></div>`;
+  const p=G.patients[b.pid]; if(!p) return '';
+  const vol=b.vol?G.vols.find(v=>v.id===b.vol):null;
+  const status = p.exceeds ? (p.cared?'🚑 Ready to evac':'Stabilizing…') : (p.care>=100?'✅ Ready to discharge':(p.cared?'Recovering…':'Needs treatment'));
+  const meter = p.cared?`<div class="care"><span style="width:${p.care}%"></span></div>`:`<div class="pat"><span style="width:${clamp(p.patience,0,100)}%"></span></div>`;
+  return `<div class="bed filled"><div class="bh"><span>${p.em} ${label}</span><span>${vol?vol.name.split(' ')[0]+' 🩺':''}</span></div>
+    ${pcard(p.id,'bed')}
+    <div class="mini">${status}</div>${meter}</div>`;
+}
 function renderBeds(){
-  const beds=G.beds.map(b=>{
-    if(b.offline>0) return `<div class="bed offline"><div class="bh"><span>Bed</span><span>⚠️ offline ${b.offline}s</span></div><div class="empty-l">Repairing…</div></div>`;
-    if(!b.pid) return `<div class="bed" ondragover="event.preventDefault();this.classList.add('drop')" ondragleave="this.classList.remove('drop')" ondrop="onDrop(event,'${b.id}')"><div class="bh"><span>Bed</span><span>empty</span></div><div class="empty-l">Drop or send a patient</div></div>`;
-    const p=G.patients[b.pid]; if(!p) return '';
-    const vol=b.vol?G.vols.find(v=>v.id===b.vol):null;
-    const status = p.exceeds ? (p.cared?'🚑 Ready to evac':'Stabilizing…') : (p.care>=100?'✅ Ready to discharge':(p.cared?'Recovering…':'Needs treatment'));
-    const meter = p.cared?`<div class="care"><span style="width:${p.care}%"></span></div>`:`<div class="pat"><span style="width:${clamp(p.patience,0,100)}%"></span></div>`;
-    return `<div class="bed filled ${G.sel===p.id?'':''}"><div class="bh"><span>${p.em} Bed</span><span>${vol?vol.name.split(' ')[0]+' 🩺':''}</span></div>
-      ${pcard(p.id,'bed')}
-      <div class="mini">${status}</div>${meter}</div>`;
-  }).join('');
+  const beds=G.beds.map(b=>bedCellHtml(b,'Bed','Drop or send a patient',
+    `ondragover="event.preventDefault();this.classList.add('drop')" ondragleave="this.classList.remove('drop')" ondrop="onDrop(event,'${b.id}')"`)).join('');
   return `<div class="zone"><h3>🛏️ Treatment Beds <span class="zc">${G.beds.filter(b=>b.pid).length}/${G.beds.length} in use</span></h3>
     <div class="bedgrid">${beds}</div>
+    ${renderIso()}
     ${renderRecovery()}</div>`;
+}
+function renderIso(){
+  if(!G.isoBeds.length) return '';
+  const cells=G.isoBeds.map(b=>bedCellHtml(b,'Isolation','Hazmat only — drop or send a patient',
+    `ondragover="event.preventDefault();this.classList.add('drop')" ondragleave="this.classList.remove('drop')" ondrop="onDrop(event,'${b.id}')"`)).join('');
+  return `<h3 style="margin-top:10px">☣️ Isolation <span class="zc">${G.isoBeds.filter(b=>b.pid).length}/${G.isoBeds.length} in use</span></h3><div class="bedgrid">${cells}</div>`;
 }
 function renderRecovery(){
   let html='';
@@ -976,17 +1026,26 @@ function renderDock(){
   if(p.stage==='triage') return '';
   let acts='';
   if(p.stage==='triaged'){
-    const lowAcuity = p.needs.every(n=>['observe','support','hydrate'].includes(n));
-    acts=`<button class="btn primary" onclick="sendToBed(${p.id})">🛏️ Send to bed</button>`;
-    if(G.obsCap>0 && lowAcuity && G.obs.some(o=>!o.pid)) acts+=`<button class="btn" onclick="sendToObs(${p.id})">👁️ Send to observation</button>`;
-    acts+=`<span class="mini">…or drag the card onto a bed.</span>`;
+    if(p.hazmat){
+      if(freeIsoBed()){
+        acts=`<button class="btn primary" onclick="sendToBed(${p.id})">☣️ Send to isolation</button><span class="mini">…or drag the card onto an isolation bed.</span>`;
+      } else {
+        acts=`<button class="btn primary" ${G.ambReady>0?'':'disabled'} onclick="requestEvacDirect(${p.id})">🚑 Evacuate (no isolation available)</button><span class="mini">Hazmat patients can't use a regular bed.</span>`;
+      }
+    } else {
+      const lowAcuity = p.needs.every(n=>['observe','support','hydrate'].includes(n));
+      acts=`<button class="btn primary" onclick="sendToBed(${p.id})">🛏️ Send to bed</button>`;
+      if(G.obsCap>0 && lowAcuity && G.obs.some(o=>!o.pid)) acts+=`<button class="btn" onclick="sendToObs(${p.id})">👁️ Send to observation</button>`;
+      acts+=`<span class="mini">…or drag the card onto a bed.</span>`;
+    }
   } else if(p.stage==='bed'){
     // treatment actions: needs + harmful/distractors, shuffled once
     if(!p._acts){ const set=new Set([...p.needs]); (p.harmful||[]).forEach(h=>set.add(h));
+      if(p.type==='burn' && G.pharmacy) set.add('burndress');
       // add a plausible distractor
       const extra=['observe','hydrate','warm','cool','support'].find(x=>!set.has(x)); if(extra&&set.size<5)set.add(extra);
       p._acts=[...set].sort(()=>Math.random()-0.5); }
-    acts=p._acts.map(tx=>{ const t=TREAT[tx]; const done=p.done.includes(tx);
+    acts=p._acts.map(tx=>{ const t=TREAT[tx]; const done=p.done.includes(NEED_ALIAS[tx]||tx);
       const afford=Object.keys(t.cost).every(s=>(G.inv[s]||0)>=t.cost[s]);
       const costTxt=Object.keys(t.cost).map(s=>t.cost[s]+SUP[s].em).join(' ')||'time';
       return `<button class="btn sm ${done?'primary':''}" ${done?'disabled':''} onclick="applyTx(${p.id},'${tx}')" title="${costTxt}">${t.em} ${t.lb}${done?' ✓':''}</button>`;
@@ -1187,6 +1246,7 @@ function nextDay(){
   G.t=0; G.spawnTimer=G.tier.spawn[0]; G.evTimer=24; G.exhaustTimer=0; G.warnedEnd=false;
   G.waiting=[]; G.patients={}; G.ambPending=[]; G.sel=null; G.mods={};
   G.beds.forEach(b=>{b.pid=null;b.offline=0;b.vol=null;});
+  G.isoBeds.forEach(b=>{b.pid=null;b.offline=0;b.vol=null;});
   G.recovery.forEach(r=>r.pid=null);
   G.obs.forEach(o=>o.pid=null);
   G.vols.forEach(v=>{v.bed=null; v.hurt=0; v.fatigue=clamp(v.fatigue-35,0,100);});
