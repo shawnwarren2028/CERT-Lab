@@ -160,7 +160,7 @@
 
 <footer><span>Wallingford CERT</span> — Training Suite · Scene Search · For educational use — follow your local CERT program guidelines.</footer>
 
-<div class="ov" id="ov" onclick="if(event.target===this)closeOv()"><div class="ov-box" id="ov-box"></div></div>
+<div class="ov" id="ov" onclick="if(event.target===this && canDismissOv())closeOv()"><div class="ov-box" id="ov-box"></div></div>
 
 <script>
 /* ============================================================
@@ -623,7 +623,11 @@ function tank(x,y){ return `<g>
 /* ---------- overlay ---------- */
 function openOv(html){ document.getElementById('ov-box').innerHTML=html; document.getElementById('ov').classList.add('show'); }
 function closeOv(){ document.getElementById('ov').classList.remove('show'); }
-document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&G&&G.ended) closeOv(); });
+// Before a run starts (G is null) the board behind the overlay is empty —
+// dismissing by backdrop click or Escape would strand the player on a
+// blank screen, so only allow it once a run exists.
+function canDismissOv(){ return !!G; }
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&canDismissOv()) closeOv(); });
 
 /* ---------- boot ---------- */
 ['pointerdown','keydown','touchstart'].forEach(ev=>window.addEventListener(ev,function once(){ SND.arm(); },{once:true}));
