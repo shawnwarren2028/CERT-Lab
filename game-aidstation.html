@@ -295,6 +295,12 @@ const SND=(function(){
     evt(){ tone(320,0,'sawtooth',0.12,0.18); tone(240,0.1,'sawtooth',0.12,0.2); },
     win(){ [523,659,784,1047,1319].forEach((f,i)=>tone(f,i*0.1,'triangle',0.2,0.22)); },
     lose(){ [400,320,240,160].forEach((f,i)=>tone(f,i*0.12,'sawtooth',0.18,0.26)); },
+    // distinct game-over stings per lose reason, so the sound alone hints why
+    broke(){ [220,180,140,100].forEach((f,i)=>tone(f,i*0.11,'square',0.17,0.2)); },
+    exhausted(){ [300,255,215,180].forEach((f,i)=>tone(f,i*0.15,'triangle',0.16,0.24)); },
+    // early proactive warnings, distinct from the final stings above
+    brokeWarn(){ tone(260,0,'square',0.13,0.13); tone(200,0.13,'square',0.13,0.15); },
+    exhaustWarn(){ tone(320,0,'triangle',0.12,0.11); tone(270,0.13,'triangle',0.12,0.13); },
     toggle(){ on=!on; localStorage.setItem('cert_aid_sfx',on?'on':'off'); const b=document.getElementById('sfx-btn'); if(b)b.textContent=on?'🔊':'🔇'; if(on){ac();this.click();} },
     arm(){ if(!on)return; ac(); if(ctx.state==='suspended') ctx.resume(); },
     init(){ const b=document.getElementById('sfx-btn'); if(b)b.textContent=on?'🔊':'🔇'; }
@@ -540,7 +546,7 @@ function newGame(tier){
     ambMax:tier.amb, ambReady:tier.amb, ambEta:12, ambPending:[],
     bought:{}, mods:{}, log:[],
     generator:false,hvac:false,pharmacy:false,trauma:false,training:false,lighting:false,iso:false,restFast:false,helipad:false,
-    spawnTimer:tier.spawn[0], evTimer:24, exhaustTimer:0, warnedEnd:false,
+    spawnTimer:tier.spawn[0], evTimer:24, exhaustTimer:0, warnedEnd:false, warnedExhaust:false, warnedBroke:false,
     day:1, daysHigh:0,
     stats:{arrived:0,discharged:0,evac:0,lost:0,walkaway:0,triaged:0,triageRight:0,expOk:0,donated:0,grant:0,satSum:0,satN:0},
     dayBase:{arrived:0,discharged:0,evac:0,lost:0,walkaway:0,triaged:0,triageRight:0,satSum:0,satN:0},
@@ -935,7 +941,13 @@ function tick(){
   // heat mod adds heat arrivals faster (handled in spawn weighting)
   // volunteer exhaustion: every volunteer hurt or maxed-out on fatigue, sustained
   if(G.vols.length && G.vols.every(v=>v.hurt>0 || v.fatigue>=100)){ G.exhaustTimer=(G.exhaustTimer||0)+1; }
-  else { G.exhaustTimer=0; }
+  else { G.exhaustTimer=0; G.warnedExhaust=false; }
+  if(G.exhaustTimer>=8 && !G.warnedExhaust){ G.warnedExhaust=true; SND.exhaustWarn();
+    toast('😴 Every volunteer is hurt or exhausted — the station will stop functioning if this continues.','bad'); }
+  const brokeClose=G.money<250 && coreSupplyTotal(G)<15;
+  if(brokeClose && !G.warnedBroke){ G.warnedBroke=true; SND.brokeWarn();
+    toast('💸 Funding and supplies are running dangerously low.','bad'); }
+  else if(!brokeClose){ G.warnedBroke=false; }
   // fail / end
   if(G.sat<=0){ return endDay('sat'); }
   if(G.money<=0 && coreSupplyTotal(G)<=0){ return endDay('broke'); }
@@ -1292,7 +1304,10 @@ function endDay(loseReason){
   if(highDay) G.daysHigh++;
   const won = !loseReason && G.daysHigh>=(G.tier.win||3);
 
-  if(loseReason){ SND.lose(); showCampaignReport('lose',loseReason,m); }
+  if(loseReason){
+    if(loseReason==='broke') SND.broke(); else if(loseReason==='exhausted') SND.exhausted(); else SND.lose();
+    showCampaignReport('lose',loseReason,m);
+  }
   else if(won){ SND.win(); showCampaignReport('win',null,m); }
   else { if(stars>=2)SND.win(); else SND.good(); showDayReport(m); }
 }
@@ -1369,7 +1384,7 @@ function showCampaignReport(kind,loseReason,m){
 function continueCampaign(){ nextDay(); openIntermission(); }
 function nextDay(){
   G.day++;
-  G.t=0; G.spawnTimer=G.tier.spawn[0]; G.evTimer=24; G.exhaustTimer=0; G.warnedEnd=false;
+  G.t=0; G.spawnTimer=G.tier.spawn[0]; G.evTimer=24; G.exhaustTimer=0; G.warnedEnd=false; G.warnedExhaust=false; G.warnedBroke=false;
   G.waiting=[]; G.patients={}; G.ambPending=[]; G.sel=null; G.mods={};
   G.beds.forEach(b=>{b.pid=null;b.offline=0;b.vol=null;});
   G.isoBeds.forEach(b=>{b.pid=null;b.offline=0;b.vol=null;});
