@@ -31,7 +31,8 @@
   [data-theme="light"] header{background:#e3ecd6;}
   [data-theme="light"] footer{background:#e3ecd6;}
   *{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);
+  body{font-family:'Segoe UI',system-ui,sans-serif;color:var(--text);
+    background:radial-gradient(ellipse 1200px 640px at 50% -8%, var(--surface2) 0%, var(--bg) 62%);
     min-height:100vh;display:flex;flex-direction:column;-webkit-tap-highlight-color:transparent;}
 
   header{width:100%;background:#111a09;border-bottom:3px solid var(--primary);
@@ -55,9 +56,14 @@
 
   main{flex:1;width:100%;max-width:1080px;margin:0 auto;padding:12px 14px 24px;display:flex;flex-direction:column;gap:11px;}
 
+  .scene-banner{border-radius:var(--radius);overflow:hidden;border:1px solid var(--border);line-height:0;
+    box-shadow:inset 0 0 44px rgba(0,0,0,.4),0 3px 10px rgba(0,0,0,.2);}
+  .scene-banner svg{width:100%;height:auto;display:block;max-height:130px;}
+
   /* ---- top stat bar ---- */
   .top{display:flex;gap:8px;flex-wrap:wrap;align-items:stretch;}
-  .chip{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px 12px;
+  .chip{background:linear-gradient(160deg,var(--surface) 0%,var(--surface2) 150%);border:1px solid var(--border);
+    border-radius:10px;padding:6px 12px;box-shadow:0 2px 6px rgba(0,0,0,.16);
     display:flex;flex-direction:column;gap:1px;min-width:74px;}
   .chip .ck{font-size:0.62rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;}
   .chip .cv{font-size:1.02rem;font-weight:800;line-height:1.1;}
@@ -81,16 +87,18 @@
 
   /* ---- board ---- */
   .board{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1.55fr) minmax(0,1fr);gap:11px;align-items:start;}
-  .zone{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px;min-height:80px;}
+  .zone{background:linear-gradient(165deg,var(--surface) 0%,var(--surface2) 140%);border:1px solid var(--border);
+    border-radius:var(--radius);padding:10px;min-height:80px;box-shadow:0 3px 10px rgba(0,0,0,.16);}
   .zone > h3{font-size:0.8rem;font-weight:800;color:var(--primary-light);margin-bottom:8px;display:flex;align-items:center;gap:6px;justify-content:space-between;}
   .zone > h3 .zc{font-size:0.68rem;color:var(--text-muted);font-weight:700;}
   .qlist{display:flex;flex-direction:column;gap:7px;max-height:430px;overflow-y:auto;}
   .qlist.empty::after,.bedgrid.empty::after{content:attr(data-empty);display:block;color:var(--text-muted);font-size:0.76rem;text-align:center;padding:14px 4px;font-style:italic;}
 
   /* patient card */
-  .pcard{background:var(--surface2);border:1px solid var(--border);border-left-width:5px;border-radius:9px;padding:8px 10px;
-    cursor:pointer;transition:.12s;position:relative;}
-  .pcard:hover{border-color:var(--primary);}
+  .pcard{background:linear-gradient(150deg,var(--surface2) 0%,var(--surface) 150%);border:1px solid var(--border);
+    border-left-width:5px;border-radius:9px;padding:8px 10px;box-shadow:0 2px 6px rgba(0,0,0,.2);
+    cursor:pointer;transition:.14s;position:relative;}
+  .pcard:hover{border-color:var(--primary);box-shadow:0 4px 11px rgba(0,0,0,.28);transform:translateY(-1px);}
   .pcard.sel{outline:2px solid var(--info);}
   .pcard.drag{opacity:.5;}
   .pcard .pn{font-size:0.86rem;font-weight:800;display:flex;align-items:center;gap:5px;}
@@ -112,9 +120,9 @@
 
   /* beds */
   .bedgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;}
-  .bed{background:#0f150a;border:1px dashed var(--border);border-radius:9px;padding:7px;min-height:84px;
+  .bed{background:linear-gradient(165deg,#141c0c,#0d1208);border:1px dashed var(--border);border-radius:9px;padding:7px;min-height:84px;
     display:flex;flex-direction:column;gap:4px;transition:.12s;}
-  .bed.filled{border-style:solid;background:var(--surface2);}
+  .bed.filled{border-style:solid;background:linear-gradient(155deg,var(--surface2) 0%,var(--surface) 150%);box-shadow:0 2px 7px rgba(0,0,0,.2);}
   .bed.drop{border-color:var(--info);background:#12232b;}
   .bed.offline{opacity:.5;}
   .bed .bh{font-size:0.64rem;color:var(--text-muted);font-weight:700;display:flex;justify-content:space-between;}
@@ -122,7 +130,8 @@
 
   /* side panels */
   .side{display:flex;flex-direction:column;gap:11px;}
-  .panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px;}
+  .panel{background:linear-gradient(165deg,var(--surface) 0%,var(--surface2) 140%);border:1px solid var(--border);
+    border-radius:var(--radius);padding:10px;box-shadow:0 3px 10px rgba(0,0,0,.16);}
   .panel h3{font-size:0.8rem;font-weight:800;color:var(--primary-light);margin-bottom:7px;display:flex;justify-content:space-between;align-items:center;}
   .invgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:5px;}
   .invcell{background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:4px 6px;font-size:0.72rem;text-align:center;}
@@ -138,7 +147,8 @@
   .logbox .lg.evt{border-color:var(--warn);color:#f0dcae;}
 
   /* dock (selected patient) */
-  .dock{position:sticky;bottom:0;background:var(--surface);border:2px solid var(--info);border-radius:var(--radius);
+  .dock{position:sticky;bottom:0;background:linear-gradient(165deg,var(--surface) 0%,var(--surface2) 160%);
+    border:2px solid var(--info);border-radius:var(--radius);
     padding:11px 13px;box-shadow:0 -4px 18px rgba(0,0,0,.4);z-index:30;}
   .dock .dh{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:8px;}
   .dock .dh .dn{font-size:1rem;font-weight:800;}
@@ -159,14 +169,16 @@
   .ov{position:fixed;inset:0;background:rgba(6,9,5,.86);display:none;align-items:center;justify-content:center;padding:18px;z-index:120;}
   .ov.show{display:flex;animation:ovf .2s ease;}
   @keyframes ovf{from{opacity:0}to{opacity:1}}
-  .ov-box{background:var(--surface);border:2px solid var(--primary);border-radius:14px;padding:22px;max-width:620px;width:100%;
+  .ov-box{background:linear-gradient(165deg,var(--surface) 0%,var(--surface2) 160%);border:2px solid var(--primary);
+    border-radius:14px;padding:22px;max-width:620px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,.45);
     max-height:92vh;overflow-y:auto;position:relative;}
   .ov-box h2{font-size:1.4rem;color:var(--primary);margin-bottom:6px;text-align:center;}
   .ov-box p.sub{text-align:center;color:var(--text-muted);font-size:0.86rem;line-height:1.5;margin-bottom:12px;}
   .tier-list{display:flex;flex-direction:column;gap:9px;margin-top:6px;}
-  .tier-card{display:flex;align-items:center;gap:13px;text-align:left;background:var(--surface2);border:1px solid var(--border);
+  .tier-card{display:flex;align-items:center;gap:13px;text-align:left;background:linear-gradient(150deg,var(--surface2) 0%,var(--surface) 160%);
+    border:1px solid var(--border);box-shadow:0 2px 7px rgba(0,0,0,.18);
     border-radius:11px;padding:12px 14px;cursor:pointer;transition:.14s;font-family:inherit;color:var(--text);width:100%;}
-  .tier-card:hover{border-color:var(--primary);background:var(--border);transform:translateY(-1px);}
+  .tier-card:hover{border-color:var(--primary);box-shadow:0 4px 13px rgba(0,0,0,.28);transform:translateY(-1px);}
   .tier-card .tc-ic{font-size:1.7rem;flex-shrink:0;}
   .tier-card .tc-body{flex:1;min-width:0;}
   .tier-card .tc-name{font-weight:800;color:var(--primary-light);font-size:1rem;}
@@ -181,7 +193,8 @@
     padding:7px 12px;border-radius:8px;cursor:pointer;font-family:inherit;}
   .shop-tab.on{background:var(--primary);color:#06210a;border-color:var(--primary);}
   .shop-grid{display:grid;grid-template-columns:1fr;gap:8px;}
-  .shop-item{display:flex;align-items:center;gap:11px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;}
+  .shop-item{display:flex;align-items:center;gap:11px;background:linear-gradient(150deg,var(--surface2) 0%,var(--surface) 160%);
+    border:1px solid var(--border);border-radius:10px;padding:10px 12px;box-shadow:0 2px 6px rgba(0,0,0,.15);}
   .shop-item .si-ic{font-size:1.5rem;flex-shrink:0;}
   .shop-item .si-b{flex:1;min-width:0;} .shop-item .si-n{font-weight:800;font-size:0.9rem;}
   .shop-item .si-d{font-size:0.74rem;color:var(--text-muted);line-height:1.35;margin-top:1px;}
@@ -916,6 +929,61 @@ function tryMoveRecovery(p){
 /* ============================================================
    RENDER
    ============================================================ */
+/* ---------- scene banner (scenario-themed illustration) ---------- */
+const SCENE_THEME={
+  1:{sky0:'#2a3320',sky1:'#151c0e',ground:'#1b2412',accent:'#5aaa3a',label:'NEIGHBORHOOD INCIDENT'},
+  2:{sky0:'#2a3320',sky1:'#151c0e',ground:'#1b2412',accent:'#5aaa3a',label:'TRAINING INCIDENT'},
+  3:{sky0:'#332f20',sky1:'#1c180e',ground:'#241f12',accent:'#e8c33a',label:'DISASTER RESPONSE'},
+  4:{sky0:'#3a2820',sky1:'#1e140e',ground:'#28180f',accent:'#e8853a',label:'MASS CASUALTY'},
+  5:{sky0:'#3a1e20',sky1:'#1e0e10',ground:'#280f12',accent:'#ef4444',label:'CATASTROPHE RESPONSE'},
+  6:{sky0:'#4a2612',sky1:'#241108',ground:'#2c1608',accent:'#ff7a3c',label:'WILDFIRE EVACUATION'},
+  7:{sky0:'#1c2a38',sky1:'#0e161e',ground:'#131f28',accent:'#56d4ff',label:'FLASH FLOOD'},
+  8:{sky0:'#2a3038',sky1:'#161a20',ground:'#1c2026',accent:'#cfe8ff',label:'WINTER STORM'},
+  9:{sky0:'#2e2a26',sky1:'#161412',ground:'#201d1a',accent:'#c2a878',label:'BUILDING COLLAPSE'},
+};
+function stationScene(){
+  const th=SCENE_THEME[G.tier.n]||SCENE_THEME[1];
+  const target=G.tier.win||3;
+  const bx0=380-(target-1)*16;
+  const pips=Array.from({length:target}).map((_,i)=>{
+    const x=bx0+i*32, achieved=i<G.daysHigh;
+    const c=achieved?'#e8c33a':'rgba(255,255,255,.16)';
+    return `<circle cx="${x}" cy="139" r="7" fill="${c}" stroke="rgba(0,0,0,.4)" stroke-width="1.2"/>${achieved?
+      `<path d="M${x-3} 139 l2.4 2.4 l4.2 -5" stroke="#2e2606" stroke-width="1.8" fill="none" stroke-linecap="round"/>`:''}`;
+  }).join('');
+  return `<div class="scene-banner"><svg viewBox="0 0 760 150" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="skyG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${th.sky0}"/><stop offset="1" stop-color="${th.sky1}"/></linearGradient>
+      <linearGradient id="groundG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${th.ground}"/><stop offset="1" stop-color="#0a0e07"/></linearGradient>
+      <linearGradient id="tentG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e9e2cf"/><stop offset="1" stop-color="#c7bd9f"/></linearGradient>
+      <linearGradient id="ambG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f4f2"/><stop offset="1" stop-color="#c9cdd2"/></linearGradient>
+    </defs>
+    <rect width="760" height="98" fill="url(#skyG)"/>
+    <rect y="98" width="760" height="52" fill="url(#groundG)"/>
+    <ellipse cx="120" cy="70" rx="150" ry="46" fill="${th.accent}" opacity=".16"/>
+    <g transform="translate(566,62)">
+      <rect x="0" y="18" width="150" height="34" rx="4" fill="url(#ambG)" stroke="#8891a0" stroke-width="1.5"/>
+      <rect x="0" y="0" width="46" height="34" rx="4" fill="url(#ambG)" stroke="#8891a0" stroke-width="1.5"/>
+      <rect x="4" y="6" width="16" height="12" rx="2" fill="#274058"/>
+      <rect x="46" y="30" width="104" height="6" fill="#e5484d"/>
+      <rect x="60" y="8" width="26" height="10" fill="#e5484d"/><rect x="69" y="0" width="8" height="26" fill="#e5484d"/>
+      <circle cx="30" cy="54" r="9" fill="#1c1f24"/><circle cx="30" cy="54" r="3.4" fill="#6a7078"/>
+      <circle cx="118" cy="54" r="9" fill="#1c1f24"/><circle cx="118" cy="54" r="3.4" fill="#6a7078"/>
+      <rect x="8" y="-8" width="30" height="7" rx="2" fill="#e5484d" opacity=".9"/>
+    </g>
+    <g transform="translate(230,0)">
+      <path d="M0 98 L100 40 L200 98 Z" fill="url(#tentG)" stroke="#8f855f" stroke-width="1.5"/>
+      <path d="M60 98 L100 70 L140 98 Z" fill="#0a0e07" opacity=".55"/>
+      <rect x="80" y="46" width="40" height="10" fill="#e5484d"/><rect x="95" y="34" width="10" height="34" fill="#e5484d"/>
+      <text x="100" y="112" text-anchor="middle" font-family="'Segoe UI',sans-serif" font-weight="800" font-size="11" fill="rgba(255,255,255,.55)" letter-spacing="2">AID STATION</text>
+    </g>
+    <text x="20" y="20" font-family="'Segoe UI',sans-serif" font-weight="800" font-size="11" fill="rgba(255,255,255,.4)" letter-spacing="2">${th.label}</text>
+    <text x="740" y="20" text-anchor="end" font-family="'Segoe UI',sans-serif" font-weight="800" font-size="11" fill="rgba(255,255,255,.4)" letter-spacing="1">DAY ${G.day}</text>
+    ${pips}
+    <text x="380" y="127" text-anchor="middle" font-family="'Segoe UI',sans-serif" font-weight="700" font-size="8" fill="rgba(255,255,255,.32)" letter-spacing="1.5">HIGH-SATISFACTION DAYS TO WIN</text>
+  </svg></div>`;
+}
+
 function render(){
   if(!G) return;
   const m=document.getElementById('main');
@@ -929,6 +997,7 @@ function render(){
   const satFace=G.sat>70?'😊':G.sat>45?'🙂':G.sat>22?'😟':'😣';
   const q=G.waiting.filter(id=>{const p=G.patients[id];return p&&(p.stage==='triage'||p.stage==='triaged');}).length;
   m.innerHTML=`
+   ${stationScene()}
    <div class="top">
      <div class="chip"><span class="ck">📅 Day</span><span class="cv">${G.day}</span></div>
      <div class="chip"><span class="ck">💵 Funding</span><span class="cv">$${G.money}</span></div>
