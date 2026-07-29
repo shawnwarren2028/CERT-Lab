@@ -460,7 +460,7 @@ const SHOP=[
   // equipment / upgrades
   {id:'generator',cat:'equip',n:'Backup Generator',em:'🔋',cost:240,once:true,d:'Immune to power-outage events.',eff:g=>{g.generator=true;}},
   {id:'hvac',cat:'equip',n:'HVAC System',em:'🌬️',cost:240,once:true,d:'Heat/cold events are milder and cause fewer heat/hypothermia arrivals.',eff:g=>{g.hvac=true;}},
-  {id:'pharmacy',cat:'equip',n:'Larger Pharmacy',em:'💊',cost:300,once:true,d:'Unlocks advanced supplies (O₂, burn dressings, splints) and +20 stock cap.',eff:g=>{g.pharmacy=true;g.invCap+=20;}},
+  {id:'pharmacy',cat:'equip',n:'Larger Pharmacy',em:'💊',cost:300,once:true,d:'Unlocks advanced supplies and +20 stock cap. Oxygen is required for smoke inhalation/heat stroke/head injury; adv. splints for crush injury; burn dressing is an optional upgrade for burns.',eff:g=>{g.pharmacy=true;g.invCap+=20;}},
   {id:'radio',cat:'equip',n:'Radio Room',em:'📻',cost:250,once:true,d:'+1 ambulance readiness and faster evac dispatch.',eff:g=>{g.ambReady+=1;g.ambMax+=1;g.ambEta=Math.max(6,g.ambEta-2);}},
   {id:'trauma',cat:'equip',n:'Trauma Bay',em:'⚕️',cost:400,once:true,d:'+35% treatment/recovery speed and steadier critical patients.',eff:g=>{g.trauma=true;}},
   {id:'training',cat:'equip',n:'Training Room',em:'🎓',cost:280,once:true,d:'Volunteers gain experience over the shift; new recruits start trained.',eff:g=>{g.training=true;}},
@@ -1105,9 +1105,10 @@ function render(){
   window.scrollTo(0,winScroll);
 }
 function renderWaiting(){
-  const ids=G.waiting.filter(id=>{const p=G.patients[id];return p&&(p.stage==='triage'||p.stage==='triaged');});
+  const ids=G.waiting.filter(id=>{const p=G.patients[id];return p&&(p.stage==='triage'||p.stage==='triaged');})
+    .sort((a,b)=>G.patients[a].patience-G.patients[b].patience); // most time-critical first
   const cards=ids.map(id=>pcard(id,'wait')).join('');
-  return `<div class="zone"><h3>🚶 Waiting Room <span class="zc">${ids.length} waiting</span></h3>
+  return `<div class="zone"><h3>🚶 Waiting Room <span class="zc">${ids.length} waiting${ids.length>1?' · sorted by urgency':''}</span></h3>
     <div class="qlist ${ids.length?'':'empty'}" data-empty="No patients waiting.">${cards}</div></div>`;
 }
 function bedCellHtml(b,label,emptyNote,dropAttr){
