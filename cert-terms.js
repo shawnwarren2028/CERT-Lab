@@ -196,6 +196,16 @@ const CERT_TERMS = [
   {a:"BACKDRAFT",   d:3, clue:"Explosive reignition when oxygen rushes into a superheated, smoke-filled room.", info:"Never open a hot door fast — a backdraft can level a room instantly."},
   {a:"GCS",         d:3, clue:"Glasgow Coma Scale (acronym), scored 3 to 15.", info:"GCS scores eye, verbal, and motor response to gauge consciousness."},
   {a:"SHORING",     d:3, clue:"Bracing a structure to prevent further collapse.", info:"Shoring is heavier and more involved than cribbing — usually beyond CERT's scope."},
+
+  // ── volunteer & partner organizations (mirrored from the CERT Reference Guide's fuller glossary) ──
+  {a:"RUBICON",    d:2, clue:"Team ___ — a veteran-led disaster response nonprofit.", info:"About 70% of Team Rubicon's 200,000+ volunteers are military veterans, though service isn't required to join."},
+  {a:"GREYSHIRT",  d:3, clue:"Team Rubicon's own name for its volunteers, after the color of their shirt.", info:"Team Rubicon's value statement is \"Mission First, Greyshirts Always.\""},
+  {a:"HAITI",      d:2, clue:"Site of the 2010 earthquake that was Team Rubicon's founding operation.", info:"Team Rubicon's founders crossed into Haiti to help after the 2010 earthquake — the org's name itself references crossing a river with no turning back."},
+  {a:"VETERAN",    d:1, clue:"About 70% of Team Rubicon's volunteers are military ___s.", info:"Service isn't required to volunteer with Team Rubicon — only a commitment to helping."},
+  {a:"PILLOWCASE", d:2, clue:"The ___ Project — a Red Cross classroom program teaching kids disaster prep.", info:"Inspired by New Orleans students who carried belongings in pillowcases evacuating Hurricane Katrina; it's since reached over a million children."},
+  {a:"ALARM",      d:1, clue:"The Red Cross \"Sound the ___\" campaign installs these for free.", info:"A working smoke alarm cuts the risk of dying in a home fire in half."},
+  {a:"SUV",        d:3, clue:"Spontaneous Unaffiliated Volunteer (acronym) — shows up to help with no training or affiliation.", info:"FEMA's own doctrine warns that uncoordinated SUVs can become 'a disaster within a disaster' — exactly why VOAD, MRC, Team Rubicon, and CERT itself exist."},
+  {a:"AFFILIATED", d:2, clue:"Trained and registered with a recognized volunteer org, unlike a spontaneous (SUV) one.", info:"Being affiliated — with CERT, VOAD, MRC, or Team Rubicon — is what lets a volunteer's skills actually be put to use during a disaster."},
 ];
 
 /* CERT sections (used for themed crossword mode). */
@@ -218,7 +228,8 @@ const SECTION_DEFS = [
   {id:'terror',  name:'Terrorism Awareness',   icon:'💥',
     words:['CBRNE','SECONDARY','STANDOFF','IED','LOCKDOWN','SUSPICIOUS']},
   {id:'fieldref', name:'Field Reference (Multi-Agency)', icon:'🌐',
-    words:['CISA','OSHA','USFA','VOAD','GDACS','NWS','ANNEX','WATCH','WARNING','LAHAR','EARTHQUAKE','TSUNAMI','VOLCANO','LANDSLIDE','WILDFIRE','HURRICANE','TORNADO','FLOOD','PANDEMIC']},
+    words:['CISA','OSHA','USFA','VOAD','GDACS','NWS','ANNEX','WATCH','WARNING','LAHAR','EARTHQUAKE','TSUNAMI','VOLCANO','LANDSLIDE','WILDFIRE','HURRICANE','TORNADO','FLOOD','PANDEMIC',
+      'RUBICON','GREYSHIRT','HAITI','VETERAN','PILLOWCASE','ALARM','SUV','AFFILIATED']},
   {id:'nato', name:'NATO Phonetic Alphabet', icon:'📻',
     words:['ALPHA','BRAVO','CHARLIE','DELTA','ECHO','FOXTROT','GOLF','HOTEL','INDIA','JULIETT','KILO','LIMA','MIKE','NOVEMBER','OSCAR','PAPA','QUEBEC','ROMEO','SIERRA','TANGO','UNIFORM','VICTOR','WHISKEY','YANKEE','ZULU']},
 ];
