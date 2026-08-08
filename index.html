@@ -48,18 +48,16 @@
     display:flex;flex-direction:column;}
 
   .hero{text-align:center;margin-bottom:38px;}
-  .hero-lockup{display:grid;grid-template-columns:auto auto;justify-content:center;
-    column-gap:20px;row-gap:8px;}
-  .hero-shield{grid-column:1;grid-row:1;align-self:center;justify-self:center;
-    max-width:169px;width:100%;height:auto;display:block;
+  .hero-lockup{display:flex;align-items:center;justify-content:center;gap:20px;flex-wrap:wrap;}
+  .hero-textblock{display:flex;flex-direction:column;align-items:center;}
+  .hero-shield{max-width:169px;width:100%;height:auto;display:block;
     filter:drop-shadow(0 8px 20px rgba(0,0,0,.35));}
-  .hero-wordmark{grid-column:2;grid-row:1;align-self:center;justify-self:start;
-    max-width:320px;width:100%;height:auto;display:block;}
+  .hero-wordmark{max-width:320px;width:100%;height:auto;display:block;}
   .hero-wordmark-light{display:none;}
   [data-theme="light"] .hero-wordmark-dark{display:none;}
   [data-theme="light"] .hero-wordmark-light{display:block;}
-  .hero p{grid-column:2;grid-row:2;justify-self:start;text-align:left;font-size:1rem;
-    color:var(--text-muted);max-width:320px;margin:0;line-height:1.25;}
+  .hero p{text-align:center;font-size:1rem;color:var(--text-muted);
+    max-width:320px;margin:6px 0 0;line-height:1.25;}
 
   .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;}
   .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
@@ -135,10 +133,10 @@
     #cert-logo{height:40px;}
     main{padding:26px 16px 18px;}
     .hero{margin-bottom:26px;}
-    .hero-lockup{column-gap:12px;row-gap:6px;}
+    .hero-lockup{gap:12px;}
     .hero-shield{max-width:117px;}
     .hero-wordmark{max-width:190px;}
-    .hero p{font-size:0.85rem;max-width:190px;line-height:1.2;}
+    .hero p{font-size:0.85rem;max-width:190px;line-height:1.2;margin-top:4px;}
     .cards{gap:14px;}
     .card{padding:22px 18px 18px;}
     .card-icon{font-size:2.2rem;margin-bottom:12px;}
@@ -170,10 +168,12 @@
   <div class="hero">
     <div class="hero-lockup">
       <img class="hero-shield" src="readiness-arcade-hero-shield.png" alt="">
-      <img class="hero-wordmark hero-wordmark-dark" src="readiness-arcade-wordmark-dark.png" alt="Readiness Arcade — Learn, Practice, Respond, Together">
-      <img class="hero-wordmark hero-wordmark-light" src="readiness-arcade-wordmark-light.png" alt="Readiness Arcade — Learn, Practice, Respond, Together">
-      <p>Practice decision-making through realistic scenarios,
-         or step into the field with an interactive response mission.</p>
+      <div class="hero-textblock">
+        <img class="hero-wordmark hero-wordmark-dark" src="readiness-arcade-wordmark-dark.png" alt="Readiness Arcade — Learn, Practice, Respond, Together">
+        <img class="hero-wordmark hero-wordmark-light" src="readiness-arcade-wordmark-light.png" alt="Readiness Arcade — Learn, Practice, Respond, Together">
+        <p>Practice decision-making through realistic scenarios,
+           or step into the field with an interactive response mission.</p>
+      </div>
     </div>
   </div>
 
