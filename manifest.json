@@ -1,7 +1,7 @@
 {
-  "name": "Wallingford CERT — Training Suite",
-  "short_name": "CERT Suite",
-  "description": "Community Emergency Response Team training games for Wallingford CERT.",
+  "name": "Readiness Arcade",
+  "short_name": "Readiness Arcade",
+  "description": "Community Emergency Response Team training games.",
   "start_url": "index.html",
   "scope": "./",
   "display": "standalone",

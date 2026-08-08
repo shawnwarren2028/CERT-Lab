@@ -4,16 +4,16 @@
 <script src="theme.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Wallingford CERT — Training Suite</title>
+<title>Readiness Arcade</title>
 <meta name="description" content="Nine free browser games that turn FEMA CERT Basic Training into hands-on practice: START triage, disaster medicine, hazmat, fire safety, search & rescue, and more.">
 <meta name="theme-color" content="#5aaa3a">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Wallingford CERT Training Suite">
-<meta property="og:title" content="Wallingford CERT — Training Suite">
+<meta property="og:site_name" content="Readiness Arcade">
+<meta property="og:title" content="Readiness Arcade">
 <meta property="og:description" content="Nine free browser games that turn FEMA CERT Basic Training into hands-on practice — triage, disaster medicine, hazmat, fire safety, and more.">
 <meta property="og:image" content="icon-512.png">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Wallingford CERT — Training Suite">
+<meta name="twitter:title" content="Readiness Arcade">
 <meta name="twitter:description" content="A free learning lab of nine interactive games for Community Emergency Response Team training.">
 
 <style>
@@ -48,6 +48,9 @@
     display:flex;flex-direction:column;}
 
   .hero{text-align:center;margin-bottom:38px;}
+  .hero-shield{max-width:130px;width:100%;height:auto;margin:0 auto 14px;display:block;
+    filter:drop-shadow(0 8px 20px rgba(0,0,0,.35));}
+  .hero-wordmark{max-width:320px;width:100%;height:auto;margin:0 auto 22px;display:block;}
   .hero .eyebrow{font-size:0.78rem;letter-spacing:.22em;text-transform:uppercase;
     color:var(--primary-light);font-weight:700;margin-bottom:10px;}
   .hero h2{font-size:2.3rem;font-weight:800;line-height:1.15;margin-bottom:14px;}
@@ -128,6 +131,8 @@
     #cert-logo{height:40px;}
     main{padding:26px 16px 18px;}
     .hero{margin-bottom:26px;}
+    .hero-shield{max-width:90px;margin-bottom:10px;}
+    .hero-wordmark{max-width:220px;margin-bottom:16px;}
     .hero h2{font-size:1.7rem;}
     .hero p{font-size:0.92rem;}
     .cards{gap:14px;}
@@ -141,14 +146,14 @@
 
 <header>
   <div class="logo-wrap">
-    <img id="cert-logo" src="cert-wallingford-logo.png" alt="CERT Wallingford"
+    <img id="cert-logo" src="readiness-arcade-logo.png" alt="Readiness Arcade"
       onerror="this.style.display='none';document.getElementById('logo-fallback').style.display='flex'">
     <div id="logo-fallback" style="display:none;align-items:center;gap:10px;">
-      <div class="logo-badge">CERT</div>
+      <div class="logo-badge">RA</div>
     </div>
   </div>
   <div class="hdr-text">
-    <h1>Wallingford CERT — Training Suite</h1>
+    <h1>Readiness Arcade</h1>
     <p>Community Emergency Response Team</p>
   </div>
   <div class="hdr-actions">
@@ -159,6 +164,8 @@
 
 <main>
   <div class="hero">
+    <img class="hero-shield" src="readiness-arcade-hero-shield.png" alt="">
+    <img class="hero-wordmark" src="readiness-arcade-wordmark.png" alt="Readiness Arcade — Learn, Practice, Respond, Together">
     <div class="eyebrow">Basic Training · Sections 1–8</div>
     <h2>Sharpen your <span>CERT</span> skills.</h2>
     <p>Choose a training tool below. Practice decision-making through realistic scenarios,
@@ -253,7 +260,7 @@
 </main>
 
 <footer>
-  <span>Wallingford CERT</span> — Training Suite · For educational use, this is not medical advice. If a true emergency contact 911 or your local EMS — follow your local CERT program guidelines.
+  <span>Readiness Arcade</span> · For educational use, this is not medical advice. If a true emergency contact 911 or your local EMS — follow your local CERT program guidelines.
 </footer>
 
 <div class="rec-ov" id="rec-ov" onclick="if(event.target===this)closeRecord()">

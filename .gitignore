@@ -16,3 +16,8 @@ build/
 
 # ReferenceGuide is an independent, separately-initialized git repo nested here
 ReferenceGuide/
+
+# Rebrand source files (GIMP working docs, raw SVG/PNG exports) — large,
+# not needed to serve the site. Final processed assets are committed
+# directly at the repo root (readiness-arcade-logo.png, etc.).
+Artwork/

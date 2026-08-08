@@ -4,16 +4,16 @@
 <script src="theme.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Wallingford CERT — Fire Scene RPG</title>
+<title>Readiness Arcade — Fire Scene RPG</title>
 <meta name="description" content="Play a CERT volunteer in a top-down fire-scene response: size up the scene, triage patients, manage hazards, and hand off to EMS.">
 <meta name="theme-color" content="#5aaa3a">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Wallingford CERT Training Suite">
-<meta property="og:title" content="Wallingford CERT — Fire Scene RPG">
+<meta property="og:site_name" content="Readiness Arcade">
+<meta property="og:title" content="Readiness Arcade — Fire Scene RPG">
 <meta property="og:description" content="Play a CERT volunteer in a top-down fire-scene response: size up the scene, triage patients, manage hazards, and hand off to EMS.">
 <meta property="og:image" content="icon-512.png">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Wallingford CERT — Fire Scene RPG">
+<meta name="twitter:title" content="Readiness Arcade — Fire Scene RPG">
 <meta name="twitter:description" content="Play a CERT volunteer in a top-down fire-scene response: size up the scene, triage patients, manage hazards, and hand off to EMS.">
 <style>
 :root {
@@ -277,9 +277,9 @@ canvas#map{display:block;width:auto;height:auto;max-width:100%;max-height:100%;a
 </head>
 <body>
 <header>
-  <img class="logo-img" src="cert-wallingford-logo.png" alt="CERT" onerror="this.style.display='none'">
+  <img class="logo-img" src="readiness-arcade-logo.png" alt="CERT" onerror="this.style.display='none'">
   <div class="hdr-title">
-    <h1>Wallingford CERT — Fire Scene RPG</h1>
+    <h1>Readiness Arcade — Fire Scene RPG</h1>
     <p>Community Emergency Response Team</p>
   </div>
   <div class="hdr-actions">
@@ -873,7 +873,7 @@ const DLGS = {
     choices:[{ text:'Copy. Gearing up now.', close:true }] },
   'rodriguez-duty':{ npc:'rodriguez', text:`"CERT, glad you made it. I’m Rodriguez, IC. What’s your status?"`,
     choices:[
-      { text:'Abe L., CERT Wallingford. PPE on, radio on Command channel. Ready to assist.', action:chkIn, next:'rodriguez-duty2' },
+      { text:'Abe L., CERT. PPE on, radio on Command channel. Ready to assist.', action:chkIn, next:'rodriguez-duty2' },
       { text:'I’ll just head into the yard and start helping.', action:()=>loseCR(10,'Freelanced instead of checking in'), next:'rodriguez-duty-wrong' },
       { text:'Where’s the fire, exactly?', action:()=>loseCR(5,'Unprofessional check-in'), next:'rodriguez-duty-wrong' },
     ] },

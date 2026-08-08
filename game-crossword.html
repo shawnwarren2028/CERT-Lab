@@ -4,16 +4,16 @@
 <script src="theme.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Wallingford CERT — Crossword</title>
+<title>Readiness Arcade — Crossword</title>
 <meta name="description" content="Auto-generated CERT terminology crosswords with five difficulty levels and a daily challenge. A fresh puzzle every time.">
 <meta name="theme-color" content="#5aaa3a">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Wallingford CERT Training Suite">
-<meta property="og:title" content="Wallingford CERT — Crossword">
+<meta property="og:site_name" content="Readiness Arcade">
+<meta property="og:title" content="Readiness Arcade — Crossword">
 <meta property="og:description" content="Auto-generated CERT terminology crosswords with five difficulty levels and a daily challenge. A fresh puzzle every time.">
 <meta property="og:image" content="icon-512.png">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Wallingford CERT — Crossword">
+<meta name="twitter:title" content="Readiness Arcade — Crossword">
 <meta name="twitter:description" content="Auto-generated CERT terminology crosswords with five difficulty levels and a daily challenge. A fresh puzzle every time.">
 <style>
   :root{
@@ -213,12 +213,12 @@
 
 <header>
   <div class="logo-wrap">
-    <img id="cert-logo" src="cert-wallingford-logo.png" alt="Wallingford CERT"
+    <img id="cert-logo" src="readiness-arcade-logo.png" alt="Readiness Arcade"
       onerror="this.style.display='none';document.getElementById('logo-fallback').style.display='flex'">
-    <div id="logo-fallback" style="display:none;align-items:center;gap:10px;"><div class="logo-badge">CERT</div></div>
+    <div id="logo-fallback" style="display:none;align-items:center;gap:10px;"><div class="logo-badge">RA</div></div>
   </div>
   <div class="hdr-text">
-    <h1>Wallingford CERT — Crossword</h1>
+    <h1>Readiness Arcade — Crossword</h1>
     <p>Community Emergency Response Team</p>
   </div>
   <div class="hdr-right">
@@ -314,7 +314,7 @@
 
 <div class="toast" id="toast"></div>
 
-<footer><span>Wallingford CERT</span> — Training Suite · Crossword · For educational use, this is not medical advice. If a true emergency contact 911 or your local EMS — follow your local CERT program guidelines.</footer>
+<footer><span>Readiness Arcade</span> · Crossword · For educational use, this is not medical advice. If a true emergency contact 911 or your local EMS — follow your local CERT program guidelines.</footer>
 
 <script src="cert-terms.js"></script>
 <script>
@@ -819,7 +819,7 @@ function printGridHTML(showAnswers){
 function printPuzzle(){
   const across=PZ.words.filter(w=>w.dir==='A').sort((a,b)=>a.num-b.num).map(w=>`<li><b>${w.num}.</b> ${w.clue}</li>`).join('');
   const down  =PZ.words.filter(w=>w.dir==='D').sort((a,b)=>a.num-b.num).map(w=>`<li><b>${w.num}.</b> ${w.clue}</li>`).join('');
-  const title=`Wallingford CERT Crossword — ${LV.name}${isDaily?` (Daily ${todayStr()})`:''}`;
+  const title=`Readiness Arcade Crossword — ${LV.name}${isDaily?` (Daily ${todayStr()})`:''}`;
   const win=window.open('','_blank');
   if (!win){ toast('Allow pop-ups to print.'); return; }
   win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${title}</title>
@@ -842,7 +842,7 @@ function printPuzzle(){
     .key-note{font-size:10pt;color:#333;margin-bottom:10px;}
   </style></head><body>
     <h1>${title}</h1>
-    <div class="meta">Wallingford CERT — Training Suite · ${PZ.words.length} terms</div>
+    <div class="meta">Readiness Arcade — Training Suite · ${PZ.words.length} terms</div>
     <div class="nameline">Name: ______________________________   Date: ________________</div>
     ${printGridHTML(false)}
     <div class="clues">
