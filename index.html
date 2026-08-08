@@ -48,11 +48,14 @@
     display:flex;flex-direction:column;}
 
   .hero{text-align:center;margin-bottom:38px;}
-  .hero-shield{max-width:130px;width:100%;height:auto;margin:0 auto 14px;display:block;
+  .hero-lockup{display:flex;align-items:center;justify-content:center;gap:20px;
+    margin:0 auto 26px;flex-wrap:wrap;}
+  .hero-shield{max-width:169px;width:100%;height:auto;display:block;flex:0 1 auto;
     filter:drop-shadow(0 8px 20px rgba(0,0,0,.35));}
-  .hero-wordmark{max-width:320px;width:100%;height:auto;margin:0 auto 22px;display:block;}
-  .hero .eyebrow{font-size:0.78rem;letter-spacing:.22em;text-transform:uppercase;
-    color:var(--primary-light);font-weight:700;margin-bottom:10px;}
+  .hero-wordmark{max-width:320px;width:100%;height:auto;display:block;flex:1 1 220px;}
+  .hero-wordmark-light{display:none;}
+  [data-theme="light"] .hero-wordmark-dark{display:none;}
+  [data-theme="light"] .hero-wordmark-light{display:block;}
   .hero h2{font-size:2.3rem;font-weight:800;line-height:1.15;margin-bottom:14px;}
   .hero h2 span{color:var(--primary);}
   .hero p{font-size:1rem;color:var(--text-muted);max-width:620px;margin:0 auto;line-height:1.6;}
@@ -131,8 +134,9 @@
     #cert-logo{height:40px;}
     main{padding:26px 16px 18px;}
     .hero{margin-bottom:26px;}
-    .hero-shield{max-width:90px;margin-bottom:10px;}
-    .hero-wordmark{max-width:220px;margin-bottom:16px;}
+    .hero-lockup{gap:12px;margin-bottom:18px;}
+    .hero-shield{max-width:117px;}
+    .hero-wordmark{max-width:190px;}
     .hero h2{font-size:1.7rem;}
     .hero p{font-size:0.92rem;}
     .cards{gap:14px;}
@@ -164,9 +168,11 @@
 
 <main>
   <div class="hero">
-    <img class="hero-shield" src="readiness-arcade-hero-shield.png" alt="">
-    <img class="hero-wordmark" src="readiness-arcade-wordmark.png" alt="Readiness Arcade — Learn, Practice, Respond, Together">
-    <div class="eyebrow">Basic Training · Sections 1–8</div>
+    <div class="hero-lockup">
+      <img class="hero-shield" src="readiness-arcade-hero-shield.png" alt="">
+      <img class="hero-wordmark hero-wordmark-dark" src="readiness-arcade-wordmark-dark.png" alt="Readiness Arcade — Learn, Practice, Respond, Together">
+      <img class="hero-wordmark hero-wordmark-light" src="readiness-arcade-wordmark-light.png" alt="Readiness Arcade — Learn, Practice, Respond, Together">
+    </div>
     <h2>Sharpen your <span>CERT</span> skills.</h2>
     <p>Choose a training tool below. Practice decision-making through realistic scenarios,
        or step into the field with an interactive response mission.</p>
