@@ -733,6 +733,8 @@ const TREATMENTS = [
   {id:'pressure', t:'Apply direct pressure and a bandage to the head wound', good:true},
   {id:'burncover', t:'Cover the burn with a clean, dry, non-stick dressing', good:true},
   {id:'shock', t:'Keep her warm and monitor for shock', good:true},
+  {id:'ribsupport', t:'Help her find a comfortable position and keep monitoring her breathing', good:true},
+  {id:'inhaler', t:'Offer her albuterol inhaler for the shortness of breath', good:true, requiresAsked:'meds'},
   {id:'ice', t:'Apply ice directly to the burn to cool it', good:false,
     note:"Ice can damage already-injured tissue and isn't appropriate for burn care — use cool (not ice-cold) water or a clean dry dressing instead."},
   {id:'butter', t:'Rub butter or ointment on the burn', good:false,
@@ -740,11 +742,14 @@ const TREATMENTS = [
   {id:'water', t:'Give the patient water to drink', good:false,
     note:'With injuries of uncertain severity, withhold food and drink — she may need procedures later that an empty stomach makes safer.'},
   {id:'walk', t:'Have her stand and walk to a chair', good:false,
-    note:'With a possible rib injury and signs of shock, unnecessary movement can worsen her condition — keep her positioned and still.'}
+    note:'With a possible rib injury and signs of shock, unnecessary movement can worsen her condition — keep her positioned and still.'},
+  {id:'bindribs', t:'Wrap her ribs tightly with a bandage for support', good:false,
+    note:"Tightly binding the chest can restrict breathing — a real risk when breathing is already affected. Support her position instead; don't bind."}
 ];
 function viewTreatment(){
   if(!S.checks.bleedSeen) S.pressureApplied = S.given.pressure; // already handled earlier in primary if applied there
-  const list = TREATMENTS.map((t,i)=>{
+  const visible = TREATMENTS.filter(t=>!t.requiresAsked || S.asked[t.requiresAsked]);
+  const list = visible.map((t,i)=>{
     const done = S.given[t.id] || (t.id==='pressure'&&S.pressureApplied);
     return `<div class="opt ${done?'done':''}" onclick="${done?'':`pickTreatment('${t.id}')`}"><div class="n">${done?'✓':i+1}</div>${t.t}</div>`;
   }).join('');
