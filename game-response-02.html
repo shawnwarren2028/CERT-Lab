@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script src="theme.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Readiness Arcade — Field Response: After the Storm</title>
+<meta name="description" content="An interactive comic: a patient is trapped under storm debris. Search technique, crush syndrome, and knowing when not to act.">
+<meta name="theme-color" content="#5aaa3a">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Readiness Arcade">
+<meta property="og:title" content="Readiness Arcade — Field Response: After the Storm">
+<meta property="og:description" content="An interactive comic: a patient is trapped under storm debris. Search technique, crush syndrome, and knowing when not to act.">
+<meta property="og:image" content="icon-512.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Readiness Arcade — Field Response: After the Storm">
+<meta name="twitter:description" content="An interactive comic: a patient is trapped under storm debris. Search technique, crush syndrome, and knowing when not to act.">
+<style>
+  :root{
+    --bg:#0e1208; --surface:#1a2012; --surface2:#243018; --border:#3a5228;
+    --primary:#5aaa3a; --primary-dark:#4a8f2e; --primary-light:#7ac95a;
+    --text:#eef2e8; --text-muted:#8aa87a; --radius:12px; --gold:#e8c33a;
+    --danger:#ef4444; --warn:#f59e0b; --min:#27ae60;
+  }
+  [data-theme="light"]{
+    --bg:#eef3e7; --surface:#ffffff; --surface2:#e7eedd; --border:#c2d2af;
+    --primary:#41902e; --primary-dark:#317022; --primary-light:#5aaa3a;
+    --text:#16210d; --text-muted:#5c6e4a; --muted:#5c6e4a;
+  }
+  [data-theme="light"] header{background:#e3ecd6;}
+  [data-theme="light"] footer{background:#e3ecd6;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);
+    min-height:100vh;display:flex;flex-direction:column;-webkit-tap-highlight-color:transparent;}
+
+  header{width:100%;background:#111a09;border-bottom:3px solid var(--primary);
+    padding:10px 22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  #cert-logo{height:48px;width:auto;}
+  .logo-badge{background:var(--primary);color:#000;font-weight:900;font-size:1.05rem;letter-spacing:.1em;padding:6px 12px;border-radius:6px;}
+  header h1{font-size:1.12rem;font-weight:700;color:var(--primary);}
+  header p{font-size:0.76rem;color:var(--text-muted);}
+  .hdr-text{flex:1 1 0;min-width:0;}
+  .hdr-actions{margin-left:auto;display:flex;align-items:center;gap:9px;}
+  .home-link{color:var(--primary-light);text-decoration:none;font-size:0.85rem;font-weight:600;
+    border:1px solid var(--border);padding:8px 14px;border-radius:8px;transition:.15s;white-space:nowrap;}
+  .home-link:hover{background:var(--surface2);border-color:var(--primary);}
+  .icon-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:1rem;line-height:1;
+    padding:8px 11px;border-radius:8px;cursor:pointer;transition:.15s;}
+  .icon-btn:hover{border-color:var(--primary);}
+
+  main{flex:1;width:100%;max-width:880px;margin:0 auto;padding:16px 18px 26px;display:flex;flex-direction:column;gap:14px;}
+
+  .panel-frame{position:relative;border:3px solid #0a0e07;border-radius:6px;overflow:hidden;
+    background:#0a0e07 radial-gradient(circle, rgba(255,255,255,.05) 1px, transparent 1.4px) 0 0/14px 14px;
+    box-shadow:0 10px 26px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.06);}
+  [data-theme="light"] .panel-frame{border-color:#1a1a1a;}
+  svg.scene{display:block;width:100%;height:auto;}
+  .issue-tag{position:absolute;top:10px;left:10px;background:var(--gold);color:#1a1400;font-weight:900;
+    font-size:0.68rem;letter-spacing:.06em;padding:4px 9px;border-radius:4px;transform:rotate(-2deg);
+    box-shadow:0 2px 6px rgba(0,0,0,.4);z-index:2;}
+
+  .caption-box{background:#f4ecd2;color:#1a1608;border:2px solid #1a1608;border-radius:2px;
+    padding:10px 14px;font-size:0.92rem;font-weight:600;line-height:1.5;margin:-3px 12px 0;
+    box-shadow:0 4px 10px rgba(0,0,0,.35);position:relative;z-index:2;font-family:Georgia,'Times New Roman',serif;}
+  .caption-box b{color:#7a1010;}
+
+  .speech-wrap{display:flex;gap:10px;align-items:flex-start;margin:2px 4px 0;}
+  .speech-bubble{background:#fff;color:#111;border:2px solid #111;border-radius:16px;padding:10px 16px;
+    font-size:0.92rem;font-weight:600;line-height:1.45;position:relative;max-width:520px;box-shadow:0 4px 10px rgba(0,0,0,.3);}
+  .speech-bubble::before{content:'';position:absolute;top:-2px;left:26px;width:16px;height:16px;background:#fff;
+    border-left:2px solid #111;border-top:2px solid #111;transform:rotate(45deg) translateY(-8px);}
+  .speech-name{font-size:0.68rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--primary-light);
+    margin-bottom:6px;}
+
+  .sfx-text{position:absolute;font-family:Impact,'Arial Black',sans-serif;font-weight:900;letter-spacing:.02em;
+    color:#fff200;-webkit-text-stroke:2px #1a1200;text-shadow:3px 3px 0 #1a1200;transform:rotate(-6deg);
+    z-index:3;pointer-events:none;}
+
+  .hint-row{display:flex;align-items:center;gap:8px;font-size:0.78rem;color:var(--text-muted);padding:2px 4px;}
+  .hint-row .pip{width:9px;height:9px;border-radius:50%;background:var(--gold);flex-shrink:0;
+    box-shadow:0 0 6px var(--gold);animation:pip 1.4s ease-in-out infinite;}
+  @keyframes pip{0%,100%{opacity:.5}50%{opacity:1}}
+
+  .opts{display:flex;flex-direction:column;gap:9px;}
+  .opt{display:flex;align-items:center;gap:10px;text-align:left;background:var(--surface2);border:1px solid var(--border);
+    color:var(--text);font-size:0.92rem;font-weight:600;padding:12px 14px;border-radius:10px;cursor:pointer;transition:.14s;
+    font-family:inherit;}
+  .opt:hover{border-color:var(--primary);background:var(--border);}
+  .opt.done{opacity:.55;border-color:var(--min);cursor:default;}
+  .opt .n{width:22px;height:22px;border-radius:50%;background:var(--bg);border:1px solid var(--border);
+    display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:800;flex-shrink:0;}
+
+  .btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.92rem;font-weight:700;
+    padding:12px 20px;border-radius:9px;cursor:pointer;transition:.15s;font-family:inherit;text-decoration:none;
+    display:inline-flex;align-items:center;gap:7px;justify-content:center;}
+  .btn:hover{border-color:var(--primary);background:var(--border);}
+  .btn.primary{background:var(--primary);color:#06210a;border-color:var(--primary);}
+  .btn.primary:hover{background:var(--primary-light);}
+  .btn:disabled{opacity:.4;cursor:not-allowed;}
+  .btn-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:4px;}
+
+  .notes-panel{background:var(--surface);border:1px dashed var(--border);border-radius:10px;padding:10px 14px;}
+  .notes-panel h4{font-size:0.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;}
+  .notes-panel ul{list-style:none;display:flex;flex-direction:column;gap:4px;}
+  .notes-panel li{font-size:0.84rem;color:var(--text);}
+
+  .cover{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:26px 22px;text-align:center;}
+  .cover .num{color:var(--gold);font-weight:900;letter-spacing:.15em;font-size:0.78rem;}
+  .cover h2{font-size:1.7rem;font-weight:900;color:var(--primary);margin:6px 0 10px;letter-spacing:.02em;}
+  .cover p{color:var(--text-muted);font-size:0.92rem;max-width:520px;margin:0 auto 14px;line-height:1.55;}
+  .skill-row{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-bottom:16px;}
+  .skill-chip{font-size:0.74rem;background:var(--surface2);border:1px solid var(--border);border-radius:20px;
+    padding:5px 11px;color:var(--text);}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;}
+  .card h3{font-size:1.05rem;color:var(--primary);margin-bottom:6px;}
+  .card p{font-size:0.88rem;color:var(--text-muted);line-height:1.5;}
+
+  .score-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin:14px 0;}
+  .score-item{background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:10px 12px;}
+  .score-item .lbl{font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;}
+  .score-item .val{font-size:1.3rem;font-weight:800;color:var(--primary);}
+  .overall{text-align:center;padding:16px;background:var(--bg);border:1px solid var(--border);border-radius:10px;margin-bottom:14px;}
+  .overall .pct{font-size:2.4rem;font-weight:900;color:var(--gold);}
+  .overall .stars{font-size:1.3rem;letter-spacing:.1em;}
+
+  .check-list{display:flex;flex-direction:column;gap:7px;margin:10px 0 16px;}
+  .check-item{display:flex;gap:9px;align-items:flex-start;font-size:0.86rem;background:var(--bg);
+    border:1px solid var(--border);border-radius:8px;padding:9px 11px;}
+  .check-item .ic{flex-shrink:0;}
+  .check-item.ok .ic{color:var(--min);} .check-item.warn .ic{color:var(--warn);}
+  .instr-note{background:var(--surface2);border-left:3px solid var(--gold);border-radius:6px;padding:10px 13px;
+    font-size:0.84rem;color:var(--text);margin-top:6px;}
+  .instr-note b{color:var(--gold);}
+
+  footer{text-align:center;padding:16px;color:var(--text-muted);font-size:0.74rem;border-top:1px solid var(--border);}
+  footer span{color:var(--primary);}
+</style>
+</head>
+<body>
+
+<header>
+  <img id="cert-logo" src="readiness-arcade-logo.png" alt="Readiness Arcade"
+    onerror="this.style.display='none';document.getElementById('logo-fallback').style.display='flex'">
+  <div id="logo-fallback" style="display:none;align-items:center;"><div class="logo-badge">RA</div></div>
+  <div class="hdr-text">
+    <h1>Field Response</h1>
+    <p>Issue 02 · After the Storm</p>
+  </div>
+  <div class="hdr-actions">
+    <button class="icon-btn" id="sfx-btn" onclick="SND.toggle()" title="Sound effects">🔊</button>
+    <a class="home-link" href="game-response.html">← Issues</a>
+    <button class="theme-btn" onclick="toggleTheme()" aria-label="Toggle light or dark mode">☀️</button>
+  </div>
+</header>
+
+<main id="main"></main>
+
+<footer><span>Readiness Arcade</span> · Field Response · For educational use, this is not medical advice. If a true emergency contact 911 or your local EMS — follow your local CERT program guidelines.</footer>
+
+<script>
+/* ============================================================
+   SFX
+============================================================ */
+const SND=(function(){
+  let ctx,on=(localStorage.getItem('cert_response_sfx')!=='off'),comp;
+  function ac(){ if(!ctx){ ctx=new (window.AudioContext||window.webkitAudioContext)(); comp=ctx.createDynamicsCompressor(); comp.connect(ctx.destination);} return ctx; }
+  function tone(f,t,type,g,dur){ if(!on)return; ac(); const o=ctx.createOscillator(),ga=ctx.createGain();
+    o.type=type||'sine'; o.frequency.setValueAtTime(f,ctx.currentTime+t);
+    ga.gain.setValueAtTime(0,ctx.currentTime+t); ga.gain.linearRampToValueAtTime(g||.2,ctx.currentTime+t+.01);
+    ga.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+t+(dur||.2));
+    o.connect(ga); ga.connect(comp); o.start(ctx.currentTime+t); o.stop(ctx.currentTime+t+(dur||.2)+.02); }
+  return {
+    click(){ tone(520,0,'square',.12,.06); },
+    good(){ tone(660,0,'sine',.18,.12); tone(880,.08,'sine',.16,.16); },
+    bad(){ tone(220,0,'sawtooth',.16,.22); },
+    crack(){ tone(90,0,'square',.3,.35); tone(60,.05,'square',.25,.3); },
+    win(){ tone(523,0,'sine',.18,.14); tone(659,.1,'sine',.18,.14); tone(784,.2,'sine',.2,.3); },
+    toggle(){ on=!on; localStorage.setItem('cert_response_sfx',on?'on':'off'); document.getElementById('sfx-btn').textContent=on?'🔊':'🔇'; if(on){ac();this.click();} },
+    init(){ document.getElementById('sfx-btn').textContent=on?'🔊':'🔇'; }
+  };
+})();
+
+/* ============================================================
+   ART SWAP-IN POINT
+============================================================ */
+const PANEL_ART = {
+  // briefing:  'response-issue02-briefing.png',
+  // establish: 'response-issue02-establish.png',
+  // sizeup:    'response-issue02-sizeup.png',
+  // patient_trapped:      'response-issue02-patient-trapped.png',
+  // patient_stabilized:   'response-issue02-patient-stabilized.png',
+  // patient_deteriorated: 'response-issue02-patient-deteriorated.png',
+  // collapse:  'response-issue02-collapse.png',
+};
+
+/* ============================================================
+   SCENE RENDERING — comic-ink vector art
+============================================================ */
+const DEFS = `
+  <pattern id="hatch" width="6" height="6" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+    <line x1="0" y1="0" x2="0" y2="6" stroke="#000" stroke-width="1.3" opacity=".22"/>
+  </pattern>
+  <filter id="hglow" x="-60%" y="-60%" width="220%" height="220%">
+    <feGaussianBlur stdDeviation="4" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+  <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#3a4250"/><stop offset="100%" stop-color="#5a6472"/>
+  </linearGradient>`;
+
+function hotspot(x,y,r,id,found,pulse){
+  if(found){
+    return `<g class="hotspot" onclick="clickHotspot('${id}')" style="cursor:pointer" pointer-events="all">
+      <circle cx="${x}" cy="${y}" r="${r}" fill="rgba(90,170,58,.15)" stroke="#5aaa3a" stroke-width="2.5"/>
+      <path d="M${x-r*0.4} ${y} l${r*0.28} ${r*0.28} l${r*0.5} -${r*0.55}" stroke="#5aaa3a" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>`;
+  }
+  const hitR = Math.round(r*0.55);
+  return `<g class="hotspot" onclick="clickHotspot('${id}')" style="cursor:pointer" pointer-events="all">
+    <circle cx="${x}" cy="${y}" r="${hitR}" fill="transparent" stroke="${pulse?'#e8c33a':'none'}" stroke-width="2" ${pulse?'filter="url(#hglow)"':''}/>
+    <circle cx="${x}" cy="${y}" r="2.5" fill="${pulse?'#e8c33a':'rgba(232,195,58,.5)'}"/>
+  </g>`;
+}
+function svgWrap(inner){
+  return `<svg class="scene" viewBox="0 0 800 533" xmlns="http://www.w3.org/2000/svg"><defs>${DEFS}</defs>${inner}</svg>`;
+}
+function art(key, fallback){
+  if(PANEL_ART[key]) return `<image href="${PANEL_ART[key]}" x="0" y="0" width="800" height="533" preserveAspectRatio="xMidYMid slice"/>`;
+  return fallback;
+}
+
+function sceneBriefing(){
+  const bg = `
+    <rect width="800" height="533" fill="url(#sky)"/>
+    <rect x="0" y="380" width="800" height="153" fill="#22281f"/>
+    <g stroke="#0a0e07" stroke-width="4" fill="#3a4a2c">
+      <rect x="500" y="150" width="220" height="200"/>
+      <polygon points="480,150 610,80 740,150"/>
+    </g>
+    <g stroke="#0a0e07" stroke-width="5" fill="#4a3a28">
+      <path d="M540 150 q-30 -140 40 -160 q60 10 20 160 z"/>
+    </g>
+    <rect x="150" y="60" width="12" height="180" fill="#555" stroke="#0a0e07" stroke-width="3"/>
+    <path d="M150 90 L400 130" stroke="#333" stroke-width="4" fill="none"/>
+    <path d="M150 90 L60 140" stroke="#333" stroke-width="4" fill="none"/>
+    <g>
+      <rect x="80" y="400" width="18" height="42" rx="3" fill="#d9d9d9" stroke="#0a0e07" stroke-width="3"/>
+      <circle cx="89" cy="388" r="12" fill="#fff" stroke="#0a0e07" stroke-width="3"/>
+    </g>
+    <g>
+      <rect x="120" y="402" width="18" height="44" rx="3" fill="#3a5228" stroke="#0a0e07" stroke-width="3"/>
+      <circle cx="129" cy="390" r="12" fill="#5aaa3a" stroke="#0a0e07" stroke-width="3"/>
+    </g>
+    <g>
+      <rect x="155" y="404" width="18" height="42" rx="3" fill="#3a5228" stroke="#0a0e07" stroke-width="3"/>
+      <circle cx="164" cy="392" r="12" fill="#5aaa3a" stroke="#0a0e07" stroke-width="3"/>
+    </g>
+    <g fill="#c9c0a8" opacity=".7">
+      <ellipse cx="300" cy="440" rx="60" ry="8"/><ellipse cx="450" cy="450" rx="80" ry="8"/>
+    </g>`;
+  return svgWrap(art('briefing', bg));
+}
+
+function sceneEstablish(){
+  const bg = `
+    <rect width="800" height="533" fill="url(#sky)"/>
+    <rect x="0" y="360" width="800" height="173" fill="#22281f"/>
+    <rect x="0" y="340" width="800" height="30" fill="#3a4038"/>
+    <g stroke="#0a0e07" stroke-width="5" fill="#3a4a2c">
+      <rect x="280" y="180" width="330" height="180"/>
+    </g>
+    <polygon points="260,180 445,100 630,180" fill="#1c2418" stroke="#0a0e07" stroke-width="5"/>
+    <g stroke="#0a0e07" stroke-width="5" fill="#4a3a28" transform="translate(360,60) rotate(20)">
+      <path d="M0 0 q-30 -120 40 -140 q60 10 15 140 z"/>
+    </g>
+    <rect x="330" y="260" width="120" height="100" fill="#2a3320" stroke="#0a0e07" stroke-width="4" transform="rotate(-4 390 310)"/>
+    <g fill="#c9c0a8" opacity=".75">
+      <ellipse cx="150" cy="420" rx="70" ry="9"/><ellipse cx="600" cy="440" rx="90" ry="9"/>
+      <rect x="500" y="400" width="70" height="14" fill="#8a8478" transform="rotate(-8 535 407)"/>
+    </g>
+    <path d="M60 100 L300 160" stroke="#333" stroke-width="4" fill="none"/>
+    <path d="M700 90 L440 150" stroke="#333" stroke-width="4" fill="none"/>
+    <rect x="700" y="60" width="12" height="140" fill="#555" stroke="#0a0e07" stroke-width="3" transform="rotate(6 706 130)"/>`;
+  return svgWrap(art('establish', bg));
+}
+
+function sceneSizeup(hs){
+  const bg = `
+    <rect width="800" height="533" fill="url(#sky)"/>
+    <rect x="0" y="380" width="800" height="153" fill="#22281f"/>
+    <g stroke="#0a0e07" stroke-width="5" fill="#3a4a2c">
+      <rect x="200" y="200" width="330" height="180"/>
+    </g>
+    <g stroke="#0a0e07" stroke-width="6" fill="#4a3a28">
+      <path d="M420 180 q80 -60 260 -20 q30 6 10 30 l-260 60 q-30 6 -20 -30 z"/>
+    </g>
+    <g stroke="#0a0e07" stroke-width="4" fill="#5a4a3a">
+      <rect x="440" y="220" width="16" height="120" transform="rotate(18 448 280)"/>
+      <rect x="500" y="210" width="14" height="130" transform="rotate(-10 507 275)"/>
+    </g>
+    <path d="M660 60 L560 210" stroke="#333" stroke-width="6" fill="none"/>
+    <path d="M660 60 L720 40" stroke="#333" stroke-width="6" fill="none"/>
+    <rect x="655" y="20" width="12" height="60" fill="#555" stroke="#0a0e07" stroke-width="3" transform="rotate(15 661 50)"/>
+    <ellipse cx="562" cy="212" rx="10" ry="6" fill="#ffe680" opacity=".8"/>
+    <g stroke="#0a0e07" stroke-width="2" fill="#7fa8d8" opacity=".7">
+      <polygon points="150,400 168,392 164,414 146,412"/>
+    </g>
+    <rect x="90" y="410" width="120" height="10" fill="#6a5a3a" stroke="#0a0e07" stroke-width="3" transform="rotate(-3 150 415)"/>`;
+  return svgWrap(art('sizeup', bg) + (hs||''));
+}
+
+function patientFigure(stage){
+  const skin = stage==='deteriorated' ? '#b7c9a8' : '#d9b48a';
+  const faceMouth = stage==='stabilized' ? `<path d="M470 300 q10 5 20 0" stroke="#3a2a1a" stroke-width="2.5" fill="none" stroke-linecap="round"/>`
+    : stage==='deteriorated' ? `<ellipse cx="480" cy="303" rx="8" ry="5" fill="#3a2a1a" opacity=".7"/>`
+    : `<path d="M470 305 q10 -6 20 -2" stroke="#3a2a1a" stroke-width="2.5" fill="none" stroke-linecap="round"/>`;
+  const sweat = stage==='deteriorated' ? `<ellipse cx="500" cy="270" rx="3" ry="6" fill="#cfe8ff" opacity=".8"/>` : '';
+  const armWrap = stage!=='trapped' ? `<rect x="345" y="315" width="55" height="20" rx="8" fill="#f4f4f4" stroke="#c7c7c7" stroke-width="1.5" transform="rotate(18 372 325)"/>` : '';
+  const bloodArm = stage==='trapped' ? `<ellipse cx="372" cy="325" rx="20" ry="10" fill="#8a1414" opacity=".7" transform="rotate(18 372 325)"/>` : '';
+  const blanket = stage==='stabilized' ? `<path d="M410 300 q60 -10 110 20 l4 40 q-60 14 -118 0 z" fill="#8899cc" stroke="#0a0e07" stroke-width="3" opacity=".92"/>` : '';
+  return `
+    <g>
+      ${blanket}
+      <!-- torso, pinned from waist down -->
+      <path d="M415 295 q55 -28 110 4 l6 90 q-60 20 -120 4 z" fill="#4a5a3a" stroke="#0a0e07" stroke-width="4"/>
+      <!-- debris pile covering legs -->
+      <g stroke="#0a0e07" stroke-width="4" fill="#5a4a3a">
+        <rect x="400" y="380" width="150" height="55" rx="4"/>
+        <rect x="420" y="360" width="60" height="30" rx="3" transform="rotate(-6 450 375)"/>
+      </g>
+      <!-- injured arm -->
+      <path d="M410 315 q-30 6 -40 34" stroke="${skin}" stroke-width="18" fill="none" stroke-linecap="round"/>
+      ${bloodArm}${armWrap}
+      <!-- head -->
+      <circle cx="475" cy="278" r="34" fill="${skin}" stroke="#0a0e07" stroke-width="4"/>
+      <path d="M446 260 q30 -34 60 -6 q4 -20 -14 -30 q-30 -10 -48 12 q-8 10 2 24" fill="#2a1c10" stroke="#0a0e07" stroke-width="3"/>
+      <circle cx="463" cy="280" r="3.4" fill="#2a1c10"/><circle cx="489" cy="280" r="3.4" fill="#2a1c10"/>
+      ${faceMouth}${sweat}
+    </g>`;
+}
+function scenePatient(stage, hs){
+  const bg = sceneSizeupBase() + patientFigure(stage);
+  return svgWrap(art('patient_'+stage, bg) + (hs||''));
+}
+function sceneSizeupBase(){
+  return `
+    <rect width="800" height="533" fill="url(#sky)"/>
+    <rect x="0" y="380" width="800" height="153" fill="#22281f"/>
+    <g stroke="#0a0e07" stroke-width="5" fill="#3a4a2c">
+      <rect x="200" y="200" width="330" height="180"/>
+    </g>
+    <g stroke="#0a0e07" stroke-width="6" fill="#4a3a28">
+      <path d="M420 180 q80 -60 260 -20 q30 6 10 30 l-260 60 q-30 6 -20 -30 z"/>
+    </g>`;
+}
+
+function sceneCollapse(){
+  const bg = `
+    <rect width="800" height="533" fill="#26241c"/>
+    <rect width="800" height="533" fill="url(#hatch)" opacity=".4"/>
+    <g stroke="#0a0e07" stroke-width="4" fill="#5a4a3a">
+      <polygon points="150,80 260,60 220,220 100,190"/>
+      <polygon points="400,40 520,20 470,200 350,170"/>
+    </g>
+    <g fill="#c9c0a8" opacity=".8">
+      <circle cx="220" cy="120" r="5"/><circle cx="300" cy="180" r="4"/><circle cx="410" cy="90" r="6"/>
+      <circle cx="470" cy="200" r="4"/>
+    </g>
+    <rect width="800" height="533" fill="#fff" opacity=".07"/>`;
+  return svgWrap(art('collapse', bg));
+}
+
+/* ============================================================
+   STATE
+============================================================ */
+const ISSUE = {n:'02', title:'AFTER THE STORM', level:'Level 1 — Basic',
+  skills:['Search Technique','Crush Injury','Bleeding Control','Shock']};
+const ISSUE_KEY = '02';
+
+const HAZARDS = {
+  powerline: {
+    name:'Downed power line',
+    found:'A power line lies across part of the debris pile, sparking faintly where it snapped from the pole.',
+    choices:[
+      {t:'Stay back, mark the area, and report it for utility shutoff', good:true},
+      {t:'Move the line aside with a dry branch to get closer', good:false,
+        note:"A branch won't protect you from a live line — never assume you can safely move one. Mark it and stay clear until the utility company confirms it's de-energized."},
+      {t:"It's probably not live anymore — step over it", good:false,
+        note:'Never assume a downed line is safe. Treat every downed line as energized until a utility crew confirms otherwise.'}
+    ]
+  },
+  debris: {
+    name:'Unstable debris',
+    found:'The remaining porch structure looks unstable — a support beam is barely holding the weight above it.',
+    choices:[
+      {t:'Note it, stay clear of the unstable section, and approach from the other side', good:true},
+      {t:'Try to brace it yourself before going further', good:false,
+        note:"Shoring up damaged structure is beyond CERT training — that's a job for trained rescue personnel. Work around hazards you can't fix."},
+      {t:"It's held this long, it'll be fine", good:false,
+        note:"Structural damage doesn't announce when it's about to fail. Treat it as unstable until someone qualified says otherwise."}
+    ]
+  }
+};
+const DECOYS = {
+  fence: 'Just a knocked-over section of fence. Nothing hazardous — but worth noting for the report.',
+  glass: 'Broken glass from a shattered window, scattered nearby. Watch your step, nothing more.'
+};
+const PRIMARY_REACTIONS = {
+  'chk-resp': '"...h-hey... over here..."',
+  'chk-breathing': '"I can breathe okay... just... heavy, on my chest."',
+  'site-arm': '"My arm\'s bleeding pretty good. Careful, there\'s glass everywhere."'
+};
+
+function freshState(){
+  return {
+    phase:'cover',
+    hazards:{powerline:{found:false,resolved:false}, debris:{found:false,resolved:false}},
+    decoys:{fence:false, glass:false},
+    activeHazard:null, hintTarget:null, calledOut:false,
+    collapsed:false, ppeOn:false, gloveType:null,
+    checks:{resp:false, airway:false, breathing:false, bleedSeen:false},
+    pressureApplied:false, lastFinding:null,
+    asked:{}, lastAsked:null, secondary:{forehead:false},
+    given:{}, mistakes:0,
+    stage:'trapped',
+    dispositionPick:null,
+    score:{sceneSafety:100, assessment:100, prioritization:100, communication:100, treatment:100, reassessment:100},
+    log:[]
+  };
+}
+let S = freshState();
+
+function deduct(cat, amt, text){ S.score[cat]=Math.max(0,S.score[cat]-amt); S.log.push({ok:false,text}); }
+function praise(text){ S.log.push({ok:true,text}); }
+function showTempNote(text){
+  const panel = M.querySelector('.panel-frame');
+  if(!panel) return;
+  const el = document.createElement('div');
+  el.className = 'instr-note'; el.id = 'tnote-'+Date.now();
+  el.innerHTML = text;
+  panel.insertAdjacentElement('afterend', el);
+  setTimeout(()=>{ el.remove(); }, 4200);
+}
+
+/* ============================================================
+   PERSISTENCE (shared per-issue key across the Field Response library)
+============================================================ */
+function loadAllProg(){ try{ return JSON.parse(localStorage.getItem('cert_response_progress'))||{}; }catch(e){ return {}; } }
+function loadProg(){ const all = loadAllProg(); return (all.issues && all.issues[ISSUE_KEY]) || {}; }
+function saveProgress(pct, stars){
+  const all = loadAllProg();
+  all.issues = all.issues || {};
+  const p = all.issues[ISSUE_KEY] || {};
+  p.completed = true; p.plays = (p.plays||0)+1;
+  if(!p.bestPct || pct>p.bestPct){ p.bestPct=pct; p.bestStars=stars; }
+  all.issues[ISSUE_KEY] = p;
+  localStorage.setItem('cert_response_progress', JSON.stringify(all));
+}
+
+/* ============================================================
+   RENDER DISPATCH
+============================================================ */
+const M = document.getElementById('main');
+function render(){ M.innerHTML = VIEWS[S.phase](); window.scrollTo({top:0,behavior:'smooth'}); }
+
+/* ---------- COVER ---------- */
+function viewCover(){
+  const p = loadProg();
+  const best = p.bestPct ? `<p style="color:var(--gold);font-weight:700;">Best run: ${p.bestPct}% ${'★'.repeat(p.bestStars||0)}${'☆'.repeat(3-(p.bestStars||0))}</p>` : '';
+  return `
+    <div class="cover">
+      <div class="num">ISSUE ${ISSUE.n}</div>
+      <h2>${ISSUE.title}</h2>
+      <p>A storm has torn through the neighborhood. Somewhere under the wreckage of a collapsed carport, someone
+         is trapped and waiting for help. Search carefully, assess what you can reach, and remember: not every
+         patient can be helped by freeing them faster.</p>
+      <div class="skill-row">${ISSUE.skills.map(s=>`<span class="skill-chip">${s}</span>`).join('')}</div>
+      <p style="font-size:0.8rem;">${ISSUE.level}</p>
+      ${best}
+      <div class="btn-row"><button class="btn primary" onclick="SND.click();S=freshState();S.phase='briefing';render()">▶ Begin Issue 02</button></div>
+      <div class="btn-row"><a class="btn" href="game-response.html">📚 All Issues</a></div>
+    </div>`;
+}
+
+/* ---------- BRIEFING ---------- */
+function viewBriefing(){
+  return `
+    <div class="panel-frame"><span class="issue-tag">ISSUE ${ISSUE.n}</span>${sceneBriefing()}</div>
+    <div class="caption-box"><b>7:10 AM.</b> The storm blew through overnight. Your CERT Team Leader has crews
+      working the block street by street. A neighbor reported someone may be trapped at this address — nobody's
+      confirmed it yet.</div>
+    <div class="speech-wrap"><div class="speech-bubble"><div class="speech-name">Team Leader</div>
+      "Take Dana with you, work it like we trained — stop, look, listen before you get close. Don't go in until
+      you've both cleared it. Radio me the second you find anything."</div></div>
+    <div class="btn-row"><button class="btn primary" onclick="SND.click();S.phase='establish';render()">Head to the house with Dana →</button></div>`;
+}
+
+/* ---------- ESTABLISH ---------- */
+function viewEstablish(){
+  return `
+    <div class="panel-frame">${sceneEstablish()}</div>
+    <div class="caption-box">The house is quiet. A tree has come down across what used to be a carport, and the
+      structure underneath is crushed flat in places. Dana stops at the edge of the yard. <b>"I'll hang back and
+      watch the street,"</b> she says. <b>"Do your search."</b></div>
+    <div class="btn-row"><button class="btn primary" onclick="SND.click();S.phase='sizeup';render()">Approach the debris →</button></div>`;
+}
+
+/* ---------- SIZE-UP (call-out, then hazard search) ---------- */
+function clickHotspot(id){
+  if(S.phase==='sizeup'){
+    if(S.activeHazard) return;
+    if(id.startsWith('hazard-')){
+      const key = id.slice(7);
+      if(S.hazards[key].found) return;
+      S.hazards[key].found = true; SND.good(); S.activeHazard = key;
+      render(); return;
+    }
+    if(id.startsWith('decoy-')){
+      const key = id.slice(6);
+      if(S.decoys[key]) return;
+      S.decoys[key] = true; SND.click();
+      render(); showTempNote(DECOYS[key]); return;
+    }
+    return;
+  }
+  if(S.phase==='primary'){
+    if(id==='chk-resp'&&!S.checks.resp){ S.checks.resp=true; S.checks.airway=true; SND.click(); S.lastFinding=PRIMARY_REACTIONS[id]; }
+    else if(id==='chk-breathing'&&!S.checks.breathing){ S.checks.breathing=true; SND.click(); S.lastFinding=PRIMARY_REACTIONS[id]; }
+    else if(id==='site-arm'&&!S.checks.bleedSeen){ S.checks.bleedSeen=true; SND.click(); S.lastFinding=PRIMARY_REACTIONS[id]; }
+    render(); return;
+  }
+  if(S.phase==='secondary'){
+    if(id==='site-forehead'&&!S.secondary.forehead){ S.secondary.forehead=true; SND.click(); render(); }
+    return;
+  }
+}
+function sizeupHotspots(){
+  return hotspot(560,220,45,'hazard-powerline',S.hazards.powerline.resolved,S.hintTarget==='hazard-powerline')
+    + hotspot(460,260,35,'hazard-debris',S.hazards.debris.resolved,S.hintTarget==='hazard-debris')
+    + hotspot(150,405,22,'decoy-glass',S.decoys.glass,S.hintTarget==='decoy-glass')
+    + hotspot(680,460,26,'decoy-fence',S.decoys.fence,S.hintTarget==='decoy-fence');
+}
+function callOut(){
+  SND.click(); S.calledOut = true; render();
+}
+function viewSizeup(){
+  if(S.activeHazard){
+    const h = HAZARDS[S.activeHazard];
+    return `
+      <div class="panel-frame">${sceneSizeup(sizeupHotspots())}</div>
+      <div class="caption-box"><b>Hazard found:</b> ${h.found}</div>
+      <div class="opts">${h.choices.map((c,i)=>`<div class="opt" onclick="resolveHazard(${i})"><div class="n">${i+1}</div>${c.t}</div>`).join('')}</div>`;
+  }
+  if(!S.calledOut){
+    return `
+      <div class="panel-frame">${sceneSizeup('')}</div>
+      <div class="caption-box">The debris pile is silent. Before you get any closer, CERT search technique says:
+        stop, look, listen — then call out.</div>
+      <div class="btn-row"><button class="btn primary" onclick="callOut()">📢 "Can anyone hear me?"</button></div>`;
+  }
+  const hs = sizeupHotspots();
+  const ready = S.hazards.powerline.resolved && S.hazards.debris.resolved;
+  return `
+    <div class="panel-frame">${sceneSizeup(hs)}</div>
+    <div class="speech-wrap"><div class="speech-bubble"><div class="speech-name">???</div>
+      "...help... over here..."</div></div>
+    <div class="caption-box">Faint, but close — near the collapsed carport. <b>Search the area</b> before you
+      approach.</div>
+    <div class="hint-row"><span class="pip"></span> ${ready ? 'Hazards addressed — you can make entry.' : 'Something in this debris needs your attention before you go further.'}</div>
+    <div class="btn-row">
+      <button class="btn" onclick="hintCurrentPhase()">🔍 Hint</button>
+      <button class="btn primary" onclick="SND.click();enterDebris()">Approach the debris pile →</button>
+    </div>`;
+}
+function resolveHazard(i){
+  const key = S.activeHazard, h = HAZARDS[key], c = h.choices[i];
+  S.hazards[key].resolved = true;
+  if(c.good){ SND.good(); praise(`Found and safely addressed: ${h.name.toLowerCase()}.`); }
+  else { SND.bad(); deduct('sceneSafety', 12, c.note); }
+  S.activeHazard = null;
+  render();
+}
+function hintCurrentPhase(){
+  SND.click();
+  const phase = S.phase;
+  let remaining = [];
+  if(phase==='sizeup'){
+    remaining = ['hazard-powerline','hazard-debris','decoy-glass','decoy-fence'].filter(id=>
+      id.startsWith('hazard-') ? !S.hazards[id.slice(7)].resolved : !S.decoys[id.slice(6)]);
+  } else if(phase==='primary'){
+    const need = {'chk-resp':!S.checks.resp,'chk-breathing':!S.checks.breathing,'site-arm':!S.checks.bleedSeen};
+    remaining = Object.keys(need).filter(id=>need[id]);
+  } else if(phase==='secondary'){
+    remaining = S.secondary.forehead ? [] : ['site-forehead'];
+  }
+  if(!remaining.length) return;
+  S.hintTarget = remaining[0];
+  render();
+  setTimeout(()=>{ if(S.phase===phase){ S.hintTarget=null; render(); } }, 2600);
+}
+function enterDebris(){
+  if(!(S.hazards.powerline.resolved && S.hazards.debris.resolved)){
+    S.collapsed = true;
+    deduct('sceneSafety', 35, 'Approached the debris pile without addressing the live power line and unstable structure.');
+    SND.crack();
+    S.phase='collapse'; render(); return;
+  }
+  S.phase='approach'; render();
+}
+
+/* ---------- COLLAPSE CONSEQUENCE ---------- */
+function viewCollapse(){
+  return `
+    <div class="panel-frame">${sceneCollapse()}
+      <div class="sfx-text" style="left:36%;top:36%;font-size:2.4rem;">CRACK!</div>
+    </div>
+    <div class="caption-box"><b>The support beam gives way.</b> More debris shifts and drops — you and Dana back
+      off fast. No one's hurt, but it was close.</div>
+    <div class="instr-note"><b>Instructor Note:</b> A hazard identified is only half the job — it has to be
+      addressed before you commit to the scene. The line and the unstable structure were both still live risks
+      when you moved in.</div>
+    <div class="btn-row"><button class="btn primary" onclick="SND.click();S.phase='sizeup';render()">Back up and finish the size-up →</button></div>`;
+}
+
+/* ---------- APPROACH / PPE ---------- */
+function viewApproach(){
+  return `
+    <div class="panel-frame">${sceneSizeup(sizeupHotspots())}</div>
+    <div class="caption-box">Hazards marked and radioed in. Before you reach the debris, what do you put on?</div>
+    <div class="opts">
+      <div class="opt" onclick="SND.good();S.ppeOn=true;S.gloveType='work';praise('Wore heavy work gloves before handling debris.');S.lastFinding=null;S.phase='primary';render()">
+        <div class="n">1</div> Heavy work gloves — you'll be handling splintered wood and nails</div>
+      <div class="opt" onclick="SND.bad();S.gloveType='exam';deduct('sceneSafety',10,\"Exam gloves don't protect against splinters, nails, or broken glass in debris — work gloves are the right call for this scene.\");S.lastFinding=null;S.phase='primary';render()">
+        <div class="n">2</div> Just your exam gloves — you need to feel for a pulse anyway</div>
+    </div>`;
+}
+
+/* ---------- PRIMARY ASSESSMENT ---------- */
+function viewPrimary(){
+  const hs = hotspot(475,278,35,'chk-resp',S.checks.resp,S.hintTarget==='chk-resp')
+    + hotspot(500,310,28,'chk-breathing',S.checks.breathing,S.hintTarget==='chk-breathing')
+    + hotspot(372,325,32,'site-arm',S.checks.bleedSeen,S.hintTarget==='site-arm');
+  const allDone = S.checks.resp && S.checks.breathing && S.checks.bleedSeen;
+  const canPressure = S.checks.bleedSeen && !S.pressureApplied;
+  return `
+    <div class="panel-frame">${scenePatient('trapped', hs)}</div>
+    <div class="speech-wrap"><div class="speech-bubble"><div class="speech-name">Patient</div>
+      ${S.lastFinding || '"...h-hey... down here..."'}</div></div>
+    <div class="notes-panel"><h4>Primary Assessment</h4><ul>
+      <li>${S.checks.resp?'✅':'⬜'} Responsiveness</li>
+      <li>${S.checks.airway?'✅':'⬜'} Airway</li>
+      <li>${S.checks.breathing?'✅':'⬜'} Breathing</li>
+      <li>${S.checks.bleedSeen?'✅':'⬜'} Bleeding check (accessible areas only — his legs are buried)</li>
+    </ul></div>
+    ${canPressure?`<div class="btn-row"><button class="btn" style="border-color:var(--danger);" onclick="SND.good();S.pressureApplied=true;praise('Applied direct pressure to the arm laceration immediately upon finding it.');render()">🩹 Apply direct pressure to his arm now</button></div>`:''}
+    ${allDone?'':'<div class="btn-row"><button class="btn" onclick="hintCurrentPhase()">🔍 Hint</button></div>'}
+    <div class="btn-row"><button class="btn primary" ${allDone?'':'disabled'} onclick="finishPrimary()">Continue to patient interview →</button></div>
+    ${allDone?'':'<div class="hint-row">Click what you can reach to complete the primary assessment.</div>'}`;
+}
+function finishPrimary(){
+  if(S.checks.bleedSeen && !S.pressureApplied){
+    deduct('prioritization', 20, 'You identified bleeding but moved on to the interview before controlling it. Immediate life threats come before history-taking.');
+  } else if(S.pressureApplied){
+    praise('Controlled the arm bleeding before continuing the survey.');
+  }
+  S.phase='interview'; render();
+}
+
+/* ---------- INTERVIEW ---------- */
+const QUESTIONS = [
+  {id:'how_long', q:'"How long have you been under there?"', a:'"Maybe twenty minutes? Since the tree came down."'},
+  {id:'legs', q:'"Can you feel your legs? Can you wiggle your toes?"', a:"\"...yeah, I can move them. It's getting numb, though — pins and needles.\""},
+  {id:'breathing', q:'"Are you having trouble breathing?"', a:'"No, just... heavy, with everything on top of me."'},
+  {id:'conditions', q:'"Do you have any medical conditions?"', a:"\"High blood pressure. That's about it.\""},
+  {id:'meds', q:'"Are you taking any medications?"', a:'"A blood pressure pill every morning. Took it before the storm hit."'},
+  {id:'allergies', q:'"Are you allergic to anything?"', a:'"Not that I know of."'},
+  {id:'ate', q:'"Have you eaten or had anything to drink today?"', a:'"Coffee, early this morning. Nothing since."'}
+];
+function viewInterview(){
+  const answered = QUESTIONS.filter(q=>S.asked[q.id]).map(q=>`<li><b>${q.q}</b> ${q.a}</li>`).join('');
+  const opts = QUESTIONS.filter(q=>!S.asked[q.id]).map((q,i)=>
+    `<div class="opt" onclick="askQ('${q.id}')"><div class="n">${i+1}</div>${q.q}</div>`).join('');
+  const bubble = S.lastAsked ? QUESTIONS.find(q=>q.id===S.lastAsked).a
+    : "\"Thank god... I heard someone out there. I'm stuck — the porch came down on me.\"";
+  return `
+    <div class="panel-frame">${scenePatient('trapped')}</div>
+    <div class="speech-wrap"><div class="speech-bubble"><div class="speech-name">Patient</div>
+      ${bubble}</div></div>
+    ${answered?`<div class="notes-panel"><h4>What you've learned</h4><ul>${answered}</ul></div>`:''}
+    <div class="opts">${opts}</div>
+    <div class="btn-row"><button class="btn primary" onclick="finishInterview()">Continue to secondary assessment →</button></div>`;
+}
+function askQ(id){ SND.click(); S.asked[id]=true; S.lastAsked=id; render(); }
+function finishInterview(){
+  const asked = Object.keys(S.asked).length;
+  if(asked>=5){ praise(`Gathered a thorough patient history (${asked}/7 questions asked).`); }
+  else { deduct('communication', (5-asked)*12, `Only asked ${asked} of 7 available interview questions — including the numbness check that flags crush syndrome risk.`); }
+  S.phase='secondary'; render();
+}
+
+/* ---------- SECONDARY ---------- */
+function viewSecondary(){
+  const hs = hotspot(462,260,28,'site-forehead',S.secondary.forehead,S.hintTarget==='site-forehead');
+  return `
+    <div class="panel-frame">${scenePatient('trapped', hs)}</div>
+    <div class="caption-box">You check what else you can reach. <b>Click his forehead</b> to check for any head injury from the falling debris.</div>
+    ${S.secondary.forehead?`<div class="speech-wrap"><div class="speech-bubble"><div class="speech-name">Patient</div>"Just a bump, I think. Hit my head on the way down, but it's not bleeding."</div></div>`:''}
+    ${S.secondary.forehead?'':'<div class="btn-row"><button class="btn" onclick="hintCurrentPhase()">🔍 Hint</button></div>'}
+    <div class="btn-row"><button class="btn primary" ${S.secondary.forehead?'':'disabled'} onclick="S.phase='treatment';render()">Continue to treatment →</button></div>
+    ${S.secondary.forehead?'':'<div class="hint-row">Complete the head-to-toe exam before treating.</div>'}`;
+}
+
+/* ---------- TREATMENT ---------- */
+const TREATMENTS = [
+  {id:'pressure', t:'Apply direct pressure and a bandage to the arm laceration', good:true},
+  {id:'shock', t:'Keep him warm and monitor for shock', good:true},
+  {id:'waitrescue', t:'Do NOT attempt to free his leg — wait for extrication support with EMS standing by', good:true},
+  {id:'free', t:'Now that he\'s stable, pull the debris off and free his leg', good:false,
+    note:'A limb trapped this long can release toxins into his bloodstream the moment pressure is released — sudden release can trigger fatal crush syndrome. Wait for EMS with equipment to manage it.'},
+  {id:'massage', t:'Massage his leg to keep the circulation going', good:false,
+    note:"Massaging a crush-injured limb can push toxins into circulation early, before EMS is ready to manage it. Leave it alone and keep monitoring."},
+  {id:'water', t:'Give him water since he\'s been out here a while', good:false,
+    note:'With injuries of uncertain severity, withhold food and drink — he may need procedures later that an empty stomach makes safer.'},
+  {id:'pullfree', t:'Have him try to wiggle free while you pull from outside', good:false,
+    note:'Any sudden movement that frees a long-trapped limb carries the same crush syndrome risk as pulling the debris off yourself. Keep him still.'}
+];
+function viewTreatment(){
+  const list = TREATMENTS.map((t,i)=>{
+    const done = S.given[t.id] || (t.id==='pressure'&&S.pressureApplied);
+    return `<div class="opt ${done?'done':''}" onclick="${done?'':`pickTreatment('${t.id}')`}"><div class="n">${done?'✓':i+1}</div>${t.t}</div>`;
+  }).join('');
+  const coreGiven = (S.pressureApplied||S.given.pressure) && S.given.shock && S.given.waitrescue;
+  return `
+    <div class="panel-frame">${scenePatient('trapped')}</div>
+    <div class="caption-box">Decide what he needs while you wait for extrication support. Some of these choices help — some don't.</div>
+    <div class="opts">${list}</div>
+    <div class="btn-row"><button class="btn primary" ${coreGiven?'':'disabled'} onclick="finishTreatment()">Continue to reassessment →</button></div>
+    ${coreGiven?'':'<div class="hint-row">Control the bleeding, treat for shock, and commit to waiting for proper extrication.</div>'}`;
+}
+function pickTreatment(id){
+  const t = TREATMENTS.find(x=>x.id===id);
+  if(t.good){ S.given[id]=true; SND.good(); praise(t.t+' — appropriate care.'); render(); return; }
+  S.mistakes++; SND.bad(); deduct('treatment', 15, t.note);
+  M.querySelector('.panel-frame').insertAdjacentHTML('afterend',
+    `<div class="instr-note" id="tnote"><b>Not quite:</b> ${t.note}</div>`);
+  setTimeout(()=>{ const n=document.getElementById('tnote'); if(n) n.remove(); }, 4200);
+}
+function finishTreatment(){
+  S.stage = (S.pressureApplied && S.given.shock && S.mistakes===0) ? 'stabilized'
+          : (S.mistakes>=2) ? 'deteriorated' : 'stabilized';
+  S.phase='reassess'; render();
+}
+
+/* ---------- REASSESS ---------- */
+function viewReassess(){
+  const good = S.stage==='stabilized';
+  const text = good
+    ? "\"...the numbness isn't getting worse, at least.\" His breathing has settled and the bleeding has stopped."
+    : "The numbness in his legs seems to be spreading, and he's gone quieter than before. The bleeding hasn't fully stopped.";
+  if(good) praise('Reassessment showed no worsening — bleeding controlled, condition holding steady.');
+  else deduct('reassessment', 20, 'Reassessment showed signs of worsening — incomplete treatment let his condition slide while trapped.');
+  return `
+    <div class="panel-frame">${scenePatient(S.stage)}</div>
+    <div class="caption-box">You recheck his ABCs and ask how he's doing. ${text}</div>
+    <div class="btn-row"><button class="btn primary" onclick="SND.click();S.phase='disposition';render()">Decide next steps →</button></div>`;
+}
+
+/* ---------- DISPOSITION ---------- */
+function viewDisposition(){
+  return `
+    <div class="panel-frame">${scenePatient(S.stage)}</div>
+    <div class="caption-box">What's the right call now?</div>
+    <div class="opts">
+      <div class="opt" onclick="pickDisposition('free')"><div class="n">1</div>He's stable enough — free him yourselves now</div>
+      <div class="opt" onclick="pickDisposition('stay')"><div class="n">2</div>Mark his location, radio for extrication + EMS, and stay with him</div>
+      <div class="opt" onclick="pickDisposition('search')"><div class="n">3</div>Radio for help, then continue searching the block for other victims</div>
+    </div>`;
+}
+function pickDisposition(pick){
+  S.dispositionPick = pick;
+  if(pick==='free'){
+    SND.bad(); deduct('prioritization', 30, 'A limb trapped this long needs EMS present for extrication, no matter how stable he seems — freeing him yourselves risks crush syndrome.');
+  } else if(pick==='stay'){
+    SND.good(); praise('Requested proper extrication and EMS support, and stayed with the patient — the safest call regardless of his condition.');
+  } else if(pick==='search'){
+    if(S.stage==='stabilized'){ SND.good(); praise('With him stable and help on the way, continuing the search for other possible victims was a reasonable use of the team.'); }
+    else { SND.bad(); deduct('prioritization', 15, 'Given how he was trending, he needed a responder to stay with him rather than being left while you searched elsewhere.'); }
+  }
+  S.phase='outcome'; render();
+}
+
+/* ---------- OUTCOME ---------- */
+function viewOutcome(){
+  const good = S.stage==='stabilized' && S.dispositionPick!=='free';
+  const text = good
+    ? "Extrication arrives with EMS already staged. They free him carefully, monitoring him the whole way — exactly how it's supposed to go. He's talking to the paramedics as they load him up. Another responder, not another patient."
+    : "Extrication and EMS take over from here. He makes it out, but the choices made on scene added risk that didn't need to be there. Every mistake here is one you won't make on a real call.";
+  return `
+    <div class="panel-frame">${scenePatient(S.stage)}</div>
+    <div class="caption-box"><b>A while later.</b> ${text}</div>
+    <div class="btn-row"><button class="btn primary" onclick="SND.win();showDebrief()">See your debrief →</button></div>`;
+}
+
+/* ---------- DEBRIEF ---------- */
+function showDebrief(){
+  const cats = S.score;
+  const pct = Math.round(Object.values(cats).reduce((a,b)=>a+b,0)/Object.keys(cats).length);
+  const stars = pct>=90?3:pct>=70?2:1;
+  saveProgress(pct, stars);
+  S.phase='debrief'; S._pct=pct; S._stars=stars;
+  render();
+}
+function viewDebrief(){
+  const pct = S._pct, stars = S._stars;
+  const rows = Object.entries(S.score).map(([k,v])=>{
+    const lbl = {sceneSafety:'Scene Safety',assessment:'Assessment',prioritization:'Prioritization',
+      communication:'Communication',treatment:'Treatment',reassessment:'Reassessment'}[k];
+    return `<div class="score-item"><div class="lbl">${lbl}</div><div class="val">${Math.round(v)}%</div></div>`;
+  }).join('');
+  const good = S.log.filter(l=>l.ok).map(l=>`<div class="check-item ok"><span class="ic">✓</span>${l.text}</div>`).join('');
+  const warn = S.log.filter(l=>!l.ok).map(l=>`<div class="check-item warn"><span class="ic">⚠</span>${l.text}</div>`).join('');
+  return `
+    <div class="card">
+      <h3>Debrief — Issue ${ISSUE.n}: ${ISSUE.title}</h3>
+      <div class="overall"><div class="pct">${pct}%</div><div class="stars">${'★'.repeat(stars)}${'☆'.repeat(3-stars)}</div></div>
+      <div class="score-grid">${rows}</div>
+      <div class="check-list">${good}${warn}</div>
+      <div class="btn-row">
+        <button class="btn primary" onclick="SND.click();S=freshState();S.phase='briefing';render()">↻ Replay Issue 02</button>
+        <a class="btn" href="game-response.html">📚 All Issues</a>
+      </div>
+    </div>`;
+}
+
+/* ============================================================
+   VIEW TABLE + BOOT
+============================================================ */
+const VIEWS = {
+  cover: viewCover, briefing: viewBriefing, establish: viewEstablish, sizeup: viewSizeup, collapse: viewCollapse,
+  approach: viewApproach, primary: viewPrimary, interview: viewInterview, secondary: viewSecondary,
+  treatment: viewTreatment, reassess: viewReassess, disposition: viewDisposition, outcome: viewOutcome,
+  debrief: viewDebrief
+};
+
+SND.init();
+render();
+</script>
+</body>
+</html>
