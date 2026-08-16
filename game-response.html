@@ -219,11 +219,16 @@ const DEFS = `
   </linearGradient>`;
 
 function hotspot(x,y,r,id,found,pulse){
-  return `<g class="hotspot" onclick="clickHotspot('${id}')" style="cursor:pointer">
-    <circle cx="${x}" cy="${y}" r="${r}" fill="${found?'rgba(90,170,58,.15)':'rgba(232,195,58,.16)'}"
-      stroke="${found?'#5aaa3a':'#e8c33a'}" stroke-width="2.5" ${pulse&&!found?'filter="url(#hglow)"':''}/>
-    ${found?`<path d="M${x-r*0.4} ${y} l${r*0.28} ${r*0.28} l${r*0.5} -${r*0.55}" stroke="#5aaa3a" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`
-      :`<circle cx="${x}" cy="${y}" r="3.5" fill="#e8c33a"/>`}
+  if(found){
+    return `<g class="hotspot" onclick="clickHotspot('${id}')" style="cursor:pointer" pointer-events="all">
+      <circle cx="${x}" cy="${y}" r="${r}" fill="rgba(90,170,58,.15)" stroke="#5aaa3a" stroke-width="2.5"/>
+      <path d="M${x-r*0.4} ${y} l${r*0.28} ${r*0.28} l${r*0.5} -${r*0.55}" stroke="#5aaa3a" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>`;
+  }
+  const hitR = Math.round(r*0.55);
+  return `<g class="hotspot" onclick="clickHotspot('${id}')" style="cursor:pointer" pointer-events="all">
+    <circle cx="${x}" cy="${y}" r="${hitR}" fill="transparent" stroke="${pulse?'#e8c33a':'none'}" stroke-width="2" ${pulse?'filter="url(#hglow)"':''}/>
+    <circle cx="${x}" cy="${y}" r="2.5" fill="${pulse?'#e8c33a':'rgba(232,195,58,.5)'}"/>
   </g>`;
 }
 
@@ -594,7 +599,7 @@ function viewSizeup(){
       click anything that catches your eye.</div>
     <div class="hint-row"><span class="pip"></span> ${ready ? 'Hazards addressed — you can make entry.' : 'Something in this room needs your attention before you go further in.'}</div>
     <div class="btn-row">
-      <button class="btn" onclick="hintSizeup()">🔍 Hint</button>
+      <button class="btn" onclick="hintCurrentPhase()">🔍 Hint</button>
       <button class="btn primary" onclick="SND.click();enterKitchen()">Enter and approach the patient →</button>
     </div>`;
 }
@@ -606,14 +611,24 @@ function resolveHazard(i){
   S.activeHazard = null;
   render();
 }
-function hintSizeup(){
+function hintCurrentPhase(){
   SND.click();
-  const remaining = ['hazard-gas','hazard-ceiling','hazard-glass','decoy-chair','decoy-clutter'].filter(id=>
-    id.startsWith('hazard-') ? !S.hazards[id.slice(7)].resolved : !S.decoys[id.slice(6)]);
+  const phase = S.phase;
+  let remaining = [];
+  if(phase==='sizeup'){
+    remaining = ['hazard-gas','hazard-ceiling','hazard-glass','decoy-chair','decoy-clutter'].filter(id=>
+      id.startsWith('hazard-') ? !S.hazards[id.slice(7)].resolved : !S.decoys[id.slice(6)]);
+  } else if(phase==='primary'){
+    const need = {'chk-resp':!S.checks.resp,'chk-breathing':!S.checks.breathing,
+      'site-head':!S.checks.bleedSeen,'site-arm':!S.checks.burnSeen};
+    remaining = Object.keys(need).filter(id=>need[id]);
+  } else if(phase==='secondary'){
+    remaining = S.secondary.ribs ? [] : ['site-ribs'];
+  }
   if(!remaining.length) return;
   S.hintTarget = remaining[0];
   render();
-  setTimeout(()=>{ S.hintTarget=null; if(S.phase==='sizeup' && !S.activeHazard) render(); }, 2600);
+  setTimeout(()=>{ if(S.phase===phase){ S.hintTarget=null; render(); } }, 2600);
 }
 function enterKitchen(){
   if(!(S.hazards.gas.resolved && S.hazards.ceiling.resolved)){
@@ -655,10 +670,10 @@ function viewApproach(){
 
 /* ---------- PRIMARY ASSESSMENT ---------- */
 function viewPrimary(){
-  const hs = hotspot(280,100,35,'chk-resp',S.checks.resp,true)
-    + hotspot(311,211,30,'chk-breathing',S.checks.breathing,false)
-    + hotspot(272,63,26,'site-head',S.checks.bleedSeen,true)
-    + hotspot(283,377,40,'site-arm',S.checks.burnSeen,true);
+  const hs = hotspot(280,100,35,'chk-resp',S.checks.resp,S.hintTarget==='chk-resp')
+    + hotspot(311,211,30,'chk-breathing',S.checks.breathing,S.hintTarget==='chk-breathing')
+    + hotspot(272,63,26,'site-head',S.checks.bleedSeen,S.hintTarget==='site-head')
+    + hotspot(283,377,40,'site-arm',S.checks.burnSeen,S.hintTarget==='site-arm');
   const allDone = S.checks.resp && S.checks.breathing && S.checks.bleedSeen && S.checks.burnSeen;
   const canPressure = S.checks.bleedSeen && !S.pressureApplied;
   return `
@@ -673,6 +688,7 @@ function viewPrimary(){
       <li>${S.checks.burnSeen?'✅':'⬜'} Full-body scan</li>
     </ul></div>
     ${canPressure?`<div class="btn-row"><button class="btn" style="border-color:var(--danger);" onclick="SND.good();S.pressureApplied=true;praise('Applied direct pressure to the scalp laceration immediately upon finding it.');render()">🩹 Apply direct pressure to the head wound now</button></div>`:''}
+    ${allDone?'':'<div class="btn-row"><button class="btn" onclick="hintCurrentPhase()">🔍 Hint</button></div>'}
     <div class="btn-row"><button class="btn primary" ${allDone?'':'disabled'} onclick="finishPrimary()">Continue to patient interview →</button></div>
     ${allDone?'':'<div class="hint-row">Click the patient to complete the primary assessment.</div>'}`;
 }
@@ -719,11 +735,12 @@ function finishInterview(){
 
 /* ---------- SECONDARY ---------- */
 function viewSecondary(){
-  const hs = hotspot(428,289,35,'site-ribs',S.secondary.ribs,true);
+  const hs = hotspot(428,289,35,'site-ribs',S.secondary.ribs,S.hintTarget==='site-ribs');
   return `
     <div class="panel-frame">${scenePatient('injured', hs)}</div>
     <div class="caption-box">You continue a head-to-toe exam. <b>Click her side/ribs</b> to check for additional injury.</div>
     ${S.secondary.ribs?`<div class="speech-wrap"><div class="speech-bubble"><div class="speech-name">Patient</div>"Ow — sharp pain right there when I breathe in. I think I hit the counter edge when I fell."</div></div>`:''}
+    ${S.secondary.ribs?'':'<div class="btn-row"><button class="btn" onclick="hintCurrentPhase()">🔍 Hint</button></div>'}
     <div class="btn-row"><button class="btn primary" ${S.secondary.ribs?'':'disabled'} onclick="S.phase='treatment';render()">Continue to treatment →</button></div>
     ${S.secondary.ribs?'':'<div class="hint-row">Complete the head-to-toe exam before treating.</div>'}`;
 }
