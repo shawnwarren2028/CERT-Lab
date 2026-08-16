@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script src="theme.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Readiness Arcade — Field Response</title>
+<meta name="description" content="An interactive comic: size up a developing emergency scene, assess and treat a patient, and watch the story change based on your decisions.">
+<meta name="theme-color" content="#5aaa3a">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Readiness Arcade">
+<meta property="og:title" content="Readiness Arcade — Field Response">
+<meta property="og:description" content="An interactive comic: size up a developing emergency scene, assess and treat a patient, and watch the story change based on your decisions.">
+<meta property="og:image" content="icon-512.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Readiness Arcade — Field Response">
+<meta name="twitter:description" content="An interactive comic: size up a developing emergency scene, assess and treat a patient, and watch the story change based on your decisions.">
+<style>
+  :root{
+    --bg:#0e1208; --surface:#1a2012; --surface2:#243018; --border:#3a5228;
+    --primary:#5aaa3a; --primary-dark:#4a8f2e; --primary-light:#7ac95a;
+    --text:#eef2e8; --text-muted:#8aa87a; --radius:12px; --gold:#e8c33a;
+    --danger:#ef4444; --warn:#f59e0b; --min:#27ae60;
+  }
+  [data-theme="light"]{
+    --bg:#eef3e7; --surface:#ffffff; --surface2:#e7eedd; --border:#c2d2af;
+    --primary:#41902e; --primary-dark:#317022; --primary-light:#5aaa3a;
+    --text:#16210d; --text-muted:#5c6e4a; --muted:#5c6e4a;
+  }
+  [data-theme="light"] header{background:#e3ecd6;}
+  [data-theme="light"] footer{background:#e3ecd6;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);
+    min-height:100vh;display:flex;flex-direction:column;-webkit-tap-highlight-color:transparent;}
+
+  header{width:100%;background:#111a09;border-bottom:3px solid var(--primary);
+    padding:10px 22px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  #cert-logo{height:48px;width:auto;}
+  .logo-badge{background:var(--primary);color:#000;font-weight:900;font-size:1.05rem;letter-spacing:.1em;padding:6px 12px;border-radius:6px;}
+  header h1{font-size:1.12rem;font-weight:700;color:var(--primary);}
+  header p{font-size:0.76rem;color:var(--text-muted);}
+  .hdr-text{flex:1 1 0;min-width:0;}
+  .hdr-actions{margin-left:auto;display:flex;align-items:center;gap:9px;}
+  .home-link{color:var(--primary-light);text-decoration:none;font-size:0.85rem;font-weight:600;
+    border:1px solid var(--border);padding:8px 14px;border-radius:8px;transition:.15s;white-space:nowrap;}
+  .home-link:hover{background:var(--surface2);border-color:var(--primary);}
+  .icon-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:1rem;line-height:1;
+    padding:8px 11px;border-radius:8px;cursor:pointer;transition:.15s;}
+  .icon-btn:hover{border-color:var(--primary);}
+
+  main{flex:1;width:100%;max-width:880px;margin:0 auto;padding:16px 18px 26px;display:flex;flex-direction:column;gap:14px;}
+
+  /* ---- comic panel frame ---- */
+  .panel-frame{position:relative;border:3px solid #0a0e07;border-radius:6px;overflow:hidden;
+    background:#0a0e07 radial-gradient(circle, rgba(255,255,255,.05) 1px, transparent 1.4px) 0 0/14px 14px;
+    box-shadow:0 10px 26px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.06);}
+  [data-theme="light"] .panel-frame{border-color:#1a1a1a;}
+  svg.scene{display:block;width:100%;height:auto;}
+  .issue-tag{position:absolute;top:10px;left:10px;background:var(--gold);color:#1a1400;font-weight:900;
+    font-size:0.68rem;letter-spacing:.06em;padding:4px 9px;border-radius:4px;transform:rotate(-2deg);
+    box-shadow:0 2px 6px rgba(0,0,0,.4);z-index:2;}
+
+  .caption-box{background:#f4ecd2;color:#1a1608;border:2px solid #1a1608;border-radius:2px;
+    padding:10px 14px;font-size:0.92rem;font-weight:600;line-height:1.5;margin:-3px 12px 0;
+    box-shadow:0 4px 10px rgba(0,0,0,.35);position:relative;z-index:2;font-family:Georgia,'Times New Roman',serif;}
+  .caption-box b{color:#7a1010;}
+
+  .speech-wrap{display:flex;gap:10px;align-items:flex-start;margin:2px 4px 0;}
+  .speech-bubble{background:#fff;color:#111;border:2px solid #111;border-radius:16px;padding:10px 16px;
+    font-size:0.92rem;font-weight:600;line-height:1.45;position:relative;max-width:520px;box-shadow:0 4px 10px rgba(0,0,0,.3);}
+  .speech-bubble::before{content:'';position:absolute;top:-2px;left:26px;width:16px;height:16px;background:#fff;
+    border-left:2px solid #111;border-top:2px solid #111;transform:rotate(45deg) translateY(-8px);}
+  .speech-name{font-size:0.68rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--primary-light);
+    margin-bottom:6px;}
+
+  .sfx-text{position:absolute;font-family:Impact,'Arial Black',sans-serif;font-weight:900;letter-spacing:.02em;
+    color:#fff200;-webkit-text-stroke:2px #1a1200;text-shadow:3px 3px 0 #1a1200;transform:rotate(-6deg);
+    z-index:3;pointer-events:none;}
+
+  .hint-row{display:flex;align-items:center;gap:8px;font-size:0.78rem;color:var(--text-muted);padding:2px 4px;}
+  .hint-row .pip{width:9px;height:9px;border-radius:50%;background:var(--gold);flex-shrink:0;
+    box-shadow:0 0 6px var(--gold);animation:pip 1.4s ease-in-out infinite;}
+  @keyframes pip{0%,100%{opacity:.5}50%{opacity:1}}
+
+  .opts{display:flex;flex-direction:column;gap:9px;}
+  .opt{display:flex;align-items:center;gap:10px;text-align:left;background:var(--surface2);border:1px solid var(--border);
+    color:var(--text);font-size:0.92rem;font-weight:600;padding:12px 14px;border-radius:10px;cursor:pointer;transition:.14s;
+    font-family:inherit;}
+  .opt:hover{border-color:var(--primary);background:var(--border);}
+  .opt.done{opacity:.55;border-color:var(--min);cursor:default;}
+  .opt .n{width:22px;height:22px;border-radius:50%;background:var(--bg);border:1px solid var(--border);
+    display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:800;flex-shrink:0;}
+
+  .btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:0.92rem;font-weight:700;
+    padding:12px 20px;border-radius:9px;cursor:pointer;transition:.15s;font-family:inherit;text-decoration:none;
+    display:inline-flex;align-items:center;gap:7px;justify-content:center;}
+  .btn:hover{border-color:var(--primary);background:var(--border);}
+  .btn.primary{background:var(--primary);color:#06210a;border-color:var(--primary);}
+  .btn.primary:hover{background:var(--primary-light);}
+  .btn:disabled{opacity:.4;cursor:not-allowed;}
+  .btn-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:4px;}
+
+  .notes-panel{background:var(--surface);border:1px dashed var(--border);border-radius:10px;padding:10px 14px;}
+  .notes-panel h4{font-size:0.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);margin-bottom:6px;}
+  .notes-panel ul{list-style:none;display:flex;flex-direction:column;gap:4px;}
+  .notes-panel li{font-size:0.84rem;color:var(--text);}
+
+  .cover{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:26px 22px;text-align:center;}
+  .cover .num{color:var(--gold);font-weight:900;letter-spacing:.15em;font-size:0.78rem;}
+  .cover h2{font-size:1.7rem;font-weight:900;color:var(--primary);margin:6px 0 10px;letter-spacing:.02em;}
+  .cover p{color:var(--text-muted);font-size:0.92rem;max-width:520px;margin:0 auto 14px;line-height:1.55;}
+  .skill-row{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-bottom:16px;}
+  .skill-chip{font-size:0.74rem;background:var(--surface2);border:1px solid var(--border);border-radius:20px;
+    padding:5px 11px;color:var(--text);}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;}
+  .card h3{font-size:1.05rem;color:var(--primary);margin-bottom:6px;}
+  .card p{font-size:0.88rem;color:var(--text-muted);line-height:1.5;}
+
+  .score-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin:14px 0;}
+  .score-item{background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:10px 12px;}
+  .score-item .lbl{font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;}
+  .score-item .val{font-size:1.3rem;font-weight:800;color:var(--primary);}
+  .overall{text-align:center;padding:16px;background:var(--bg);border:1px solid var(--border);border-radius:10px;margin-bottom:14px;}
+  .overall .pct{font-size:2.4rem;font-weight:900;color:var(--gold);}
+  .overall .stars{font-size:1.3rem;letter-spacing:.1em;}
+
+  .check-list{display:flex;flex-direction:column;gap:7px;margin:10px 0 16px;}
+  .check-item{display:flex;gap:9px;align-items:flex-start;font-size:0.86rem;background:var(--bg);
+    border:1px solid var(--border);border-radius:8px;padding:9px 11px;}
+  .check-item .ic{flex-shrink:0;}
+  .check-item.ok .ic{color:var(--min);} .check-item.warn .ic{color:var(--warn);}
+  .instr-note{background:var(--surface2);border-left:3px solid var(--gold);border-radius:6px;padding:10px 13px;
+    font-size:0.84rem;color:var(--text);margin-top:6px;}
+  .instr-note b{color:var(--gold);}
+
+  footer{text-align:center;padding:16px;color:var(--text-muted);font-size:0.74rem;border-top:1px solid var(--border);}
+  footer span{color:var(--primary);}
+</style>
+</head>
+<body>
+
+<header>
+  <img id="cert-logo" src="readiness-arcade-logo.png" alt="Readiness Arcade"
+    onerror="this.style.display='none';document.getElementById('logo-fallback').style.display='flex'">
+  <div id="logo-fallback" style="display:none;align-items:center;"><div class="logo-badge">RA</div></div>
+  <div class="hdr-text">
+    <h1>Field Response</h1>
+    <p>Interactive Response Comic</p>
+  </div>
+  <div class="hdr-actions">
+    <button class="icon-btn" id="sfx-btn" onclick="SND.toggle()" title="Sound effects">🔊</button>
+    <a class="home-link" href="game-response.html">← Issues</a>
+    <button class="theme-btn" onclick="toggleTheme()" aria-label="Toggle light or dark mode">☀️</button>
+  </div>
+</header>
+
+<main id="main"></main>
+
+<footer><span>Readiness Arcade</span> · Field Response · For educational use, this is not medical advice. If a true emergency contact 911 or your local EMS — follow your local CERT program guidelines.</footer>
+
+<script>
+/* ============================================================
+   SFX (self-contained Web Audio, matches suite convention)
+============================================================ */
+const SND=(function(){
+  let ctx,on=(localStorage.getItem('cert_response_sfx')!=='off'),comp;
+  function ac(){ if(!ctx){ ctx=new (window.AudioContext||window.webkitAudioContext)(); comp=ctx.createDynamicsCompressor(); comp.connect(ctx.destination);} return ctx; }
+  function tone(f,t,type,g,dur){ if(!on)return; ac(); const o=ctx.createOscillator(),ga=ctx.createGain();
+    o.type=type||'sine'; o.frequency.setValueAtTime(f,ctx.currentTime+t);
+    ga.gain.setValueAtTime(0,ctx.currentTime+t); ga.gain.linearRampToValueAtTime(g||.2,ctx.currentTime+t+.01);
+    ga.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+t+(dur||.2));
+    o.connect(ga); ga.connect(comp); o.start(ctx.currentTime+t); o.stop(ctx.currentTime+t+(dur||.2)+.02); }
+  return {
+    click(){ tone(520,0,'square',.12,.06); },
+    good(){ tone(660,0,'sine',.18,.12); tone(880,.08,'sine',.16,.16); },
+    bad(){ tone(220,0,'sawtooth',.16,.22); },
+    crack(){ tone(90,0,'square',.3,.35); tone(60,.05,'square',.25,.3); },
+    win(){ tone(523,0,'sine',.18,.14); tone(659,.1,'sine',.18,.14); tone(784,.2,'sine',.2,.3); },
+    toggle(){ on=!on; localStorage.setItem('cert_response_sfx',on?'on':'off'); document.getElementById('sfx-btn').textContent=on?'🔊':'🔇'; if(on){ac();this.click();} },
+    init(){ document.getElementById('sfx-btn').textContent=on?'🔊':'🔇'; }
+  };
+})();
+
+/* ============================================================
+   ART SWAP-IN POINT
+   Drop a PNG at the site root and set the matching key below to
+   its filename to replace the hand-drawn vector background for
+   that beat. Everything else (hotspots, story, scoring) is
+   unaffected — interactive elements are drawn as a layer on top
+   regardless of which background is used.
+============================================================ */
+const PANEL_ART = {
+  briefing:  'response-issue01-briefing.png',
+  establish: 'response-issue01-establish.png',
+  sizeup:    'response-issue01-sizeup.png',
+  patient_injured:      'response-issue01-patient-injured.png',
+  patient_treated:      'response-issue01-patient-treated.png',
+  patient_deteriorated: 'response-issue01-patient-deteriorated.png',
+  collapse:  'response-issue01-collapse.png',
+};
+
+/* ============================================================
+   SCENE RENDERING — comic-ink vector art
+============================================================ */
+const DEFS = `
+  <pattern id="hatch" width="6" height="6" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+    <line x1="0" y1="0" x2="0" y2="6" stroke="#000" stroke-width="1.3" opacity=".22"/>
+  </pattern>
+  <filter id="hglow" x="-60%" y="-60%" width="220%" height="220%">
+    <feGaussianBlur stdDeviation="4" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>
+  <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#1c2a4a"/><stop offset="100%" stop-color="#3a4a6a"/>
+  </linearGradient>
+  <linearGradient id="warmglow" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#ff9d3d" stop-opacity=".55"/><stop offset="100%" stop-color="#ff9d3d" stop-opacity="0"/>
+  </linearGradient>`;
+
+function hotspot(x,y,r,id,found,pulse){
+  if(found){
+    return `<g class="hotspot" onclick="clickHotspot('${id}')" style="cursor:pointer" pointer-events="all">
+      <circle cx="${x}" cy="${y}" r="${r}" fill="rgba(90,170,58,.15)" stroke="#5aaa3a" stroke-width="2.5"/>
+      <path d="M${x-r*0.4} ${y} l${r*0.28} ${r*0.28} l${r*0.5} -${r*0.55}" stroke="#5aaa3a" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>`;
+  }
+  const hitR = Math.round(r*0.55);
+  return `<g class="hotspot" onclick="clickHotspot('${id}')" style="cursor:pointer" pointer-events="all">
+    <circle cx="${x}" cy="${y}" r="${hitR}" fill="transparent" stroke="${pulse?'#e8c33a':'none'}" stroke-width="2" ${pulse?'filter="url(#hglow)"':''}/>
+    <circle cx="${x}" cy="${y}" r="2.5" fill="${pulse?'#e8c33a':'rgba(232,195,58,.5)'}"/>
+  </g>`;
+}
+
+function svgWrap(inner){
+  return `<svg class="scene" viewBox="0 0 800 533" xmlns="http://www.w3.org/2000/svg"><defs>${DEFS}</defs>${inner}</svg>`;
+}
+function art(key, fallback){
+  if(PANEL_ART[key]) return `<image href="${PANEL_ART[key]}" x="0" y="0" width="800" height="533" preserveAspectRatio="xMidYMid slice"/>`;
+  return fallback;
+}
+
+function sceneBriefing(){
+  const bg = `
+    <rect width="800" height="533" fill="url(#sky)"/>
+    <rect x="0" y="380" width="800" height="153" fill="#141a10"/>
+    <!-- fire engine -->
+    <rect x="20" y="270" width="220" height="90" rx="6" fill="#a11d1d" stroke="#0a0e07" stroke-width="5"/>
+    <rect x="35" y="285" width="60" height="40" fill="#c94040" stroke="#0a0e07" stroke-width="3"/>
+    <circle cx="60" cy="368" r="22" fill="#111" stroke="#0a0e07" stroke-width="4"/>
+    <circle cx="190" cy="368" r="22" fill="#111" stroke="#0a0e07" stroke-width="4"/>
+    <rect x="20" y="255" width="220" height="16" fill="#e8c33a" opacity=".85"/>
+    <!-- house w/ smaller, partly-controlled fire -->
+    <rect x="330" y="180" width="330" height="190" fill="#2b3524" stroke="#0a0e07" stroke-width="5"/>
+    <rect x="330" y="180" width="330" height="190" fill="url(#hatch)"/>
+    <polygon points="310,180 495,95 680,180" fill="#1c2418" stroke="#0a0e07" stroke-width="5"/>
+    <rect x="520" y="230" width="70" height="60" fill="#0a0e07" stroke="#0a0e07" stroke-width="4"/>
+    <polygon points="520,230 590,230 585,285 525,282" fill="#ff9d3d" opacity=".55"/>
+    <ellipse cx="555" cy="190" rx="40" ry="22" fill="#666" opacity=".4"/>
+    <!-- hose line -->
+    <path d="M120 300 Q300 340 555 260" stroke="#333" stroke-width="5" fill="none"/>
+    <!-- firefighters at the window -->
+    <g><rect x="500" y="300" width="16" height="38" rx="3" fill="#c98a2c" stroke="#0a0e07" stroke-width="2.5"/>
+       <circle cx="508" cy="292" r="10" fill="#e0b060" stroke="#0a0e07" stroke-width="2.5"/></g>
+    <g><rect x="560" y="305" width="16" height="38" rx="3" fill="#c98a2c" stroke="#0a0e07" stroke-width="2.5"/>
+       <circle cx="568" cy="297" r="10" fill="#e0b060" stroke="#0a0e07" stroke-width="2.5"/></g>
+    <!-- fire officer briefing two CERT responders, foreground -->
+    <g><rect x="270" y="400" width="18" height="42" rx="3" fill="#d9d9d9" stroke="#0a0e07" stroke-width="3"/>
+       <circle cx="279" cy="388" r="12" fill="#fff" stroke="#0a0e07" stroke-width="3"/></g>
+    <g><rect x="320" y="400" width="18" height="44" rx="3" fill="#3a5228" stroke="#0a0e07" stroke-width="3"/>
+       <circle cx="329" cy="388" r="12" fill="#5aaa3a" stroke="#0a0e07" stroke-width="3"/></g>
+    <g><rect x="355" y="402" width="18" height="42" rx="3" fill="#3a5228" stroke="#0a0e07" stroke-width="3"/>
+       <circle cx="364" cy="390" r="12" fill="#5aaa3a" stroke="#0a0e07" stroke-width="3"/></g>
+    <rect x="0" y="0" width="800" height="533" fill="url(#warmglow)" opacity=".22"/>`;
+  return svgWrap(art('briefing', bg));
+}
+
+function sceneEstablish(){
+  const bg = `
+    <rect width="800" height="533" fill="url(#sky)"/>
+    <rect x="0" y="330" width="800" height="130" fill="#141a10"/>
+    <!-- house -->
+    <rect x="230" y="150" width="360" height="200" fill="#2b3524" stroke="#0a0e07" stroke-width="5"/>
+    <rect x="230" y="150" width="360" height="200" fill="url(#hatch)"/>
+    <polygon points="210,150 410,60 610,150" fill="#1c2418" stroke="#0a0e07" stroke-width="5"/>
+    <rect x="270" y="230" width="70" height="120" fill="#141a10" stroke="#0a0e07" stroke-width="4"/>
+    <rect x="430" y="200" width="80" height="70" fill="#0a0e07" stroke="#0a0e07" stroke-width="4"/>
+    <rect x="430" y="200" width="80" height="70" fill="none" stroke="#ff9d3d" stroke-width="3"/>
+    <polygon points="430,200 510,200 505,270 425,265" fill="#ff9d3d" opacity=".5"/>
+    <ellipse cx="470" cy="160" rx="55" ry="30" fill="#555" opacity=".55"/>
+    <ellipse cx="500" cy="130" rx="65" ry="34" fill="#666" opacity=".45"/>
+    <ellipse cx="450" cy="105" rx="50" ry="26" fill="#777" opacity=".35"/>
+    <!-- responder -->
+    <g>
+      <rect x="335" y="300" width="20" height="46" rx="4" fill="#3a5228" stroke="#0a0e07" stroke-width="3"/>
+      <circle cx="345" cy="288" r="13" fill="#5aaa3a" stroke="#0a0e07" stroke-width="3"/>
+      <rect x="330" y="330" width="10" height="26" fill="#243018" stroke="#0a0e07" stroke-width="2"/>
+      <rect x="350" y="330" width="10" height="26" fill="#243018" stroke="#0a0e07" stroke-width="2"/>
+    </g>
+    <!-- bystanders -->
+    <g opacity=".85">
+      <circle cx="130" cy="315" r="9" fill="#8aa87a" stroke="#0a0e07" stroke-width="2"/>
+      <rect x="123" y="322" width="14" height="26" fill="#3a5228" stroke="#0a0e07" stroke-width="2"/>
+      <circle cx="165" cy="318" r="9" fill="#8aa87a" stroke="#0a0e07" stroke-width="2"/>
+      <rect x="158" y="325" width="14" height="24" fill="#243018" stroke="#0a0e07" stroke-width="2"/>
+    </g>
+    <rect x="0" y="0" width="800" height="533" fill="url(#warmglow)" opacity=".3"/>`;
+  return svgWrap(art('establish', bg));
+}
+
+function kitchenBase(){
+  return `
+    <rect width="800" height="533" fill="#1a2012"/>
+    <rect width="800" height="533" fill="url(#hatch)" opacity=".5"/>
+    <rect x="0" y="0" width="800" height="60" fill="#141a10" stroke="#0a0e07" stroke-width="4"/>
+    <rect x="0" y="350" width="800" height="110" fill="#2a3320" stroke="#0a0e07" stroke-width="4"/>
+    <!-- cabinets -->
+    <rect x="0" y="230" width="230" height="120" fill="#3a4a2c" stroke="#0a0e07" stroke-width="5"/>
+    <rect x="8" y="238" width="105" height="104" fill="none" stroke="#0a0e07" stroke-width="3"/>
+    <rect x="118" y="238" width="104" height="104" fill="none" stroke="#0a0e07" stroke-width="3"/>
+    <!-- overhead cabinet, one door open/cracked -->
+    <rect x="30" y="70" width="130" height="90" fill="#3a4a2c" stroke="#0a0e07" stroke-width="5"/>
+    <g transform="translate(160,70) rotate(18)"><rect x="0" y="0" width="60" height="88" fill="#2e3a22" stroke="#0a0e07" stroke-width="4"/></g>
+    <!-- stove -->
+    <rect x="560" y="200" width="150" height="150" fill="#333" stroke="#0a0e07" stroke-width="5"/>
+    <rect x="575" y="215" width="120" height="60" fill="#222" stroke="#0a0e07" stroke-width="3"/>
+    <circle cx="600" cy="245" r="12" fill="#111" stroke="#555" stroke-width="2"/>
+    <circle cx="660" cy="245" r="12" fill="#111" stroke="#555" stroke-width="2"/>
+    <!-- bent gas line -->
+    <path d="M710 260 q30 10 20 40 q-8 24 15 30" fill="none" stroke="#999" stroke-width="7" stroke-linecap="round"/>
+    <path d="M710 260 q30 10 20 40 q-8 24 15 30" fill="none" stroke="#0a0e07" stroke-width="10" stroke-linecap="round" opacity=".0"/>
+    <ellipse cx="735" cy="300" rx="26" ry="16" fill="#cfe8c0" opacity=".18"/>
+    <ellipse cx="745" cy="285" rx="18" ry="12" fill="#cfe8c0" opacity=".15"/>
+    <!-- scorch -->
+    <ellipse cx="640" cy="200" rx="70" ry="18" fill="#0a0a0a" opacity=".55"/>
+    <!-- ceiling crack -->
+    <path d="M120 60 L180 62 L165 40 L230 55 L210 30" fill="none" stroke="#0a0e07" stroke-width="4" stroke-linecap="round"/>
+    <!-- broken glass / debris on floor -->
+    <g stroke="#0a0e07" stroke-width="2" fill="#7fa8d8" opacity=".7">
+      <polygon points="300,400 320,390 315,415 295,412"/>
+      <polygon points="330,415 348,405 352,425 335,428"/>
+    </g>
+    <rect x="380" y="380" width="46" height="10" fill="#4a3018" stroke="#0a0e07" stroke-width="3" transform="rotate(-8 400 385)"/>`;
+}
+
+function patientFigure(stage){
+  // stage: injured | treated | deteriorated
+  const skin = stage==='deteriorated' ? '#b7c9a8' : '#d9b48a';
+  const faceMouth = stage==='treated' ? `<path d="M470 300 q10 6 20 0" stroke="#3a2a1a" stroke-width="2.5" fill="none" stroke-linecap="round"/>`
+    : stage==='deteriorated' ? `<ellipse cx="480" cy="303" rx="8" ry="5" fill="#3a2a1a" opacity=".7"/>`
+    : `<path d="M470 302 q10 -4 20 0" stroke="#3a2a1a" stroke-width="2.5" fill="none" stroke-linecap="round"/>`;
+  const sweat = stage==='deteriorated' ? `<ellipse cx="500" cy="270" rx="3" ry="6" fill="#cfe8ff" opacity=".8"/><ellipse cx="455" cy="278" rx="3" ry="6" fill="#cfe8ff" opacity=".8"/>` : '';
+  const headBandage = stage!=='injured' ? `<path d="M448 262 q30 -14 55 2" stroke="#f4f4f4" stroke-width="7" fill="none" stroke-linecap="round"/>` : '';
+  const armWrap = stage!=='injured' ? `<rect x="345" y="315" width="55" height="20" rx="8" fill="#f4f4f4" stroke="#c7c7c7" stroke-width="1.5" transform="rotate(18 372 325)"/>` : '';
+  const burnMark = stage==='injured' ? `<ellipse cx="372" cy="325" rx="24" ry="12" fill="#c9603a" opacity=".8" transform="rotate(18 372 325)"/>` : '';
+  const bloodTrail = stage==='deteriorated' ? `<path d="M478 275 q-4 20 -8 42" stroke="#8a1414" stroke-width="3" fill="none" opacity=".85"/>` : '';
+  const blanket = stage==='treated' ? `<path d="M410 300 q60 -10 110 20 l10 90 q-70 20 -130 0 z" fill="#8899cc" stroke="#0a0e07" stroke-width="3" opacity=".92"/>` : '';
+  return `
+    <g>
+      ${blanket}
+      <!-- torso against cabinets -->
+      <path d="M415 300 q55 -30 110 5 l6 105 q-60 24 -120 4 z" fill="#5a4a38" stroke="#0a0e07" stroke-width="4"/>
+      <!-- apron -->
+      <path d="M430 315 q40 -14 75 4 l-6 80 q-32 12 -66 0 z" fill="#c9d6b8" stroke="#0a0e07" stroke-width="3"/>
+      <!-- legs -->
+      <rect x="420" y="380" width="40" height="60" rx="8" fill="#3a3020" stroke="#0a0e07" stroke-width="3"/>
+      <rect x="470" y="380" width="40" height="60" rx="8" fill="#3a3020" stroke="#0a0e07" stroke-width="3"/>
+      <!-- injured arm w/ burn -->
+      <path d="M410 320 q-30 6 -40 34" stroke="${skin}" stroke-width="18" fill="none" stroke-linecap="round"/>
+      ${burnMark}${armWrap}
+      <!-- head -->
+      <circle cx="475" cy="278" r="34" fill="${skin}" stroke="#0a0e07" stroke-width="4"/>
+      <path d="M446 260 q30 -34 60 -6 q4 -20 -14 -30 q-30 -10 -48 12 q-8 10 2 24" fill="#2a1c10" stroke="#0a0e07" stroke-width="3"/>
+      <circle cx="463" cy="280" r="3.4" fill="#2a1c10"/><circle cx="489" cy="280" r="3.4" fill="#2a1c10"/>
+      ${faceMouth}${sweat}${headBandage}${bloodTrail}
+    </g>`;
+}
+
+function scenePatient(stage, hs){
+  const bg = kitchenBase() + patientFigure(stage);
+  return svgWrap(art('patient_'+stage, bg) + (hs||''));
+}
+
+function sceneSizeup(hs){
+  const bg = kitchenBase();
+  return svgWrap(art('sizeup', bg) + (hs||''));
+}
+
+function sceneCollapse(){
+  const bg = `
+    <rect width="800" height="533" fill="#241512"/>
+    <rect width="800" height="533" fill="url(#hatch)" opacity=".4"/>
+    <g stroke="#0a0e07" stroke-width="4" fill="#5a4a3a">
+      <polygon points="200,0 260,0 180,140 120,120"/>
+      <polygon points="380,0 460,0 400,170 330,150"/>
+      <polygon points="560,0 640,0 610,150 520,130"/>
+    </g>
+    <g fill="#c9c0a8" opacity=".8">
+      <circle cx="220" cy="90" r="5"/><circle cx="300" cy="140" r="4"/><circle cx="410" cy="70" r="6"/>
+      <circle cx="470" cy="160" r="4"/><circle cx="560" cy="100" r="5"/><circle cx="610" cy="180" r="4"/>
+      <circle cx="340" cy="200" r="3"/><circle cx="500" cy="220" r="4"/>
+    </g>
+    <rect width="800" height="533" fill="#fff" opacity=".08"/>`;
+  return svgWrap(art('collapse', bg));
+}
+
+/* ============================================================
+   STATE
+============================================================ */
+const ISSUE = {n:'01', title:'THE KITCHEN EXPLOSION', level:'Level 1 — Basic',
+  skills:['Scene Safety','Gas Hazards','Burns','Bleeding Control','Shock']};
+
+const HAZARDS = {
+  gas: {
+    name:'Gas leak',
+    found:'You spot a bent gas line behind the stove, hissing faintly — a gas leak.',
+    choices:[
+      {t:'Shut off the gas at the meter, then continue', good:true},
+      {t:'Try to tighten the fitting yourself', good:false,
+        note:"Handling a damaged gas fitting is outside CERT scope — the risk of a spark or a worse leak isn't worth it. Shut off the supply at the meter instead."},
+      {t:'Keep going, mention it later', good:false,
+        note:'A hazard identified is a hazard that gets addressed now, not "later" — delaying gives it more time to become dangerous.'}
+    ]
+  },
+  ceiling: {
+    name:'Structural damage',
+    found:'A crack runs across the ceiling above the stove — the blast damaged the structure here.',
+    choices:[
+      {t:'Note it, avoid standing under it, and continue', good:true},
+      {t:'Try to prop it up with a chair', good:false,
+        note:"Shoring up damaged structure is beyond CERT training — that's a job for trained rescue personnel. Work around hazards you can't fix."},
+      {t:'Ignore it — ceilings crack all the time', good:false,
+        note:'A fresh crack right after an explosion is a real structural concern, not routine wear. Note it and stay clear.'}
+    ]
+  },
+  glass: {
+    name:'Broken glass',
+    found:'The kitchen window is shattered — broken glass is scattered across this side of the room.',
+    choices:[
+      {t:'Watch your footing and steer clear while you work', good:true},
+      {t:'Stop to sweep it all up first', good:false,
+        note:'A patient is waiting. Minor hazards get worked around, not cleaned up, while care is needed elsewhere.'},
+      {t:'Kick it out of the way', good:false,
+        note:'That scatters glass further and risks a cut through your gear. Step around it instead.'}
+    ]
+  }
+};
+const DECOYS = {
+  chair: 'Just an overturned chair, knocked over in the chaos. Nothing hazardous here — but good habit, checking everything.',
+  clutter: 'Broken dishes and a fallen coffee maker on the counter. Messy, not dangerous.'
+};
+const PRIMARY_REACTIONS = {
+  'chk-resp': "\"...w-what... happened...?\"",
+  'chk-breathing': "\"I can breathe... it just hurts, a little, going deep.\"",
+  'site-head': '"My head — it stings right there."',
+  'site-arm': "\"My arm — oh, it's burning, it hurts so bad.\""
+};
+
+function freshState(){
+  return {
+    phase:'cover',
+    hazards:{gas:{found:false,resolved:false}, ceiling:{found:false,resolved:false}, glass:{found:false,resolved:false}},
+    decoys:{chair:false, clutter:false},
+    activeHazard:null, hintTarget:null,
+    collapsed:false, ppeOn:false,
+    checks:{resp:false, airway:false, breathing:false, bleedSeen:false, burnSeen:false},
+    pressureApplied:false, lastFinding:null,
+    asked:{}, lastAsked:null, secondary:{ribs:false},
+    given:{}, mistakes:0,
+    stage:'injured',
+    dispositionPick:null,
+    score:{sceneSafety:100, assessment:100, prioritization:100, communication:100, treatment:100, reassessment:100},
+    log:[]
+  };
+}
+let S = freshState();
+
+function deduct(cat, amt, text){ S.score[cat]=Math.max(0,S.score[cat]-amt); S.log.push({ok:false,text}); }
+function praise(text){ S.log.push({ok:true,text}); }
+function showTempNote(text){
+  const panel = M.querySelector('.panel-frame');
+  if(!panel) return;
+  const el = document.createElement('div');
+  el.className = 'instr-note'; el.id = 'tnote-'+Date.now();
+  el.innerHTML = text;
+  panel.insertAdjacentElement('afterend', el);
+  setTimeout(()=>{ el.remove(); }, 4200);
+}
+
+/* ============================================================
+   PERSISTENCE
+============================================================ */
+const ISSUE_KEY = '01';
+function loadAllProg(){ try{ return JSON.parse(localStorage.getItem('cert_response_progress'))||{}; }catch(e){ return {}; } }
+function loadProg(){ const all = loadAllProg(); return (all.issues && all.issues[ISSUE_KEY]) || {}; }
+function saveProgress(pct, stars){
+  const all = loadAllProg();
+  all.issues = all.issues || {};
+  const p = all.issues[ISSUE_KEY] || {};
+  p.completed = true; p.plays = (p.plays||0)+1;
+  if(!p.bestPct || pct>p.bestPct){ p.bestPct=pct; p.bestStars=stars; }
+  all.issues[ISSUE_KEY] = p;
+  localStorage.setItem('cert_response_progress', JSON.stringify(all));
+}
+
+/* ============================================================
+   RENDER DISPATCH
+============================================================ */
+const M = document.getElementById('main');
+function render(){ M.innerHTML = VIEWS[S.phase](); window.scrollTo({top:0,behavior:'smooth'}); }
+
+/* ---------- COVER ---------- */
+function viewCover(){
+  const p = loadProg();
+  const best = p.bestPct ? `<p style="color:var(--gold);font-weight:700;">Best run: ${p.bestPct}% ${'★'.repeat(p.bestStars||0)}${'☆'.repeat(3-(p.bestStars||0))}</p>` : '';
+  return `
+    <div class="cover">
+      <div class="num">ISSUE ${ISSUE.n}</div>
+      <h2>${ISSUE.title}</h2>
+      <p>You're a CERT responder dropped into a developing scene. Read the panels, click what draws your attention,
+         and decide what to do — the story changes based on your choices, and mistakes become part of the lesson
+         instead of a dead end.</p>
+      <div class="skill-row">${ISSUE.skills.map(s=>`<span class="skill-chip">${s}</span>`).join('')}</div>
+      <p style="font-size:0.8rem;">${ISSUE.level}</p>
+      ${best}
+      <div class="btn-row"><button class="btn primary" onclick="SND.click();S=freshState();S.phase='briefing';render()">▶ Begin Issue 01</button></div>
+    </div>`;
+}
+
+/* ---------- BRIEFING ---------- */
+function viewBriefing(){
+  return `
+    <div class="panel-frame"><span class="issue-tag">ISSUE ${ISSUE.n}</span>${sceneBriefing()}</div>
+    <div class="caption-box"><b>7:42 PM.</b> Engine 12 beat you here by four minutes — they're already knocking
+      down a kitchen fire and have the block cordoned off. Command waves you and your partner, Dana, over.</div>
+    <div class="speech-wrap"><div class="speech-bubble"><div class="speech-name">Fire Officer Rodriguez</div>
+      "We've got the fire, but I need eyes on a reported patient inside — kitchen, east side. Take your partner,
+      do your own size-up before you touch anything. We haven't cleared that room yet."</div></div>
+    <div class="btn-row"><button class="btn primary" onclick="SND.click();S.phase='establish';render()">Move up with Dana →</button></div>`;
+}
+
+/* ---------- ESTABLISH ---------- */
+function viewEstablish(){
+  return `
+    <div class="panel-frame">${sceneEstablish()}</div>
+    <div class="caption-box">Dana falls in beside you as you cross the yard. At the door she stops — someone
+      needs to watch the exit and keep comms with Command while you go hands-on. <b>"I've got the door,"</b> she
+      says. <b>"Go do your size-up. I'm right here."</b></div>
+    <div class="btn-row"><button class="btn primary" onclick="SND.click();S.phase='sizeup';render()">Approach the kitchen →</button></div>`;
+}
+
+/* ---------- SIZE-UP ---------- */
+function clickHotspot(id){
+  if(S.phase==='sizeup'){
+    if(S.activeHazard) return;
+    if(id.startsWith('hazard-')){
+      const key = id.slice(7);
+      if(S.hazards[key].found) return;
+      S.hazards[key].found = true; SND.good(); S.activeHazard = key;
+      render(); return;
+    }
+    if(id.startsWith('decoy-')){
+      const key = id.slice(6);
+      if(S.decoys[key]) return;
+      S.decoys[key] = true; SND.click();
+      render(); showTempNote(DECOYS[key]); return;
+    }
+    return;
+  }
+  if(S.phase==='primary'){
+    if(id==='chk-resp'&&!S.checks.resp){ S.checks.resp=true; S.checks.airway=true; SND.click(); S.lastFinding=PRIMARY_REACTIONS[id]; }
+    else if(id==='chk-breathing'&&!S.checks.breathing){ S.checks.breathing=true; SND.click(); S.lastFinding=PRIMARY_REACTIONS[id]; }
+    else if(id==='site-head'&&!S.checks.bleedSeen){ S.checks.bleedSeen=true; SND.click(); S.lastFinding=PRIMARY_REACTIONS[id]; }
+    else if(id==='site-arm'&&!S.checks.burnSeen){ S.checks.burnSeen=true; SND.click(); S.lastFinding=PRIMARY_REACTIONS[id]; }
+    render(); return;
+  }
+  if(S.phase==='secondary'){
+    if(id==='site-ribs'&&!S.secondary.ribs){ S.secondary.ribs=true; SND.click(); render(); }
+    return;
+  }
+}
+
+function sizeupHotspots(){
+  return hotspot(560,335,45,'hazard-gas',S.hazards.gas.resolved,S.hintTarget==='hazard-gas')
+    + hotspot(392,43,28,'hazard-ceiling',S.hazards.ceiling.resolved,S.hintTarget==='hazard-ceiling')
+    + hotspot(176,144,40,'hazard-glass',S.hazards.glass.resolved,S.hintTarget==='hazard-glass')
+    + hotspot(678,444,30,'decoy-chair',S.decoys.chair,S.hintTarget==='decoy-chair')
+    + hotspot(111,294,32,'decoy-clutter',S.decoys.clutter,S.hintTarget==='decoy-clutter');
+}
+
+function viewSizeup(){
+  if(S.activeHazard){
+    const h = HAZARDS[S.activeHazard];
+    return `
+      <div class="panel-frame">${sceneSizeup(sizeupHotspots())}</div>
+      <div class="caption-box"><b>Hazard found:</b> ${h.found}</div>
+      <div class="opts">${h.choices.map((c,i)=>`<div class="opt" onclick="resolveHazard(${i})"><div class="n">${i+1}</div>${c.t}</div>`).join('')}</div>`;
+  }
+  const hs = sizeupHotspots();
+  const ready = S.hazards.gas.resolved && S.hazards.ceiling.resolved;
+  return `
+    <div class="panel-frame">${sceneSizeup(hs)}</div>
+    <div class="caption-box">The kitchen is dark and quiet except for a faint hiss. <b>Search the room</b> —
+      click anything that catches your eye.</div>
+    <div class="hint-row"><span class="pip"></span> ${ready ? 'Hazards addressed — you can make entry.' : 'Something in this room needs your attention before you go further in.'}</div>
+    <div class="btn-row">
+      <button class="btn" onclick="hintCurrentPhase()">🔍 Hint</button>
+      <button class="btn primary" onclick="SND.click();enterKitchen()">Enter and approach the patient →</button>
+    </div>`;
+}
+function resolveHazard(i){
+  const key = S.activeHazard, h = HAZARDS[key], c = h.choices[i];
+  S.hazards[key].resolved = true;
+  if(c.good){ SND.good(); praise(`Found and safely addressed: ${h.name.toLowerCase()}.`); }
+  else { SND.bad(); deduct('sceneSafety', 12, c.note); }
+  S.activeHazard = null;
+  render();
+}
+function hintCurrentPhase(){
+  SND.click();
+  const phase = S.phase;
+  let remaining = [];
+  if(phase==='sizeup'){
+    remaining = ['hazard-gas','hazard-ceiling','hazard-glass','decoy-chair','decoy-clutter'].filter(id=>
+      id.startsWith('hazard-') ? !S.hazards[id.slice(7)].resolved : !S.decoys[id.slice(6)]);
+  } else if(phase==='primary'){
+    const need = {'chk-resp':!S.checks.resp,'chk-breathing':!S.checks.breathing,
+      'site-head':!S.checks.bleedSeen,'site-arm':!S.checks.burnSeen};
+    remaining = Object.keys(need).filter(id=>need[id]);
+  } else if(phase==='secondary'){
+    remaining = S.secondary.ribs ? [] : ['site-ribs'];
+  }
+  if(!remaining.length) return;
+  S.hintTarget = remaining[0];
+  render();
+  setTimeout(()=>{ if(S.phase===phase){ S.hintTarget=null; render(); } }, 2600);
+}
+function enterKitchen(){
+  if(!(S.hazards.gas.resolved && S.hazards.ceiling.resolved)){
+    S.collapsed = true;
+    deduct('sceneSafety', 35, 'Entered the scene without completing an adequate size-up — the damaged gas line and ceiling crack went unnoticed.');
+    SND.crack();
+    S.phase='collapse'; render(); return;
+  }
+  S.phase='approach'; render();
+}
+
+/* ---------- COLLAPSE CONSEQUENCE ---------- */
+function viewCollapse(){
+  return `
+    <div class="panel-frame">${sceneCollapse()}
+      <div class="sfx-text" style="left:38%;top:38%;font-size:2.6rem;">CRACK!</div>
+    </div>
+    <div class="caption-box"><b>A chunk of ceiling shifts and drops behind you.</b> You jump back — no injury this
+      time, but it easily could have gone the other way.</div>
+    <div class="instr-note"><b>Instructor Note:</b> You entered the scene without completing an adequate size-up.
+      A responder who becomes injured becomes another patient — and one CERT can no longer help. Scene safety
+      always comes first, even when a patient is waiting.</div>
+    <div class="btn-row"><button class="btn primary" onclick="SND.click();S.phase='sizeup';render()">Back up and size up the room properly →</button></div>`;
+}
+
+/* ---------- APPROACH / PPE ---------- */
+function viewApproach(){
+  return `
+    <div class="panel-frame">${sceneSizeup(sizeupHotspots())}</div>
+    <div class="caption-box">Hazards addressed and radioed to Command. Dana holds the door, keeping an eye on
+      your exit. Before you reach the patient, what do you do?</div>
+    <div class="opts">
+      <div class="opt" onclick="SND.good();S.ppeOn=true;praise('Donned gloves and eye protection before contact.');S.lastFinding=null;S.phase='primary';render()">
+        <div class="n">1</div> Put on gloves and eye protection, then approach</div>
+      <div class="opt" onclick="SND.bad();deduct('sceneSafety',10,'Made patient contact without gloves/eye protection — broken glass and blood were both present.');S.lastFinding=null;S.phase='primary';render()">
+        <div class="n">2</div> Skip the PPE, she needs you now</div>
+    </div>`;
+}
+
+/* ---------- PRIMARY ASSESSMENT ---------- */
+function viewPrimary(){
+  const hs = hotspot(280,100,35,'chk-resp',S.checks.resp,S.hintTarget==='chk-resp')
+    + hotspot(311,211,30,'chk-breathing',S.checks.breathing,S.hintTarget==='chk-breathing')
+    + hotspot(272,63,26,'site-head',S.checks.bleedSeen,S.hintTarget==='site-head')
+    + hotspot(283,377,40,'site-arm',S.checks.burnSeen,S.hintTarget==='site-arm');
+  const allDone = S.checks.resp && S.checks.breathing && S.checks.bleedSeen && S.checks.burnSeen;
+  const canPressure = S.checks.bleedSeen && !S.pressureApplied;
+  return `
+    <div class="panel-frame">${scenePatient('injured', hs)}</div>
+    <div class="speech-wrap"><div class="speech-bubble"><div class="speech-name">Patient</div>
+      ${S.lastFinding || '"...h-help..."'}</div></div>
+    <div class="notes-panel"><h4>Primary Assessment</h4><ul>
+      <li>${S.checks.resp?'✅':'⬜'} Responsiveness</li>
+      <li>${S.checks.airway?'✅':'⬜'} Airway</li>
+      <li>${S.checks.breathing?'✅':'⬜'} Breathing</li>
+      <li>${S.checks.bleedSeen?'✅':'⬜'} Bleeding check</li>
+      <li>${S.checks.burnSeen?'✅':'⬜'} Full-body scan</li>
+    </ul></div>
+    ${canPressure?`<div class="btn-row"><button class="btn" style="border-color:var(--danger);" onclick="SND.good();S.pressureApplied=true;praise('Applied direct pressure to the scalp laceration immediately upon finding it.');render()">🩹 Apply direct pressure to the head wound now</button></div>`:''}
+    ${allDone?'':'<div class="btn-row"><button class="btn" onclick="hintCurrentPhase()">🔍 Hint</button></div>'}
+    <div class="btn-row"><button class="btn primary" ${allDone?'':'disabled'} onclick="finishPrimary()">Continue to patient interview →</button></div>
+    ${allDone?'':'<div class="hint-row">Click the patient to complete the primary assessment.</div>'}`;
+}
+function finishPrimary(){
+  if(S.checks.bleedSeen && !S.pressureApplied){
+    deduct('prioritization', 20, 'You identified severe bleeding but moved on to the interview before controlling it. Immediate life threats come before history-taking.');
+  } else if(S.pressureApplied){
+    praise('Controlled severe bleeding before continuing the survey.');
+  }
+  S.phase='interview'; render();
+}
+
+/* ---------- INTERVIEW ---------- */
+const QUESTIONS = [
+  {id:'hurt', q:'"Where are you hurt?"', a:"\"My arm... it's burning. And I hit my head on the counter when I fell.\""},
+  {id:'breathing', q:'"Are you having trouble breathing?"', a:'"A little short of breath, but I can talk okay."'},
+  {id:'conditions', q:'"Do you have any medical conditions?"', a:"\"I have asthma, but I haven't needed my inhaler in months.\""},
+  {id:'meds', q:'"Are you taking any medications?"', a:'"Just my inhaler — albuterol — when I need it."'},
+  {id:'allergies', q:'"Are you allergic to anything?"', a:'"Penicillin. It gives me hives."'},
+  {id:'when', q:'"When did this happen?"', a:'"Maybe five minutes ago... right before you got here."'},
+  {id:'ate', q:'"Have you eaten or had anything to drink recently?"', a:'"I was just cooking dinner, so — no, not since lunch."'}
+];
+function viewInterview(){
+  const answered = QUESTIONS.filter(q=>S.asked[q.id]).map(q=>`<li><b>${q.q}</b> ${q.a}</li>`).join('');
+  const opts = QUESTIONS.filter(q=>!S.asked[q.id]).map((q,i)=>
+    `<div class="opt" onclick="askQ('${q.id}')"><div class="n">${i+1}</div>${q.q}</div>`).join('');
+  const bubble = S.lastAsked ? QUESTIONS.find(q=>q.id===S.lastAsked).a
+    : '"I was cooking when I heard an explosion. Then everything went dark."';
+  return `
+    <div class="panel-frame">${scenePatient('injured')}</div>
+    <div class="speech-wrap"><div class="speech-bubble"><div class="speech-name">Patient</div>
+      ${bubble}</div></div>
+    ${answered?`<div class="notes-panel"><h4>What you've learned</h4><ul>${answered}</ul></div>`:''}
+    <div class="opts">${opts}</div>
+    <div class="btn-row"><button class="btn primary" onclick="finishInterview()">Continue to secondary assessment →</button></div>`;
+}
+function askQ(id){ SND.click(); S.asked[id]=true; S.lastAsked=id; render(); }
+function finishInterview(){
+  const asked = Object.keys(S.asked).length;
+  if(asked>=5){ praise(`Gathered a thorough patient history (${asked}/7 questions asked).`); }
+  else { deduct('communication', (5-asked)*12, `Only asked ${asked} of 7 available interview questions — some SAMPLE history was never gathered.`); }
+  S.phase='secondary'; render();
+}
+
+/* ---------- SECONDARY ---------- */
+function viewSecondary(){
+  const hs = hotspot(428,289,35,'site-ribs',S.secondary.ribs,S.hintTarget==='site-ribs');
+  return `
+    <div class="panel-frame">${scenePatient('injured', hs)}</div>
+    <div class="caption-box">You continue a head-to-toe exam. <b>Click her side/ribs</b> to check for additional injury.</div>
+    ${S.secondary.ribs?`<div class="speech-wrap"><div class="speech-bubble"><div class="speech-name">Patient</div>"Ow — sharp pain right there when I breathe in. I think I hit the counter edge when I fell."</div></div>`:''}
+    ${S.secondary.ribs?'':'<div class="btn-row"><button class="btn" onclick="hintCurrentPhase()">🔍 Hint</button></div>'}
+    <div class="btn-row"><button class="btn primary" ${S.secondary.ribs?'':'disabled'} onclick="S.phase='treatment';render()">Continue to treatment →</button></div>
+    ${S.secondary.ribs?'':'<div class="hint-row">Complete the head-to-toe exam before treating.</div>'}`;
+}
+
+/* ---------- TREATMENT ---------- */
+const TREATMENTS = [
+  {id:'pressure', t:'Apply direct pressure and a bandage to the head wound', good:true},
+  {id:'burncover', t:'Cover the burn with a clean, dry, non-stick dressing', good:true},
+  {id:'shock', t:'Keep her warm and monitor for shock', good:true},
+  {id:'ribsupport', t:'Help her find a comfortable position and keep monitoring her breathing', good:true},
+  {id:'inhaler', t:'Offer her albuterol inhaler for the shortness of breath', good:true, requiresAsked:'meds'},
+  {id:'ice', t:'Apply ice directly to the burn to cool it', good:false,
+    note:"Ice can damage already-injured tissue and isn't appropriate for burn care — use cool (not ice-cold) water or a clean dry dressing instead."},
+  {id:'butter', t:'Rub butter or ointment on the burn', good:false,
+    note:'Home remedies like butter trap heat against the skin and contaminate the wound — never apply anything but a clean, dry dressing.'},
+  {id:'water', t:'Give the patient water to drink', good:false,
+    note:'With injuries of uncertain severity, withhold food and drink — she may need procedures later that an empty stomach makes safer.'},
+  {id:'walk', t:'Have her stand and walk to a chair', good:false,
+    note:'With a possible rib injury and signs of shock, unnecessary movement can worsen her condition — keep her positioned and still.'},
+  {id:'bindribs', t:'Wrap her ribs tightly with a bandage for support', good:false,
+    note:"Tightly binding the chest can restrict breathing — a real risk when breathing is already affected. Support her position instead; don't bind."}
+];
+function viewTreatment(){
+  if(!S.checks.bleedSeen) S.pressureApplied = S.given.pressure; // already handled earlier in primary if applied there
+  const visible = TREATMENTS.filter(t=>!t.requiresAsked || S.asked[t.requiresAsked]);
+  const list = visible.map((t,i)=>{
+    const done = S.given[t.id] || (t.id==='pressure'&&S.pressureApplied);
+    return `<div class="opt ${done?'done':''}" onclick="${done?'':`pickTreatment('${t.id}')`}"><div class="n">${done?'✓':i+1}</div>${t.t}</div>`;
+  }).join('');
+  const coreGiven = (S.pressureApplied||S.given.pressure) && S.given.burncover && S.given.shock;
+  return `
+    <div class="panel-frame">${scenePatient('injured')}</div>
+    <div class="caption-box">Decide what she needs. Some of these choices help — some don't.</div>
+    <div class="opts">${list}</div>
+    <div class="btn-row"><button class="btn primary" ${coreGiven?'':'disabled'} onclick="finishTreatment()">Continue to reassessment →</button></div>
+    ${coreGiven?'':'<div class="hint-row">Give the bleeding, burn, and shock care she needs.</div>'}`;
+}
+function pickTreatment(id){
+  const t = TREATMENTS.find(x=>x.id===id);
+  if(t.good){ S.given[id]=true; SND.good(); praise(t.t+' — appropriate care.'); render(); return; }
+  S.mistakes++; SND.bad(); deduct('treatment', 15, t.note);
+  M.querySelector('.panel-frame').insertAdjacentHTML('afterend',
+    `<div class="instr-note" id="tnote"><b>Not quite:</b> ${t.note}</div>`);
+  setTimeout(()=>{ const n=document.getElementById('tnote'); if(n) n.remove(); }, 4200);
+}
+function finishTreatment(){
+  S.stage = (S.pressureApplied && S.given.burncover && S.mistakes===0) ? 'treated'
+          : (!S.given.burncover || S.mistakes>=2) ? 'deteriorated' : 'treated';
+  S.phase='reassess'; render();
+}
+
+/* ---------- REASSESS ---------- */
+function viewReassess(){
+  const good = S.stage==='treated';
+  const text = good
+    ? "\"...that's better. I can breathe easier now.\" Her color has improved and the bleeding has stopped."
+    : "Her breathing looks more labored than before, and she's gone quiet. The bleeding at her hairline hasn't fully stopped.";
+  if(good) praise('Reassessment showed improvement — bleeding controlled, breathing eased.');
+  else deduct('reassessment', 20, 'Reassessment showed the patient was not improving — incomplete or delayed treatment let her condition slide.');
+  return `
+    <div class="panel-frame">${scenePatient(S.stage)}</div>
+    <div class="caption-box">You recheck her ABCs and the sites you treated. ${text}</div>
+    <div class="btn-row"><button class="btn primary" onclick="SND.click();S.phase='disposition';render()">Decide next steps →</button></div>`;
+}
+
+/* ---------- DISPOSITION ---------- */
+function viewDisposition(){
+  return `
+    <div class="panel-frame">${scenePatient(S.stage)}</div>
+    <div class="caption-box">What's the right disposition for her now?</div>
+    <div class="opts">
+      <div class="opt" onclick="pickDisposition('release')"><div class="n">1</div>Clear her — no further care needed</div>
+      <div class="opt" onclick="pickDisposition('observe')"><div class="n">2</div>Have her rest on scene, no transport</div>
+      <div class="opt" onclick="pickDisposition('treatarea')"><div class="n">3</div>Move her to the treatment area, request routine EMS evaluation</div>
+      <div class="opt" onclick="pickDisposition('priority')"><div class="n">4</div>Request immediate priority ambulance transport</div>
+    </div>`;
+}
+function pickDisposition(pick){
+  S.dispositionPick = pick;
+  if(pick==='release'||pick==='observe'){
+    SND.bad(); deduct('prioritization', 25, 'A burn, a scalp laceration, and a possible rib injury are beyond a "clear and release" — she needs further evaluation.');
+  } else if(pick==='priority'){
+    SND.good(); praise('Requested transport — appropriately cautious given her injuries.');
+  } else if(pick==='treatarea'){
+    if(S.stage==='treated'){ SND.good(); praise('Moved her to the treatment area for routine evaluation — a good match for her stabilized condition.'); }
+    else { SND.bad(); deduct('prioritization', 15, 'Given how she was trending, a higher-priority transport request would have been safer than routine evaluation.'); }
+  }
+  S.phase='outcome'; render();
+}
+
+/* ---------- OUTCOME ---------- */
+function viewOutcome(){
+  const good = S.stage==='treated' && (S.dispositionPick==='treatarea'||S.dispositionPick==='priority');
+  const text = good
+    ? "EMS arrives to find a stable, comfortable patient with a clear, complete handoff report waiting for them. She thanks you before she's loaded up. Another responder, not another patient — this call went by the book."
+    : "EMS arrives and takes over her care. She stabilizes with their treatment, but the ride would have been easier on her with more complete care on scene. Every mistake here is one you won't make on a real call.";
+  return `
+    <div class="panel-frame">${scenePatient(S.stage)}</div>
+    <div class="caption-box"><b>A few minutes later.</b> ${text}</div>
+    <div class="btn-row"><button class="btn primary" onclick="SND.win();showDebrief()">See your debrief →</button></div>`;
+}
+
+/* ---------- DEBRIEF ---------- */
+function showDebrief(){
+  const cats = S.score;
+  const pct = Math.round(Object.values(cats).reduce((a,b)=>a+b,0)/Object.keys(cats).length);
+  const stars = pct>=90?3:pct>=70?2:1;
+  saveProgress(pct, stars);
+  S.phase='debrief'; S._pct=pct; S._stars=stars;
+  render();
+}
+function viewDebrief(){
+  const pct = S._pct, stars = S._stars;
+  const rows = Object.entries(S.score).map(([k,v])=>{
+    const lbl = {sceneSafety:'Scene Safety',assessment:'Assessment',prioritization:'Prioritization',
+      communication:'Communication',treatment:'Treatment',reassessment:'Reassessment'}[k];
+    return `<div class="score-item"><div class="lbl">${lbl}</div><div class="val">${Math.round(v)}%</div></div>`;
+  }).join('');
+  const good = S.log.filter(l=>l.ok).map(l=>`<div class="check-item ok"><span class="ic">✓</span>${l.text}</div>`).join('');
+  const warn = S.log.filter(l=>!l.ok).map(l=>`<div class="check-item warn"><span class="ic">⚠</span>${l.text}</div>`).join('');
+  return `
+    <div class="card">
+      <h3>Debrief — Issue ${ISSUE.n}: ${ISSUE.title}</h3>
+      <div class="overall"><div class="pct">${pct}%</div><div class="stars">${'★'.repeat(stars)}${'☆'.repeat(3-stars)}</div></div>
+      <div class="score-grid">${rows}</div>
+      <div class="check-list">${good}${warn}</div>
+      <div class="btn-row">
+        <button class="btn primary" onclick="SND.click();S=freshState();S.phase='briefing';render()">↻ Replay Issue 01</button>
+        <a class="btn" href="game-response.html">📚 All Issues</a>
+      </div>
+    </div>`;
+}
+
+/* ============================================================
+   VIEW TABLE + BOOT
+============================================================ */
+const VIEWS = {
+  cover: viewCover, briefing: viewBriefing, establish: viewEstablish, sizeup: viewSizeup, collapse: viewCollapse,
+  approach: viewApproach, primary: viewPrimary, interview: viewInterview, secondary: viewSecondary,
+  treatment: viewTreatment, reassess: viewReassess, disposition: viewDisposition, outcome: viewOutcome,
+  debrief: viewDebrief
+};
+
+SND.init();
+render();
+</script>
+</body>
+</html>
