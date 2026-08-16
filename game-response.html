@@ -191,6 +191,7 @@ const SND=(function(){
    regardless of which background is used.
 ============================================================ */
 const PANEL_ART = {
+  // briefing: 'response-issue01-briefing.png',
   establish: 'response-issue01-establish.png',
   sizeup:    'response-issue01-sizeup.png',
   patient_injured:      'response-issue01-patient-injured.png',
@@ -232,6 +233,41 @@ function svgWrap(inner){
 function art(key, fallback){
   if(PANEL_ART[key]) return `<image href="${PANEL_ART[key]}" x="0" y="0" width="800" height="533" preserveAspectRatio="xMidYMid slice"/>`;
   return fallback;
+}
+
+function sceneBriefing(){
+  const bg = `
+    <rect width="800" height="533" fill="url(#sky)"/>
+    <rect x="0" y="380" width="800" height="153" fill="#141a10"/>
+    <!-- fire engine -->
+    <rect x="20" y="270" width="220" height="90" rx="6" fill="#a11d1d" stroke="#0a0e07" stroke-width="5"/>
+    <rect x="35" y="285" width="60" height="40" fill="#c94040" stroke="#0a0e07" stroke-width="3"/>
+    <circle cx="60" cy="368" r="22" fill="#111" stroke="#0a0e07" stroke-width="4"/>
+    <circle cx="190" cy="368" r="22" fill="#111" stroke="#0a0e07" stroke-width="4"/>
+    <rect x="20" y="255" width="220" height="16" fill="#e8c33a" opacity=".85"/>
+    <!-- house w/ smaller, partly-controlled fire -->
+    <rect x="330" y="180" width="330" height="190" fill="#2b3524" stroke="#0a0e07" stroke-width="5"/>
+    <rect x="330" y="180" width="330" height="190" fill="url(#hatch)"/>
+    <polygon points="310,180 495,95 680,180" fill="#1c2418" stroke="#0a0e07" stroke-width="5"/>
+    <rect x="520" y="230" width="70" height="60" fill="#0a0e07" stroke="#0a0e07" stroke-width="4"/>
+    <polygon points="520,230 590,230 585,285 525,282" fill="#ff9d3d" opacity=".55"/>
+    <ellipse cx="555" cy="190" rx="40" ry="22" fill="#666" opacity=".4"/>
+    <!-- hose line -->
+    <path d="M120 300 Q300 340 555 260" stroke="#333" stroke-width="5" fill="none"/>
+    <!-- firefighters at the window -->
+    <g><rect x="500" y="300" width="16" height="38" rx="3" fill="#c98a2c" stroke="#0a0e07" stroke-width="2.5"/>
+       <circle cx="508" cy="292" r="10" fill="#e0b060" stroke="#0a0e07" stroke-width="2.5"/></g>
+    <g><rect x="560" y="305" width="16" height="38" rx="3" fill="#c98a2c" stroke="#0a0e07" stroke-width="2.5"/>
+       <circle cx="568" cy="297" r="10" fill="#e0b060" stroke="#0a0e07" stroke-width="2.5"/></g>
+    <!-- fire officer briefing two CERT responders, foreground -->
+    <g><rect x="270" y="400" width="18" height="42" rx="3" fill="#d9d9d9" stroke="#0a0e07" stroke-width="3"/>
+       <circle cx="279" cy="388" r="12" fill="#fff" stroke="#0a0e07" stroke-width="3"/></g>
+    <g><rect x="320" y="400" width="18" height="44" rx="3" fill="#3a5228" stroke="#0a0e07" stroke-width="3"/>
+       <circle cx="329" cy="388" r="12" fill="#5aaa3a" stroke="#0a0e07" stroke-width="3"/></g>
+    <g><rect x="355" y="402" width="18" height="42" rx="3" fill="#3a5228" stroke="#0a0e07" stroke-width="3"/>
+       <circle cx="364" cy="390" r="12" fill="#5aaa3a" stroke="#0a0e07" stroke-width="3"/></g>
+    <rect x="0" y="0" width="800" height="533" fill="url(#warmglow)" opacity=".22"/>`;
+  return svgWrap(art('briefing', bg));
 }
 
 function sceneEstablish(){
@@ -369,14 +405,62 @@ function sceneCollapse(){
 const ISSUE = {n:'01', title:'THE KITCHEN EXPLOSION', level:'Level 1 — Basic',
   skills:['Scene Safety','Gas Hazards','Burns','Bleeding Control','Shock']};
 
+const HAZARDS = {
+  gas: {
+    name:'Gas leak',
+    found:'You spot a bent gas line behind the stove, hissing faintly — a gas leak.',
+    choices:[
+      {t:'Shut off the gas at the meter, then continue', good:true},
+      {t:'Try to tighten the fitting yourself', good:false,
+        note:"Handling a damaged gas fitting is outside CERT scope — the risk of a spark or a worse leak isn't worth it. Shut off the supply at the meter instead."},
+      {t:'Keep going, mention it later', good:false,
+        note:'A hazard identified is a hazard that gets addressed now, not "later" — delaying gives it more time to become dangerous.'}
+    ]
+  },
+  ceiling: {
+    name:'Structural damage',
+    found:'A crack runs across the ceiling above the stove — the blast damaged the structure here.',
+    choices:[
+      {t:'Note it, avoid standing under it, and continue', good:true},
+      {t:'Try to prop it up with a chair', good:false,
+        note:"Shoring up damaged structure is beyond CERT training — that's a job for trained rescue personnel. Work around hazards you can't fix."},
+      {t:'Ignore it — ceilings crack all the time', good:false,
+        note:'A fresh crack right after an explosion is a real structural concern, not routine wear. Note it and stay clear.'}
+    ]
+  },
+  glass: {
+    name:'Broken glass',
+    found:'The kitchen window is shattered — broken glass is scattered across this side of the room.',
+    choices:[
+      {t:'Watch your footing and steer clear while you work', good:true},
+      {t:'Stop to sweep it all up first', good:false,
+        note:'A patient is waiting. Minor hazards get worked around, not cleaned up, while care is needed elsewhere.'},
+      {t:'Kick it out of the way', good:false,
+        note:'That scatters glass further and risks a cut through your gear. Step around it instead.'}
+    ]
+  }
+};
+const DECOYS = {
+  chair: 'Just an overturned chair, knocked over in the chaos. Nothing hazardous here — but good habit, checking everything.',
+  clutter: 'Broken dishes and a fallen coffee maker on the counter. Messy, not dangerous.'
+};
+const PRIMARY_REACTIONS = {
+  'chk-resp': "\"...w-what... happened...?\"",
+  'chk-breathing': "\"I can breathe... it just hurts, a little, going deep.\"",
+  'site-head': '"My head — it stings right there."',
+  'site-arm': "\"My arm — oh, it's burning, it hurts so bad.\""
+};
+
 function freshState(){
   return {
     phase:'cover',
-    hazardFound:false, obsGlass:false, obsCeiling:false,
+    hazards:{gas:{found:false,resolved:false}, ceiling:{found:false,resolved:false}, glass:{found:false,resolved:false}},
+    decoys:{chair:false, clutter:false},
+    activeHazard:null, hintTarget:null,
     collapsed:false, ppeOn:false,
     checks:{resp:false, airway:false, breathing:false, bleedSeen:false, burnSeen:false},
-    pressureApplied:false,
-    asked:{}, secondary:{ribs:false},
+    pressureApplied:false, lastFinding:null,
+    asked:{}, lastAsked:null, secondary:{ribs:false},
     given:{}, mistakes:0,
     stage:'injured',
     dispositionPick:null,
@@ -388,6 +472,15 @@ let S = freshState();
 
 function deduct(cat, amt, text){ S.score[cat]=Math.max(0,S.score[cat]-amt); S.log.push({ok:false,text}); }
 function praise(text){ S.log.push({ok:true,text}); }
+function showTempNote(text){
+  const panel = M.querySelector('.panel-frame');
+  if(!panel) return;
+  const el = document.createElement('div');
+  el.className = 'instr-note'; el.id = 'tnote-'+Date.now();
+  el.innerHTML = text;
+  panel.insertAdjacentElement('afterend', el);
+  setTimeout(()=>{ el.remove(); }, 4200);
+}
 
 /* ============================================================
    PERSISTENCE
@@ -420,32 +513,55 @@ function viewCover(){
       <div class="skill-row">${ISSUE.skills.map(s=>`<span class="skill-chip">${s}</span>`).join('')}</div>
       <p style="font-size:0.8rem;">${ISSUE.level}</p>
       ${best}
-      <div class="btn-row"><button class="btn primary" onclick="SND.click();S=freshState();S.phase='establish';render()">▶ Begin Issue 01</button></div>
+      <div class="btn-row"><button class="btn primary" onclick="SND.click();S=freshState();S.phase='briefing';render()">▶ Begin Issue 01</button></div>
     </div>`;
+}
+
+/* ---------- BRIEFING ---------- */
+function viewBriefing(){
+  return `
+    <div class="panel-frame"><span class="issue-tag">ISSUE ${ISSUE.n}</span>${sceneBriefing()}</div>
+    <div class="caption-box"><b>7:42 PM.</b> Engine 12 beat you here by four minutes — they're already knocking
+      down a kitchen fire and have the block cordoned off. Command waves you and your partner, Dana, over.</div>
+    <div class="speech-wrap"><div class="speech-bubble"><div class="speech-name">Fire Officer Rodriguez</div>
+      "We've got the fire, but I need eyes on a reported patient inside — kitchen, east side. Take your partner,
+      do your own size-up before you touch anything. We haven't cleared that room yet."</div></div>
+    <div class="btn-row"><button class="btn primary" onclick="SND.click();S.phase='establish';render()">Move up with Dana →</button></div>`;
 }
 
 /* ---------- ESTABLISH ---------- */
 function viewEstablish(){
   return `
-    <div class="panel-frame"><span class="issue-tag">ISSUE ${ISSUE.n}</span>${sceneEstablish()}</div>
-    <div class="caption-box"><b>7:42 PM.</b> A call comes in: an explosion reported at a home two streets over.
-      Neighbors say they heard a bang and saw smoke. You're the first CERT responder on scene.</div>
-    <div class="btn-row"><button class="btn primary" onclick="SND.click();S.phase='sizeup';render()">Approach the house →</button></div>`;
+    <div class="panel-frame">${sceneEstablish()}</div>
+    <div class="caption-box">Dana falls in beside you as you cross the yard. At the door she stops — someone
+      needs to watch the exit and keep comms with Command while you go hands-on. <b>"I've got the door,"</b> she
+      says. <b>"Go do your size-up. I'm right here."</b></div>
+    <div class="btn-row"><button class="btn primary" onclick="SND.click();S.phase='sizeup';render()">Approach the kitchen →</button></div>`;
 }
 
 /* ---------- SIZE-UP ---------- */
 function clickHotspot(id){
   if(S.phase==='sizeup'){
-    if(id==='hazard-gas'){ S.hazardFound=true; SND.good(); praise('Identified the damaged gas line before entering.'); }
-    else if(id==='obs-ceiling'){ S.obsCeiling=true; SND.click(); }
-    else if(id==='obs-glass'){ S.obsGlass=true; SND.click(); }
-    render(); return;
+    if(S.activeHazard) return;
+    if(id.startsWith('hazard-')){
+      const key = id.slice(7);
+      if(S.hazards[key].found) return;
+      S.hazards[key].found = true; SND.good(); S.activeHazard = key;
+      render(); return;
+    }
+    if(id.startsWith('decoy-')){
+      const key = id.slice(6);
+      if(S.decoys[key]) return;
+      S.decoys[key] = true; SND.click();
+      render(); showTempNote(DECOYS[key]); return;
+    }
+    return;
   }
   if(S.phase==='primary'){
-    if(id==='chk-resp'&&!S.checks.resp){ S.checks.resp=true; S.checks.airway=true; SND.click(); }
-    if(id==='chk-breathing'&&!S.checks.breathing){ S.checks.breathing=true; SND.click(); }
-    if(id==='site-head'&&!S.checks.bleedSeen){ S.checks.bleedSeen=true; SND.click(); }
-    if(id==='site-arm'&&!S.checks.burnSeen){ S.checks.burnSeen=true; SND.click(); }
+    if(id==='chk-resp'&&!S.checks.resp){ S.checks.resp=true; S.checks.airway=true; SND.click(); S.lastFinding=PRIMARY_REACTIONS[id]; }
+    else if(id==='chk-breathing'&&!S.checks.breathing){ S.checks.breathing=true; SND.click(); S.lastFinding=PRIMARY_REACTIONS[id]; }
+    else if(id==='site-head'&&!S.checks.bleedSeen){ S.checks.bleedSeen=true; SND.click(); S.lastFinding=PRIMARY_REACTIONS[id]; }
+    else if(id==='site-arm'&&!S.checks.burnSeen){ S.checks.burnSeen=true; SND.click(); S.lastFinding=PRIMARY_REACTIONS[id]; }
     render(); return;
   }
   if(S.phase==='secondary'){
@@ -454,22 +570,53 @@ function clickHotspot(id){
   }
 }
 
+function sizeupHotspots(){
+  return hotspot(560,335,45,'hazard-gas',S.hazards.gas.resolved,S.hintTarget==='hazard-gas')
+    + hotspot(392,43,28,'hazard-ceiling',S.hazards.ceiling.resolved,S.hintTarget==='hazard-ceiling')
+    + hotspot(176,144,40,'hazard-glass',S.hazards.glass.resolved,S.hintTarget==='hazard-glass')
+    + hotspot(678,444,30,'decoy-chair',S.decoys.chair,S.hintTarget==='decoy-chair')
+    + hotspot(111,294,32,'decoy-clutter',S.decoys.clutter,S.hintTarget==='decoy-clutter');
+}
+
 function viewSizeup(){
-  const hs = hotspot(560,335,45,'hazard-gas',S.hazardFound,true)
-    + hotspot(392,43,28,'obs-ceiling',S.obsCeiling,false)
-    + hotspot(176,144,40,'obs-glass',S.obsGlass,false);
-  const canEnter = true; // always allowed — entering blind is the teaching moment, not a hard gate
+  if(S.activeHazard){
+    const h = HAZARDS[S.activeHazard];
+    return `
+      <div class="panel-frame">${sceneSizeup(sizeupHotspots())}</div>
+      <div class="caption-box"><b>Hazard found:</b> ${h.found}</div>
+      <div class="opts">${h.choices.map((c,i)=>`<div class="opt" onclick="resolveHazard(${i})"><div class="n">${i+1}</div>${c.t}</div>`).join('')}</div>`;
+  }
+  const hs = sizeupHotspots();
+  const ready = S.hazards.gas.resolved && S.hazards.ceiling.resolved;
   return `
     <div class="panel-frame">${sceneSizeup(hs)}</div>
-    <div class="caption-box">The kitchen is dark and quiet except for a faint hiss. <b>Click around the room</b>
-      before you decide how to proceed.</div>
-    <div class="hint-row"><span class="pip"></span> ${S.hazardFound ? 'Hazard identified — you can note it and enter safely.' : 'Something in this room needs your attention before you go further in.'}</div>
+    <div class="caption-box">The kitchen is dark and quiet except for a faint hiss. <b>Search the room</b> —
+      click anything that catches your eye.</div>
+    <div class="hint-row"><span class="pip"></span> ${ready ? 'Hazards addressed — you can make entry.' : 'Something in this room needs your attention before you go further in.'}</div>
     <div class="btn-row">
+      <button class="btn" onclick="hintSizeup()">🔍 Hint</button>
       <button class="btn primary" onclick="SND.click();enterKitchen()">Enter and approach the patient →</button>
     </div>`;
 }
+function resolveHazard(i){
+  const key = S.activeHazard, h = HAZARDS[key], c = h.choices[i];
+  S.hazards[key].resolved = true;
+  if(c.good){ SND.good(); praise(`Found and safely addressed: ${h.name.toLowerCase()}.`); }
+  else { SND.bad(); deduct('sceneSafety', 12, c.note); }
+  S.activeHazard = null;
+  render();
+}
+function hintSizeup(){
+  SND.click();
+  const remaining = ['hazard-gas','hazard-ceiling','hazard-glass','decoy-chair','decoy-clutter'].filter(id=>
+    id.startsWith('hazard-') ? !S.hazards[id.slice(7)].resolved : !S.decoys[id.slice(6)]);
+  if(!remaining.length) return;
+  S.hintTarget = remaining[0];
+  render();
+  setTimeout(()=>{ S.hintTarget=null; if(S.phase==='sizeup' && !S.activeHazard) render(); }, 2600);
+}
 function enterKitchen(){
-  if(!S.hazardFound){
+  if(!(S.hazards.gas.resolved && S.hazards.ceiling.resolved)){
     S.collapsed = true;
     deduct('sceneSafety', 35, 'Entered the scene without completing an adequate size-up — the damaged gas line and ceiling crack went unnoticed.');
     SND.crack();
@@ -495,13 +642,13 @@ function viewCollapse(){
 /* ---------- APPROACH / PPE ---------- */
 function viewApproach(){
   return `
-    <div class="panel-frame">${sceneSizeup(hotspot(635,290,42,'hazard-gas',true,false))}</div>
-    <div class="caption-box">Gas line noted — you radio it in so Fire/Hazmat can shut the utility. Before you go
-      to the patient, what do you do?</div>
+    <div class="panel-frame">${sceneSizeup(sizeupHotspots())}</div>
+    <div class="caption-box">Hazards addressed and radioed to Command. Dana holds the door, keeping an eye on
+      your exit. Before you reach the patient, what do you do?</div>
     <div class="opts">
-      <div class="opt" onclick="SND.good();S.ppeOn=true;praise('Donned gloves and eye protection before contact.');S.phase='primary';render()">
+      <div class="opt" onclick="SND.good();S.ppeOn=true;praise('Donned gloves and eye protection before contact.');S.lastFinding=null;S.phase='primary';render()">
         <div class="n">1</div> Put on gloves and eye protection, then approach</div>
-      <div class="opt" onclick="SND.bad();deduct('sceneSafety',10,'Made patient contact without gloves/eye protection — broken glass and blood were both present.');S.phase='primary';render()">
+      <div class="opt" onclick="SND.bad();deduct('sceneSafety',10,'Made patient contact without gloves/eye protection — broken glass and blood were both present.');S.lastFinding=null;S.phase='primary';render()">
         <div class="n">2</div> Skip the PPE, she needs you now</div>
     </div>`;
 }
@@ -517,7 +664,7 @@ function viewPrimary(){
   return `
     <div class="panel-frame">${scenePatient('injured', hs)}</div>
     <div class="speech-wrap"><div class="speech-bubble"><div class="speech-name">Patient</div>
-      "...h-help..."</div></div>
+      ${S.lastFinding || '"...h-help..."'}</div></div>
     <div class="notes-panel"><h4>Primary Assessment</h4><ul>
       <li>${S.checks.resp?'✅':'⬜'} Responsiveness</li>
       <li>${S.checks.airway?'✅':'⬜'} Airway</li>
@@ -549,20 +696,20 @@ const QUESTIONS = [
   {id:'ate', q:'"Have you eaten or had anything to drink recently?"', a:'"I was just cooking dinner, so — no, not since lunch."'}
 ];
 function viewInterview(){
-  const asked = Object.keys(S.asked).length;
   const answered = QUESTIONS.filter(q=>S.asked[q.id]).map(q=>`<li><b>${q.q}</b> ${q.a}</li>`).join('');
   const opts = QUESTIONS.filter(q=>!S.asked[q.id]).map((q,i)=>
     `<div class="opt" onclick="askQ('${q.id}')"><div class="n">${i+1}</div>${q.q}</div>`).join('');
+  const bubble = S.lastAsked ? QUESTIONS.find(q=>q.id===S.lastAsked).a
+    : '"I was cooking when I heard an explosion. Then everything went dark."';
   return `
     <div class="panel-frame">${scenePatient('injured')}</div>
     <div class="speech-wrap"><div class="speech-bubble"><div class="speech-name">Patient</div>
-      "I was cooking when I heard an explosion. Then everything went dark."</div></div>
+      ${bubble}</div></div>
     ${answered?`<div class="notes-panel"><h4>What you've learned</h4><ul>${answered}</ul></div>`:''}
     <div class="opts">${opts}</div>
-    <div class="btn-row"><button class="btn primary" onclick="finishInterview()">Continue to secondary assessment →</button>
-      ${asked<QUESTIONS.length?'':''}</div>`;
+    <div class="btn-row"><button class="btn primary" onclick="finishInterview()">Continue to secondary assessment →</button></div>`;
 }
-function askQ(id){ SND.click(); S.asked[id]=true; render(); }
+function askQ(id){ SND.click(); S.asked[id]=true; S.lastAsked=id; render(); }
 function finishInterview(){
   const asked = Object.keys(S.asked).length;
   if(asked>=5){ praise(`Gathered a thorough patient history (${asked}/7 questions asked).`); }
@@ -699,7 +846,7 @@ function viewDebrief(){
       <div class="score-grid">${rows}</div>
       <div class="check-list">${good}${warn}</div>
       <div class="btn-row">
-        <button class="btn primary" onclick="SND.click();S=freshState();S.phase='establish';render()">↻ Replay Issue 01</button>
+        <button class="btn primary" onclick="SND.click();S=freshState();S.phase='briefing';render()">↻ Replay Issue 01</button>
         <a class="btn" href="index.html">🏠 Menu</a>
       </div>
     </div>`;
@@ -709,7 +856,7 @@ function viewDebrief(){
    VIEW TABLE + BOOT
 ============================================================ */
 const VIEWS = {
-  cover: viewCover, establish: viewEstablish, sizeup: viewSizeup, collapse: viewCollapse,
+  cover: viewCover, briefing: viewBriefing, establish: viewEstablish, sizeup: viewSizeup, collapse: viewCollapse,
   approach: viewApproach, primary: viewPrimary, interview: viewInterview, secondary: viewSecondary,
   treatment: viewTreatment, reassess: viewReassess, disposition: viewDisposition, outcome: viewOutcome,
   debrief: viewDebrief
