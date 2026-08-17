@@ -180,12 +180,12 @@ const SND=(function(){
    ART SWAP-IN POINT
 ============================================================ */
 const PANEL_ART = {
-  // briefing:  'response-issue03-briefing.png',
-  // establish: 'response-issue03-establish.png',
-  // cluehunt:  'response-issue03-cluehunt.png',
-  // patient_unwell:       'response-issue03-patient-unwell.png',
-  // patient_recovering:   'response-issue03-patient-recovering.png',
-  // patient_deteriorated: 'response-issue03-patient-deteriorated.png',
+  briefing:  'response-issue03-briefing.png',
+  establish: 'response-issue03-establish.png',
+  cluehunt:  'response-issue03-cluehunt.png',
+  patient_unwell:       'response-issue03-patient-unwell.png',
+  patient_recovering:   'response-issue03-patient-recovering.png',
+  patient_deteriorated: 'response-issue03-patient-deteriorated.png',
 };
 
 /* ============================================================
@@ -432,9 +432,9 @@ function clickHotspot(id){
 }
 function cluehuntHotspots(){
   return hotspot(295,300,32,'clue-granola',S.clues.granola,S.hintTarget==='clue-granola')
-    + hotspot(295,340,40,'clue-medkit',S.clues.medkit,S.hintTarget==='clue-medkit')
-    + hotspot(420,310,26,'clue-juice',S.clues.juice,S.hintTarget==='clue-juice')
-    + hotspot(495,315,25,'clue-photo',S.clues.photo,S.hintTarget==='clue-photo');
+    + hotspot(360,245,38,'clue-medkit',S.clues.medkit,S.hintTarget==='clue-medkit')
+    + hotspot(565,235,32,'clue-juice',S.clues.juice,S.hintTarget==='clue-juice')
+    + hotspot(460,295,28,'clue-photo',S.clues.photo,S.hintTarget==='clue-photo');
 }
 function hintCurrentPhase(){
   SND.click();
@@ -474,9 +474,9 @@ function finishCluehunt(){
 
 /* ---------- PRIMARY (mental status / skin / breathing) ---------- */
 function viewPrimary(){
-  const hs = hotspot(470,278,32,'chk-orient',S.checks.orient,S.hintTarget==='chk-orient')
-    + hotspot(453,335,26,'chk-skin',S.checks.skin,S.hintTarget==='chk-skin')
-    + hotspot(470,320,28,'chk-breathing',S.checks.breathing,S.hintTarget==='chk-breathing');
+  const hs = hotspot(350,140,36,'chk-orient',S.checks.orient,S.hintTarget==='chk-orient')
+    + hotspot(330,460,34,'chk-skin',S.checks.skin,S.hintTarget==='chk-skin')
+    + hotspot(330,230,32,'chk-breathing',S.checks.breathing,S.hintTarget==='chk-breathing');
   const allDone = S.checks.orient && S.checks.skin && S.checks.breathing;
   return `
     <div class="panel-frame">${scenePatient('unwell', hs)}</div>
