@@ -185,13 +185,13 @@ const SND=(function(){
    ART SWAP-IN POINT
 ============================================================ */
 const PANEL_ART = {
-  // briefing:  'response-issue02-briefing.png',
-  // establish: 'response-issue02-establish.png',
-  // sizeup:    'response-issue02-sizeup.png',
-  // patient_trapped:      'response-issue02-patient-trapped.png',
-  // patient_stabilized:   'response-issue02-patient-stabilized.png',
-  // patient_deteriorated: 'response-issue02-patient-deteriorated.png',
-  // collapse:  'response-issue02-collapse.png',
+  briefing:  'response-issue02-briefing.png',
+  establish: 'response-issue02-establish.png',
+  sizeup:    'response-issue02-sizeup.png',
+  patient_trapped:      'response-issue02-patient-trapped.png',
+  patient_stabilized:   'response-issue02-patient-stabilized.png',
+  patient_deteriorated: 'response-issue02-patient-deteriorated.png',
+  collapse:  'response-issue02-collapse.png',
 };
 
 /* ============================================================
@@ -536,8 +536,8 @@ function clickHotspot(id){
   }
 }
 function sizeupHotspots(){
-  return hotspot(560,220,45,'hazard-powerline',S.hazards.powerline.resolved,S.hintTarget==='hazard-powerline')
-    + hotspot(460,260,35,'hazard-debris',S.hazards.debris.resolved,S.hintTarget==='hazard-debris')
+  return hotspot(100,185,42,'hazard-powerline',S.hazards.powerline.resolved,S.hintTarget==='hazard-powerline')
+    + hotspot(470,230,40,'hazard-debris',S.hazards.debris.resolved,S.hintTarget==='hazard-debris')
     + hotspot(150,405,22,'decoy-glass',S.decoys.glass,S.hintTarget==='decoy-glass')
     + hotspot(680,460,26,'decoy-fence',S.decoys.fence,S.hintTarget==='decoy-fence');
 }
@@ -638,9 +638,9 @@ function viewApproach(){
 
 /* ---------- PRIMARY ASSESSMENT ---------- */
 function viewPrimary(){
-  const hs = hotspot(475,278,35,'chk-resp',S.checks.resp,S.hintTarget==='chk-resp')
-    + hotspot(500,310,28,'chk-breathing',S.checks.breathing,S.hintTarget==='chk-breathing')
-    + hotspot(372,325,32,'site-arm',S.checks.bleedSeen,S.hintTarget==='site-arm');
+  const hs = hotspot(285,210,38,'chk-resp',S.checks.resp,S.hintTarget==='chk-resp')
+    + hotspot(480,260,40,'chk-breathing',S.checks.breathing,S.hintTarget==='chk-breathing')
+    + hotspot(400,370,40,'site-arm',S.checks.bleedSeen,S.hintTarget==='site-arm');
   const allDone = S.checks.resp && S.checks.breathing && S.checks.bleedSeen;
   const canPressure = S.checks.bleedSeen && !S.pressureApplied;
   return `
@@ -701,7 +701,7 @@ function finishInterview(){
 
 /* ---------- SECONDARY ---------- */
 function viewSecondary(){
-  const hs = hotspot(462,260,28,'site-forehead',S.secondary.forehead,S.hintTarget==='site-forehead');
+  const hs = hotspot(255,195,32,'site-forehead',S.secondary.forehead,S.hintTarget==='site-forehead');
   return `
     <div class="panel-frame">${scenePatient('trapped', hs)}</div>
     <div class="caption-box">You check what else you can reach. <b>Click his forehead</b> to check for any head injury from the falling debris.</div>
