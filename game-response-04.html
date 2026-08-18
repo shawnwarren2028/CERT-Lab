@@ -365,6 +365,7 @@ function freshState(){
       p3:{name:'Carlos', tag:null, correctTag:'red', treated:false, deteriorated:false}
     },
     sweepQueue:['p1','p2','p3'], sweepActive:null,
+    bystanderPresent: Math.random()<0.5, bystanderConsulted:false,
     treatQueue:[], treatActive:null,
     resourceRequest:null,
     score:{sceneSafety:100, triageAccuracy:100, prioritization:100, treatment:100, resources:100},
@@ -503,6 +504,8 @@ const RPM = {
   p2:{r:'20/min', p:'Radial pulse present, brisk cap refill', m:'Dazed but follows commands'},
   p3:{r:'32/min, shallow', p:'Radial pulse weak/hard to find', m:'Confused, slow to respond'}
 };
+const BYSTANDER_ANSWER = '"I saw it happen — the sedan T-boned the SUV going maybe 40, no brakes at all. The guy in the sedan wasn\'t wearing his seatbelt, I watched him get thrown forward into the wheel."';
+function askBystander(){ SND.click(); S.bystanderConsulted=true; render(); }
 function patientChips(){
   return `<div class="patient-strip">${Object.entries(S.patients).map(([k,p])=>
     `<div class="patient-chip"><span class="dot ${p.tag||'pending'}"></span>${p.name}</div>`).join('')}</div>`;
@@ -510,6 +513,10 @@ function patientChips(){
 function viewSweep(){
   if(S.sweepActive){
     const key = S.sweepActive, p = S.patients[key], r = RPM[key];
+    const bystanderBtn = (key==='p3' && S.bystanderPresent && !S.bystanderConsulted)
+      ? `<div class="btn-row"><button class="btn" onclick="askBystander()">🗣️ A bystander says they saw it happen — ask what they saw</button></div>` : '';
+    const bystanderNote = (key==='p3' && S.bystanderConsulted)
+      ? `<div class="notes-panel"><h4>Witness account</h4><ul><li>${BYSTANDER_ANSWER}</li></ul></div>` : '';
     return `
       <div class="panel-frame">${scenePatientDetail(key)}</div>
       <div class="caption-box">Quick check on ${p.name} — Respiration, Pulse, Mental status. Not a full exam,
@@ -519,6 +526,8 @@ function viewSweep(){
         <li><b>Perfusion:</b> ${r.p}</li>
         <li><b>Mental status:</b> ${r.m}</li>
       </ul></div>
+      ${bystanderNote}
+      ${bystanderBtn}
       <div class="caption-box" style="margin-top:6px;">What's the tag?</div>
       <div class="tag-row">
         <button class="tag-btn green" onclick="tagPatient('green')">🟢 Minor</button>
@@ -552,6 +561,8 @@ function tagPatient(tag){
 }
 function viewSweepDone(){
   praise('Completed the triage sweep on all three patients before starting hands-on treatment.');
+  if(S.bystanderPresent && S.bystanderConsulted){ praise('Got an eyewitness account of the collision — confirms high-speed impact and no seatbelt for the Immediate patient, consistent with his RPM findings.'); }
+  else if(S.bystanderPresent && !S.bystanderConsulted){ deduct('triageAccuracy', 8, 'A bystander who saw the collision was on scene and never asked what they saw — an eyewitness account of the mechanism of injury went ungathered.'); }
   // build treat queue in true priority order regardless of how they were tagged, so mistagging has a real cost during treatment
   S.treatQueue = ['p3','p2','p1'];
   return `
