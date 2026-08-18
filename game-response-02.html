@@ -422,10 +422,11 @@ function freshState(){
     checks:{resp:false, airway:false, breathing:false, bleedSeen:false},
     pressureApplied:false, lastFinding:null,
     asked:{}, lastAsked:null, secondary:{forehead:false},
+    familyPresent: Math.random()<0.5, familyConsulted:false, resourcePick:null,
     given:{}, mistakes:0,
     stage:'trapped',
     dispositionPick:null,
-    score:{sceneSafety:100, assessment:100, prioritization:100, communication:100, treatment:100, reassessment:100},
+    score:{sceneSafety:100, assessment:100, prioritization:100, communication:100, treatment:100, reassessment:100, resources:100},
     log:[]
   };
 }
@@ -677,25 +678,35 @@ const QUESTIONS = [
   {id:'allergies', q:'"Are you allergic to anything?"', a:'"Not that I know of."'},
   {id:'ate', q:'"Have you eaten or had anything to drink today?"', a:'"Coffee, early this morning. Nothing since."'}
 ];
+const FAMILY_ANSWER = "\"That's my husband under there! I was in the kitchen when the tree came down — that was right around ten after seven. So it's been closer to twenty-five minutes, not twenty. Please, is he going to be okay?\"";
 function viewInterview(){
   const answered = QUESTIONS.filter(q=>S.asked[q.id]).map(q=>`<li><b>${q.q}</b> ${q.a}</li>`).join('');
+  const familyNote = S.familyConsulted ? `<li><b>His wife:</b> ${FAMILY_ANSWER}</li>` : '';
   const opts = QUESTIONS.filter(q=>!S.asked[q.id]).map((q,i)=>
-    `<div class="opt" onclick="askQ('${q.id}')"><div class="n">${i+1}</div>${q.q}</div>`).join('');
-  const bubble = S.lastAsked ? QUESTIONS.find(q=>q.id===S.lastAsked).a
+    `<div class="opt" onclick="askQ('${q.id}')"><div class="n">${i+1}</div>${q.q}</div>`).join('')
+    + (S.familyPresent && !S.familyConsulted
+      ? `<div class="opt" onclick="askFamily()"><div class="n">👤</div>"Does anyone know exactly when this happened?" (a woman at the edge of the yard looks frantic)</div>`
+      : '');
+  const bubble = S.lastAsked==='family' ? FAMILY_ANSWER
+    : S.lastAsked ? QUESTIONS.find(q=>q.id===S.lastAsked).a
     : "\"Thank god... I heard someone out there. I'm stuck — the porch came down on me.\"";
+  const speaker = S.lastAsked==='family' ? 'His Wife' : 'Patient';
   return `
     <div class="panel-frame">${scenePatient('trapped')}</div>
-    <div class="speech-wrap"><div class="speech-bubble"><div class="speech-name">Patient</div>
+    <div class="speech-wrap"><div class="speech-bubble"><div class="speech-name">${speaker}</div>
       ${bubble}</div></div>
-    ${answered?`<div class="notes-panel"><h4>What you've learned</h4><ul>${answered}</ul></div>`:''}
+    ${(answered||familyNote)?`<div class="notes-panel"><h4>What you've learned</h4><ul>${answered}${familyNote}</ul></div>`:''}
     <div class="opts">${opts}</div>
     <div class="btn-row"><button class="btn primary" onclick="finishInterview()">Continue to secondary assessment →</button></div>`;
 }
 function askQ(id){ SND.click(); S.asked[id]=true; S.lastAsked=id; render(); }
+function askFamily(){ SND.click(); S.familyConsulted=true; S.lastAsked='family'; render(); }
 function finishInterview(){
   const asked = Object.keys(S.asked).length;
   if(asked>=5){ praise(`Gathered a thorough patient history (${asked}/7 questions asked).`); }
   else { deduct('communication', (5-asked)*12, `Only asked ${asked} of 7 available interview questions — including the numbness check that flags crush syndrome risk.`); }
+  if(S.familyPresent && S.familyConsulted){ praise("Checked with his wife, who confirmed almost exactly how long he'd been trapped — useful precision for the crush-syndrome risk."); }
+  else if(S.familyPresent && !S.familyConsulted){ deduct('communication', 8, "His wife was on scene and never asked to confirm exactly how long he'd been trapped."); }
   S.phase='secondary'; render();
 }
 
@@ -763,7 +774,34 @@ function viewReassess(){
   return `
     <div class="panel-frame">${scenePatient(S.stage)}</div>
     <div class="caption-box">You recheck his ABCs and ask how he's doing. ${text}</div>
-    <div class="btn-row"><button class="btn primary" onclick="SND.click();S.phase='disposition';render()">Decide next steps →</button></div>`;
+    <div class="btn-row"><button class="btn primary" onclick="SND.click();S.phase='resources';render()">Decide next steps →</button></div>`;
+}
+
+/* ---------- RESOURCES ---------- */
+function viewResources(){
+  const fw = S.familyConsulted ? " His wife confirmed it's closer to twenty-five minutes than twenty — worth passing along." : '';
+  return `
+    <div class="panel-frame">${scenePatient(S.stage)}</div>
+    <div class="caption-box">While you wait for extrication, Command wants a resource call — what do you radio ahead?${fw}</div>
+    <div class="opts">
+      <div class="opt" onclick="pickResource('flag')"><div class="n">1</div>Radio ahead: confirm extrication + EMS, and specifically flag suspected crush syndrome so they arrive prepared</div>
+      <div class="opt" onclick="pickResource('bare')"><div class="n">2</div>Just radio for an ambulance — you'll explain the details when they arrive</div>
+      <div class="opt" onclick="pickResource('wait')"><div class="n">3</div>Hold off on the radio call until extrication physically gets here</div>
+    </div>`;
+}
+function pickResource(pick){
+  S.resourcePick = pick;
+  if(pick==='flag'){
+    SND.good();
+    praise(S.familyConsulted
+      ? "Radioed ahead with the crush-syndrome flag and a solid time estimate — EMS can prep fluids and treatment before they even arrive."
+      : 'Radioed ahead to flag suspected crush syndrome — gives EMS time to prepare before they arrive.');
+  } else if(pick==='bare'){
+    SND.bad(); deduct('resources', 20, "A bare \"send an ambulance\" call leaves EMS unprepared for a time-sensitive complication like crush syndrome — the extra 30 seconds on the radio buys them prep time that matters once he's freed.");
+  } else if(pick==='wait'){
+    SND.bad(); deduct('resources', 25, "Waiting to explain in person wastes the travel time EMS could have used to prepare — crush syndrome treatment is time-critical starting the moment pressure releases, not when they arrive.");
+  }
+  S.phase='disposition'; render();
 }
 
 /* ---------- DISPOSITION ---------- */
@@ -815,7 +853,7 @@ function viewDebrief(){
   const pct = S._pct, stars = S._stars;
   const rows = Object.entries(S.score).map(([k,v])=>{
     const lbl = {sceneSafety:'Scene Safety',assessment:'Assessment',prioritization:'Prioritization',
-      communication:'Communication',treatment:'Treatment',reassessment:'Reassessment'}[k];
+      communication:'Communication',treatment:'Treatment',reassessment:'Reassessment',resources:'Resources'}[k];
     return `<div class="score-item"><div class="lbl">${lbl}</div><div class="val">${Math.round(v)}%</div></div>`;
   }).join('');
   const good = S.log.filter(l=>l.ok).map(l=>`<div class="check-item ok"><span class="ic">✓</span>${l.text}</div>`).join('');
@@ -839,8 +877,8 @@ function viewDebrief(){
 const VIEWS = {
   cover: viewCover, briefing: viewBriefing, establish: viewEstablish, sizeup: viewSizeup, collapse: viewCollapse,
   approach: viewApproach, primary: viewPrimary, interview: viewInterview, secondary: viewSecondary,
-  treatment: viewTreatment, reassess: viewReassess, disposition: viewDisposition, outcome: viewOutcome,
-  debrief: viewDebrief
+  treatment: viewTreatment, reassess: viewReassess, resources: viewResources, disposition: viewDisposition,
+  outcome: viewOutcome, debrief: viewDebrief
 };
 
 SND.init();
