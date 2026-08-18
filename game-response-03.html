@@ -330,8 +330,10 @@ function freshState(){
     asked:{}, lastAsked:null,
     given:{}, mistakes:0,
     stage:'unwell',
+    nursePresent: Math.random() < 0.5, nurseConsulted:false,
+    resourcePick:null,
     dispositionPick:null,
-    score:{assessment:100, prioritization:100, communication:100, treatment:100, reassessment:100},
+    score:{assessment:100, prioritization:100, communication:100, treatment:100, reassessment:100, resources:100},
     log:[]
   };
 }
@@ -506,25 +508,35 @@ const QUESTIONS = [
   {id:'water', q:'"Have you been drinking enough water? It\'s pretty warm in here."', a:'"I... don\'t know. It is warm, isn\'t it?"'},
   {id:'feel', q:'"Do you feel dizzy, shaky, or unwell in any particular way?"', a:'"Shaky. Sweaty. My heart feels like it\'s racing a little."'}
 ];
+const NURSE_ANSWER = '"Oh — I noticed her earlier. She skipped the dinner line about an hour ago, said she wasn\'t feeling up to standing in it. I should have said something sooner."';
 function viewInterview(){
   const answered = QUESTIONS.filter(q=>S.asked[q.id]).map(q=>`<li><b>${q.q}</b> ${q.a}</li>`).join('');
+  const nurseNote = S.nurseConsulted ? `<li><b>Shelter volunteer:</b> ${NURSE_ANSWER}</li>` : '';
   const opts = QUESTIONS.filter(q=>!S.asked[q.id]).map((q,i)=>
-    `<div class="opt" onclick="askQ('${q.id}')"><div class="n">${i+1}</div>${q.q}</div>`).join('');
-  const bubble = S.lastAsked ? QUESTIONS.find(q=>q.id===S.lastAsked).a
+    `<div class="opt" onclick="askQ('${q.id}')"><div class="n">${i+1}</div>${q.q}</div>`).join('')
+    + (S.nursePresent && !S.nurseConsulted
+      ? `<div class="opt" onclick="askNurse()"><div class="n">👤</div>"Excuse me — did anyone see what happened before she felt unwell?" (ask the volunteer nearby)</div>`
+      : '');
+  const bubble = S.lastAsked==='nurse' ? NURSE_ANSWER
+    : S.lastAsked ? QUESTIONS.find(q=>q.id===S.lastAsked).a
     : '"Sorry... I just feel a little off. Probably nothing."';
+  const speaker = S.lastAsked==='nurse' ? 'Shelter Volunteer' : 'Patient';
   return `
     <div class="panel-frame">${scenePatient('unwell')}</div>
-    <div class="speech-wrap"><div class="speech-bubble"><div class="speech-name">Patient</div>
+    <div class="speech-wrap"><div class="speech-bubble"><div class="speech-name">${speaker}</div>
       ${bubble}</div></div>
-    ${answered?`<div class="notes-panel"><h4>What you've learned</h4><ul>${answered}</ul></div>`:''}
+    ${(answered||nurseNote)?`<div class="notes-panel"><h4>What you've learned</h4><ul>${answered}${nurseNote}</ul></div>`:''}
     <div class="opts">${opts}</div>
     <div class="btn-row"><button class="btn primary" onclick="finishInterview()">Decide how to help her →</button></div>`;
 }
 function askQ(id){ SND.click(); S.asked[id]=true; S.lastAsked=id; render(); }
+function askNurse(){ SND.click(); S.nurseConsulted=true; S.lastAsked='nurse'; render(); }
 function finishInterview(){
   const asked = Object.keys(S.asked).length;
   if(asked>=5){ praise(`Gathered a thorough history (${asked}/7 questions asked) — enough to recognize the pattern.`); }
   else { deduct('communication', (5-asked)*12, `Only asked ${asked} of 7 available questions — some details pointing to the real cause were never gathered.`); }
+  if(S.nursePresent && S.nurseConsulted){ praise('Checked with a bystander who\'d seen her earlier — a second source confirming the missed meal.'); }
+  else if(S.nursePresent && !S.nurseConsulted){ deduct('communication', 8, 'A shelter volunteer nearby had seen Margaret before you arrived and was never asked what she noticed.'); }
   S.phase='treatment'; render();
 }
 
@@ -576,11 +588,38 @@ function viewReassess(){
   return `
     <div class="panel-frame">${scenePatient(S.stage)}</div>
     <div class="caption-box">You check on her again. ${text}</div>
-    <div class="btn-row"><button class="btn primary" onclick="SND.click();S.phase='disposition';render()">Decide next steps →</button></div>`;
+    <div class="btn-row"><button class="btn primary" onclick="SND.click();S.phase='resources';render()">Decide next steps →</button></div>`;
+}
+
+/* ---------- RESOURCES ---------- */
+function viewResources(){
+  return `
+    <div class="panel-frame">${scenePatient(S.stage)}</div>
+    <div class="caption-box">Margaret isn't the only person in this shelter. Before you move on, is there anything
+      worth flagging beyond her care?</div>
+    <div class="opts">
+      <div class="opt" onclick="pickResource('flag')"><div class="n">1</div>Flag the shelter's first aid kit for glucose tablets — other residents may have the same risk</div>
+      <div class="opt" onclick="pickResource('nothing')"><div class="n">2</div>Nothing further needed, this was a one-off</div>
+      <div class="opt" onclick="pickResource('evac')"><div class="n">3</div>Recommend the shelter be evacuated to a hospital-adjacent facility</div>
+    </div>`;
+}
+function pickResource(pick){
+  S.resourcePick = pick;
+  if(pick==='flag'){
+    SND.good(); praise("Flagged the shelter's medical kit for glucose supplies — a small preventive step that could help the next resident, not just this one.");
+  } else if(pick==='nothing'){
+    SND.bad(); deduct('resources', 20, "Margaret likely isn't the only diabetic resident in a shelter this size. Not flagging a supply gap misses a chance to prevent a repeat.");
+  } else if(pick==='evac'){
+    SND.bad(); deduct('resources', 30, "One resolved case of low blood sugar doesn't call for evacuating the whole shelter — that's a disproportionate response that could cause its own harm.");
+  }
+  S.phase='disposition'; render();
 }
 
 /* ---------- DISPOSITION ---------- */
 function viewDisposition(){
+  const nurseOpt = S.nursePresent
+    ? `<div class="opt" onclick="pickDisposition('nurse')"><div class="n">4</div>Hand off to the shelter's volunteer for ongoing monitoring, and note it in the shelter log</div>`
+    : '';
   return `
     <div class="panel-frame">${scenePatient(S.stage)}</div>
     <div class="caption-box">What's the right next step for Margaret?</div>
@@ -588,6 +627,7 @@ function viewDisposition(){
       <div class="opt" onclick="pickDisposition('nothing')"><div class="n">1</div>She's fine now — no further monitoring needed</div>
       <div class="opt" onclick="pickDisposition('watch')"><div class="n">2</div>Have her rest with food nearby, recheck on her in a few minutes</div>
       <div class="opt" onclick="pickDisposition('ems')"><div class="n">3</div>Request EMS evaluation given her diabetes and the shelter conditions</div>
+      ${nurseOpt}
     </div>`;
 }
 function pickDisposition(pick){
@@ -599,6 +639,9 @@ function pickDisposition(pick){
   } else if(pick==='watch'){
     if(S.stage==='recovering'){ SND.good(); praise('Kept her resting with food nearby and planned a recheck — a good match for how well she responded.'); }
     else { SND.bad(); deduct('prioritization', 15, "Given she wasn't improving, she needed more than a plan to check back later — EMS evaluation would have been safer."); }
+  } else if(pick==='nurse'){
+    if(S.stage==='recovering'){ SND.good(); praise('Handed off ongoing monitoring to the shelter volunteer and logged it — a good use of an available resource for a stabilized patient.'); }
+    else { SND.bad(); deduct('prioritization', 15, "A volunteer isn't a substitute for EMS when a patient isn't actually improving — this needed a higher level of care."); }
   }
   S.phase='outcome'; render();
 }
@@ -628,7 +671,7 @@ function viewDebrief(){
   const pct = S._pct, stars = S._stars;
   const rows = Object.entries(S.score).map(([k,v])=>{
     const lbl = {assessment:'Assessment',prioritization:'Prioritization',
-      communication:'Communication',treatment:'Treatment',reassessment:'Reassessment'}[k];
+      communication:'Communication',treatment:'Treatment',reassessment:'Reassessment',resources:'Resources'}[k];
     return `<div class="score-item"><div class="lbl">${lbl}</div><div class="val">${Math.round(v)}%</div></div>`;
   }).join('');
   const good = S.log.filter(l=>l.ok).map(l=>`<div class="check-item ok"><span class="ic">✓</span>${l.text}</div>`).join('');
@@ -652,7 +695,7 @@ function viewDebrief(){
 const VIEWS = {
   cover: viewCover, briefing: viewBriefing, establish: viewEstablish, cluehunt: viewCluehunt,
   primary: viewPrimary, interview: viewInterview, treatment: viewTreatment,
-  reassess: viewReassess, disposition: viewDisposition, outcome: viewOutcome, debrief: viewDebrief
+  reassess: viewReassess, resources: viewResources, disposition: viewDisposition, outcome: viewOutcome, debrief: viewDebrief
 };
 
 SND.init();
