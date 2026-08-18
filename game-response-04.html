@@ -199,14 +199,14 @@ const SND=(function(){
    ART SWAP-IN POINT
 ============================================================ */
 const PANEL_ART = {
-  // establish: 'response-issue04-establish.png',
-  // hazards:   'response-issue04-hazards.png',
-  // overview:  'response-issue04-overview.png',
-  // p1:        'response-issue04-p1.png',
-  // p2:        'response-issue04-p2.png',
-  // p3:        'response-issue04-p3.png',
-  // p3_deteriorated: 'response-issue04-p3-deteriorated.png',
-  // outcome:   'response-issue04-outcome.png',
+  establish: 'response-issue04-establish.png',
+  hazards:   'response-issue04-hazards.png',
+  overview:  'response-issue04-overview.png',
+  p1:        'response-issue04-p1.png',
+  p2:        'response-issue04-p2.png',
+  p3:        'response-issue04-p3.png',
+  p3_deteriorated: 'response-issue04-p3-deteriorated.png',
+  outcome:   'response-issue04-outcome.png',
 };
 
 /* ============================================================
@@ -291,14 +291,25 @@ function sceneOverview(tags){
       <rect x="140" y="346" width="20" height="30" fill="#5a4a3a" stroke="#0a0e07" stroke-width="2"/>
     </g>
     <g class="hotspot" onclick="clickHotspot('patient-p2')" style="cursor:pointer" pointer-events="all">
-      <circle cx="230" cy="320" r="16" fill="${dot(tags.p2)}" stroke="#0a0e07" stroke-width="3"/>
-      <rect x="215" y="336" width="30" height="24" fill="#4a5a6a" stroke="#0a0e07" stroke-width="2"/>
+      <circle cx="270" cy="260" r="16" fill="${dot(tags.p2)}" stroke="#0a0e07" stroke-width="3"/>
+      <rect x="255" y="276" width="30" height="24" fill="#4a5a6a" stroke="#0a0e07" stroke-width="2"/>
     </g>
     <g class="hotspot" onclick="clickHotspot('patient-p3')" style="cursor:pointer" pointer-events="all">
-      <circle cx="440" cy="380" r="16" fill="${dot(tags.p3)}" stroke="#0a0e07" stroke-width="3"/>
-      <rect x="410" y="392" width="60" height="16" rx="6" fill="#5a4a3a" stroke="#0a0e07" stroke-width="2"/>
+      <circle cx="580" cy="400" r="16" fill="${dot(tags.p3)}" stroke="#0a0e07" stroke-width="3"/>
+      <rect x="550" y="412" width="60" height="16" rx="6" fill="#5a4a3a" stroke="#0a0e07" stroke-width="2"/>
     </g>`;
   return svgWrap(art('overview', bg));
+}
+function sceneOutcome(){
+  const bg = `${lotBase()}
+    <g stroke="#0a0e07" stroke-width="4" fill="#fff">
+      <rect x="80" y="260" width="140" height="90" rx="8"/>
+      <rect x="500" y="255" width="150" height="95" rx="8"/>
+    </g>
+    <g fill="#e8c33a">
+      <circle cx="150" cy="255" r="10"/><circle cx="575" cy="250" r="10"/>
+    </g>`;
+  return svgWrap(art('outcome', bg));
 }
 function scenePatientDetail(key, tagColor){
   const colors = {p1:'#d9b48a', p2:'#c9a878', p3:'#b7a898'};
@@ -308,7 +319,8 @@ function scenePatientDetail(key, tagColor){
     <circle cx="400" cy="260" r="70" fill="${colors[key]||'#d9b48a'}" stroke="#0a0e07" stroke-width="5"/>
     <rect x="350" y="320" width="100" height="140" rx="14" fill="#5a5a58" stroke="#0a0e07" stroke-width="5"/>
     ${tagColor?`<rect x="370" y="200" width="60" height="26" rx="4" fill="${tagColor}" stroke="#0a0e07" stroke-width="3" transform="rotate(-8 400 213)"/>`:''}`;
-  return svgWrap(art(key, bg));
+  const artKey = (key==='p3' && S.patients.p3.deteriorated) ? 'p3_deteriorated' : key;
+  return svgWrap(art(artKey, bg));
 }
 
 /* ============================================================
@@ -350,12 +362,11 @@ function freshState(){
     patients:{
       p1:{name:'Jake', tag:null, correctTag:'green', treated:false},
       p2:{name:'Renee', tag:null, correctTag:'yellow', treated:false},
-      p3:{name:'Carlos', tag:null, correctTag:'red', treated:false}
+      p3:{name:'Carlos', tag:null, correctTag:'red', treated:false, deteriorated:false}
     },
     sweepQueue:['p1','p2','p3'], sweepActive:null,
     treatQueue:[], treatActive:null,
     resourceRequest:null,
-    stage3:'critical',
     score:{sceneSafety:100, triageAccuracy:100, prioritization:100, treatment:100, resources:100},
     log:[]
   };
@@ -436,8 +447,8 @@ function clickHotspot(id){
   }
 }
 function sizeupHotspots(){
-  return hotspot(610,355,45,'hazard-traffic',S.hazards.traffic.resolved,S.hintTarget==='hazard-traffic')
-    + hotspot(300,358,32,'hazard-fuel',S.hazards.fuel.resolved,S.hintTarget==='hazard-fuel');
+  return hotspot(690,50,40,'hazard-traffic',S.hazards.traffic.resolved,S.hintTarget==='hazard-traffic')
+    + hotspot(330,370,36,'hazard-fuel',S.hazards.fuel.resolved,S.hintTarget==='hazard-fuel');
 }
 function viewSizeup(){
   if(S.activeHazard){
@@ -530,7 +541,11 @@ function tagPatient(tag){
   const key = S.sweepActive, p = S.patients[key];
   p.tag = tag; SND.click();
   if(tag===p.correctTag){ praise(`Tagged ${p.name} ${tag.toUpperCase()} — correct.`); }
-  else { deduct('triageAccuracy', 18, `Tagged ${p.name} ${tag.toUpperCase()}, but their RPM signs matched ${p.correctTag.toUpperCase()} — a mistag here delays the care they actually need.`); SND.bad(); }
+  else {
+    deduct('triageAccuracy', 18, `Tagged ${p.name} ${tag.toUpperCase()}, but their RPM signs matched ${p.correctTag.toUpperCase()} — a mistag here delays the care they actually need.`);
+    SND.bad();
+    if(key==='p3') S.patients.p3.deteriorated = true;
+  }
   S.sweepQueue = S.sweepQueue.slice(1);
   S.sweepActive = null;
   render();
@@ -589,6 +604,7 @@ function pickTreatment(key, id){
   const t = TREAT_OPTIONS[key].find(x=>x.id===id);
   if(t.good){ S.patients[key][id]=true; SND.good(); praise(t.t+' — '+S.patients[key].name+'.'); render(); return; }
   SND.bad(); deduct('prioritization', 15, t.note);
+  if(key==='p3') S.patients.p3.deteriorated = true;
   M.querySelector('.panel-frame').insertAdjacentHTML('afterend',
     `<div class="instr-note" id="tnote"><b>Not quite:</b> ${t.note}</div>`);
   setTimeout(()=>{ const n=document.getElementById('tnote'); if(n) n.remove(); }, 4200);
@@ -628,7 +644,7 @@ function viewOutcome(){
     ? "EMS arrives to a scene that's already organized: three patients correctly tagged, treated in the right order, and a clear picture of who needs what waiting for them. Carlos goes out first. Jake, still waiting patiently with his bandaged arm, gives you a thumbs up as they load the others. Textbook."
     : "EMS arrives and sorts out the rest. Everyone makes it, but the scene took longer to stabilize than it should have — some of the mistakes here cost time that a real multi-casualty incident wouldn't forgive as easily.";
   return `
-    <div class="panel-frame">${sceneOverview({p1:S.patients.p1.tag,p2:S.patients.p2.tag,p3:S.patients.p3.tag})}</div>
+    <div class="panel-frame">${sceneOutcome()}</div>
     <div class="caption-box"><b>A few minutes later.</b> ${text}</div>
     <div class="btn-row"><button class="btn primary" onclick="SND.win();showDebrief()">See your debrief →</button></div>`;
 }
