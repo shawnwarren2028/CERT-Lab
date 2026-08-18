@@ -466,10 +466,11 @@ function freshState(){
     checks:{resp:false, airway:false, breathing:false, bleedSeen:false, burnSeen:false},
     pressureApplied:false, lastFinding:null,
     asked:{}, lastAsked:null, secondary:{ribs:false},
+    neighborPresent: Math.random()<0.5, neighborConsulted:false, resourcePick:null,
     given:{}, mistakes:0,
     stage:'injured',
     dispositionPick:null,
-    score:{sceneSafety:100, assessment:100, prioritization:100, communication:100, treatment:100, reassessment:100},
+    score:{sceneSafety:100, assessment:100, prioritization:100, communication:100, treatment:100, reassessment:100, resources:100},
     log:[]
   };
 }
@@ -716,25 +717,35 @@ const QUESTIONS = [
   {id:'when', q:'"When did this happen?"', a:'"Maybe five minutes ago... right before you got here."'},
   {id:'ate', q:'"Have you eaten or had anything to drink recently?"', a:'"I was just cooking dinner, so — no, not since lunch."'}
 ];
+const NEIGHBOR_ANSWER = '"I\'m her neighbor from next door — I ran over when I heard the blast. She\'s on blood thinners for her heart, has been for years. She bruises if you just look at her wrong, so please be careful with her."';
 function viewInterview(){
   const answered = QUESTIONS.filter(q=>S.asked[q.id]).map(q=>`<li><b>${q.q}</b> ${q.a}</li>`).join('');
+  const neighborNote = S.neighborConsulted ? `<li><b>Neighbor:</b> ${NEIGHBOR_ANSWER}</li>` : '';
   const opts = QUESTIONS.filter(q=>!S.asked[q.id]).map((q,i)=>
-    `<div class="opt" onclick="askQ('${q.id}')"><div class="n">${i+1}</div>${q.q}</div>`).join('');
-  const bubble = S.lastAsked ? QUESTIONS.find(q=>q.id===S.lastAsked).a
+    `<div class="opt" onclick="askQ('${q.id}')"><div class="n">${i+1}</div>${q.q}</div>`).join('')
+    + (S.neighborPresent && !S.neighborConsulted
+      ? `<div class="opt" onclick="askNeighbor()"><div class="n">👤</div>"Does anyone here know her medical history?" (a neighbor followed you in)</div>`
+      : '');
+  const bubble = S.lastAsked==='neighbor' ? NEIGHBOR_ANSWER
+    : S.lastAsked ? QUESTIONS.find(q=>q.id===S.lastAsked).a
     : '"I was cooking when I heard an explosion. Then everything went dark."';
+  const speaker = S.lastAsked==='neighbor' ? 'Neighbor' : 'Patient';
   return `
     <div class="panel-frame">${scenePatient('injured')}</div>
-    <div class="speech-wrap"><div class="speech-bubble"><div class="speech-name">Patient</div>
+    <div class="speech-wrap"><div class="speech-bubble"><div class="speech-name">${speaker}</div>
       ${bubble}</div></div>
-    ${answered?`<div class="notes-panel"><h4>What you've learned</h4><ul>${answered}</ul></div>`:''}
+    ${(answered||neighborNote)?`<div class="notes-panel"><h4>What you've learned</h4><ul>${answered}${neighborNote}</ul></div>`:''}
     <div class="opts">${opts}</div>
     <div class="btn-row"><button class="btn primary" onclick="finishInterview()">Continue to secondary assessment →</button></div>`;
 }
 function askQ(id){ SND.click(); S.asked[id]=true; S.lastAsked=id; render(); }
+function askNeighbor(){ SND.click(); S.neighborConsulted=true; S.lastAsked='neighbor'; render(); }
 function finishInterview(){
   const asked = Object.keys(S.asked).length;
   if(asked>=5){ praise(`Gathered a thorough patient history (${asked}/7 questions asked).`); }
   else { deduct('communication', (5-asked)*12, `Only asked ${asked} of 7 available interview questions — some SAMPLE history was never gathered.`); }
+  if(S.neighborPresent && S.neighborConsulted){ praise("Checked with a neighbor who knew her — confirmed she's on blood thinners, worth remembering if any bruising or internal injury turns up."); }
+  else if(S.neighborPresent && !S.neighborConsulted){ deduct('communication', 8, 'A neighbor who followed you in knew her medical history and was never asked.'); }
   S.phase='secondary'; render();
 }
 
@@ -808,7 +819,34 @@ function viewReassess(){
   return `
     <div class="panel-frame">${scenePatient(S.stage)}</div>
     <div class="caption-box">You recheck her ABCs and the sites you treated. ${text}</div>
-    <div class="btn-row"><button class="btn primary" onclick="SND.click();S.phase='disposition';render()">Decide next steps →</button></div>`;
+    <div class="btn-row"><button class="btn primary" onclick="SND.click();S.phase='resources';render()">Decide next steps →</button></div>`;
+}
+
+/* ---------- RESOURCES ---------- */
+function viewResources(){
+  const bt = S.neighborConsulted ? " Her neighbor already told you she's on blood thinners — a rib injury is a bigger deal for her than most." : '';
+  return `
+    <div class="panel-frame">${scenePatient(S.stage)}</div>
+    <div class="caption-box">Command still needs a resource call for this address. What level of response does she actually need?${bt}</div>
+    <div class="opts">
+      <div class="opt" onclick="pickResource('als')"><div class="n">1</div>Radio Command to upgrade to an ALS (paramedic) response, citing the rib injury</div>
+      <div class="opt" onclick="pickResource('minimize')"><div class="n">2</div>Don't escalate — it's probably just bruised ribs</div>
+      <div class="opt" onclick="pickResource('cert')"><div class="n">3</div>Tell Command CERT can keep monitoring and decide later</div>
+    </div>`;
+}
+function pickResource(pick){
+  S.resourcePick = pick;
+  if(pick==='als'){
+    SND.good();
+    praise(S.neighborConsulted
+      ? "Radioed Command to upgrade to an ALS response — the rib injury plus her blood-thinner use raises real risk of internal bleeding."
+      : 'Radioed Command to upgrade to an ALS response given the rib injury — appropriately cautious.');
+  } else if(pick==='minimize'){
+    SND.bad(); deduct('resources', 20, "A rib injury after blunt trauma can hide internal bleeding, especially without knowing her full medical history — treating it as \"probably fine\" risks missing that.");
+  } else if(pick==='cert'){
+    SND.bad(); deduct('resources', 25, 'CERT operates within a limited scope — deciding to "wait and see" on a possible internal injury delays the exact resource she might need most.');
+  }
+  S.phase='disposition'; render();
 }
 
 /* ---------- DISPOSITION ---------- */
@@ -861,7 +899,7 @@ function viewDebrief(){
   const pct = S._pct, stars = S._stars;
   const rows = Object.entries(S.score).map(([k,v])=>{
     const lbl = {sceneSafety:'Scene Safety',assessment:'Assessment',prioritization:'Prioritization',
-      communication:'Communication',treatment:'Treatment',reassessment:'Reassessment'}[k];
+      communication:'Communication',treatment:'Treatment',reassessment:'Reassessment',resources:'Resources'}[k];
     return `<div class="score-item"><div class="lbl">${lbl}</div><div class="val">${Math.round(v)}%</div></div>`;
   }).join('');
   const good = S.log.filter(l=>l.ok).map(l=>`<div class="check-item ok"><span class="ic">✓</span>${l.text}</div>`).join('');
@@ -885,8 +923,8 @@ function viewDebrief(){
 const VIEWS = {
   cover: viewCover, briefing: viewBriefing, establish: viewEstablish, sizeup: viewSizeup, collapse: viewCollapse,
   approach: viewApproach, primary: viewPrimary, interview: viewInterview, secondary: viewSecondary,
-  treatment: viewTreatment, reassess: viewReassess, disposition: viewDisposition, outcome: viewOutcome,
-  debrief: viewDebrief
+  treatment: viewTreatment, reassess: viewReassess, resources: viewResources, disposition: viewDisposition,
+  outcome: viewOutcome, debrief: viewDebrief
 };
 
 SND.init();
