@@ -24,8 +24,7 @@ volunteers. Ten interactive training games — no install, works on any device.
 | 10 | Field Response | Branching interactive-comic scenarios (4 issues), decision-driven scoring |
 
 Also included: a suite-wide **Training Record** (per-game mastery stars and
-achievement badges) covering games 1–9; Field Response tracks its own
-per-issue best scores separately and isn't yet folded into that aggregate.
+achievement badges) covering all ten games.
 
 Every game maps to CERT Basic Training and is kept faithful to **CERT scope** —
 stabilize-and-transfer, not advanced EMS or hospital medicine.

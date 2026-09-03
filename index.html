@@ -360,6 +360,14 @@ function buildRecord(){
   const aidMastered=Object.values(aidTiers).some(t=>(t.stars||0)>=3);
   const aidWon=(aid&&aid.campaignsWon)||0;
   const aidStat=(aid&&aid.completed)?`${aidDone}/9 scenarios played · best ${aidBest}%${aidWon?` · 🏆 ${aidWon} campaign${aidWon===1?'':'s'} won`:''}`:'Not completed yet';
+  // Game 10 — Field Response (per-issue best, 4 issues x 3 stars)
+  const fr=jget('cert_response_progress',null);
+  const frIssues=(fr&&fr.issues)?fr.issues:{};
+  const frStars=Object.values(frIssues).reduce((a,i)=>a+(i.bestStars||0),0);
+  const frDone=Object.keys(frIssues).length;
+  const frBest=Object.values(frIssues).reduce((a,i)=>Math.max(a,i.bestPct||0),0);
+  const frMastered=Object.values(frIssues).some(i=>(i.bestStars||0)>=3);
+  const frStat=frDone?`${frDone}/4 issues read · best ${frBest}%`:'Not completed yet';
 
   const rows=[
     {ic:'🎯',name:'Training Scenarios',stat:`${g1done}/${g1total} modules attempted`,stars:g1stars,max:g1max},
@@ -371,6 +379,7 @@ function buildRecord(){
     {ic:'🏥',name:'Treatment Aid Station',stat:aidStat,stars:aidStars,max:27},
     {ic:'🧩',name:'Hazmat Placard Match',stat:`${placDone}/5 levels played`,stars:placStars,max:15},
     {ic:'✏️',name:'CERT Crossword',stat:`${xDone}/5 levels · 🔥 ${streak}-day streak · ${dailyDone} daily solved`,stars:xStars,max:15},
+    {ic:'📖',name:'Field Response',stat:frStat,stars:frStars,max:12},
   ];
   const totStars=rows.reduce((a,r)=>a+r.stars,0), totMax=rows.reduce((a,r)=>a+r.max,0);
   // Equal weight: average each game's completion %, so games count the same
@@ -402,6 +411,7 @@ function buildRecord(){
     {ic:'🏆',name:'Campaign Commander',earned:aidWon>0,         desc:'Win a Treatment Aid Station campaign (string together enough high-satisfaction days).'},
     {ic:'🧩',name:'Placard Pro',  earned:placStars>=15,         desc:'Earn 3 stars on all 5 Placard levels.'},
     {ic:'✏️',name:'Wordsmith',    earned:xStars>=15,            desc:'Earn 3 stars on all 5 Crossword levels.'},
+    {ic:'📖',name:'By The Book',  earned:frMastered,            desc:'Earn 3 stars on any Field Response issue.'},
     {ic:'📚',name:'Scholar',      earned:g1done>=g1total,       desc:'Attempt all 9 Scenario modules.'},
     {ic:'🔥',name:'On a Roll',    earned:streak>=7,             desc:'Reach a 7-day Daily Challenge streak.'},
     {ic:'🗂️',name:'Section Sweep',earned:themesDone>=8,         desc:'Solve a themed crossword for all 8 sections.'},
