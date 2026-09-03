@@ -232,12 +232,13 @@
     </a>
 
     <a class="card" href="game-response.html">
-      <span class="tag">Issue 01</span>
+      <span class="tag">4 issues</span>
       <span class="card-icon">📖</span>
       <h3>Field Response</h3>
-      <p>An interactive response comic. Size up a developing emergency scene panel by panel,
-         assess and treat the patient, and watch the story branch based on your decisions.</p>
-      <span class="cta">Read Issue 01</span>
+      <p>An interactive comic library. Size up developing emergency scenes panel by panel,
+         assess and treat patients, request resources, and watch each story branch based on
+         your decisions — four issues, each with its own scenario and skills.</p>
+      <span class="cta">Choose an issue</span>
     </a>
 
     <a class="card" href="game-escape.html">
@@ -419,7 +420,7 @@ let resetConfirm=false;
 function resetProgress(){
   const b=document.getElementById('rec-reset');
   if(!resetConfirm){ resetConfirm=true; b.textContent='Click again to confirm — this erases all scores'; b.classList.add('confirm'); return; }
-  ['cert_g1_progress','cert_rpg_progress','cert_assess_progress','cert_escape_progress','cert_search_progress','cert_observe_progress','cert_aid_progress','cert_placard_stars','cert_xword_stars','cert_xword_best','cert_xword_daily','cert_xword_streak','cert_xword_themes'].forEach(k=>localStorage.removeItem(k));
+  ['cert_g1_progress','cert_rpg_progress','cert_assess_progress','cert_escape_progress','cert_search_progress','cert_observe_progress','cert_aid_progress','cert_placard_stars','cert_xword_stars','cert_xword_best','cert_xword_daily','cert_xword_streak','cert_xword_themes','cert_response_progress'].forEach(k=>localStorage.removeItem(k));
   resetConfirm=false; b.textContent='Reset all progress'; b.classList.remove('confirm');
   buildRecord();
 }

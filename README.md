@@ -1,9 +1,8 @@
-# CERT Training Suite
+# Readiness Arcade
 
 A browser-based **learning lab** that turns FEMA CERT Basic Training into hands-on,
 gamified practice for Community Emergency Response Team members and community
-volunteers. Nine interactive training games — free to run, no install, works on
-any device.
+volunteers. Ten interactive training games — no install, works on any device.
 
 > **Status:** working prototype / proof-of-concept. A proper commercial rebuild
 > (accounts, cross-device sync, completion certificates, and admin reporting) is
@@ -22,9 +21,11 @@ any device.
 | 7 | Scene Search | Hidden-object hazard & gear hunt |
 | 8 | Scene Recall | Observation & memory drill |
 | 9 | Treatment Aid Station | Disaster-medicine management sim |
+| 10 | Field Response | Branching interactive-comic scenarios (4 issues), decision-driven scoring |
 
 Also included: a suite-wide **Training Record** (per-game mastery stars and
-achievement badges).
+achievement badges) covering games 1–9; Field Response tracks its own
+per-issue best scores separately and isn't yet folded into that aggregate.
 
 Every game maps to CERT Basic Training and is kept faithful to **CERT scope** —
 stabilize-and-transfer, not advanced EMS or hospital medicine.
@@ -33,7 +34,10 @@ stabilize-and-transfer, not advanced EMS or hospital medicine.
 
 - **Single-file games** — each game is one self-contained `.html` file with inline
   CSS/JS and hand-drawn inline-SVG (or canvas) art. No framework, no build step,
-  no third-party dependencies.
+  no third-party dependencies. The one exception is Field Response (game 10),
+  which is an **issue library**: a hub page (`game-response.html`) plus one
+  self-contained file per issue (`game-response-01.html` through `-04.html`),
+  since each issue's mechanics deliberately differ.
 - **Shared modules** — `theme.js` (light/dark theme, icons, accessibility base),
   `cert-terms.js` (term data for the crossword).
 - **Progress** is stored in the browser via `localStorage` (keys prefixed
@@ -52,7 +56,9 @@ Then open <http://localhost:3000>.
 
 ```
 index.html            Suite hub / title screen + Training Record
-game-*.html           The nine games (one self-contained file each)
+game-*.html           Games 1-9 (one self-contained file each)
+game-response.html    Field Response hub (game 10 issue library)
+game-response-0N.html Field Response issues 01-04
 theme.js              Shared theme, icons, and accessibility base (loaded everywhere)
 cert-terms.js         Shared CERT term data
 manifest.json         PWA manifest
